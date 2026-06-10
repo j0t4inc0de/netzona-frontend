@@ -8,153 +8,19 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
   const isLoading = ref(false)
 
   // --- CLIENTES ---
-  const clients = ref([
-    { id: 'client-1', name: 'Agrícola Biobío Ltda.' },
-    { id: 'client-2', name: 'Radio Enlaces del Sur Spa' },
-  ])
+  const clients = ref([])
 
   // --- NODOS REGISTRADOS (Global por Netzona Técnico) ---
-  const globalNodes = ref([
-    { id: 'node-1', serial: 'SN-AG-001', model: 'AgroSoil-V1', type: 'agricola', clientId: 'client-1', assigned: true },
-    { id: 'node-2', serial: 'SN-AG-002', model: 'AgroTemp-V2', type: 'agricola', clientId: 'client-1', assigned: true },
-    { id: 'node-3', serial: 'SN-RF-101', model: 'NetzonaRepeater-V1', type: 'telecom', clientId: 'client-2', assigned: true },
-    { id: 'node-4', serial: 'SN-RF-102', model: 'NetzonaRepeater-V1', type: 'telecom', clientId: 'client-2', assigned: true },
-  ])
+  const globalNodes = ref([])
 
   // --- TRABAJADORES (Gestionado por Cliente Admin) ---
-  const workers = ref([
-    {
-      id: 'worker-1',
-      name: 'Pedro Díaz',
-      username: 'pedro.diaz',
-      role: 'trabajador',
-      permissions: ['predio-1', 'cerro-1'], // Accede solo a algunos predios/cerros
-    },
-    {
-      id: 'worker-2',
-      name: 'María Soto',
-      username: 'maria.soto',
-      role: 'trabajador',
-      permissions: ['predio-2', 'cerro-2'],
-    },
-  ])
+  const workers = ref([])
 
   // --- CASO 1: PREDIOS AGRÍCOLAS ---
-  const predios = ref([
-    {
-      id: 'predio-1',
-      name: 'Fundo San Francisco',
-      client: 'client-1',
-      lat: -36.6083,
-      lng: -72.1022,
-      zoom: 15,
-      sensors: [
-        { id: 'sens-1', name: 'Sector Norte - Suelo', serial: 'SN-AG-001', latOffset: 0.002, lngOffset: -0.003, value: 34.5, unit: '%' },
-        { id: 'sens-2', name: 'Sector Sur - Temperatura/Humedad', serial: 'SN-AG-002', latOffset: -0.001, lngOffset: 0.004, value: 22.8, unit: '°C' },
-      ],
-      metrics: {
-        temperature: 24.5,
-        humidity: 55,
-        soilMoisture: 38.2,
-        battery: 89.4,
-        solarPanelVoltage: 4.8,
-      },
-      history: {
-        temperature: [],
-        humidity: [],
-        soilMoisture: [],
-      }
-    },
-    {
-      id: 'predio-2',
-      name: 'Fundo El Sauce',
-      client: 'client-1',
-      lat: -36.8123,
-      lng: -72.5855,
-      zoom: 14,
-      sensors: [
-        { id: 'sens-3', name: 'Invernadero Principal', serial: 'SN-AG-003', latOffset: 0.0, lngOffset: 0.0, value: 29.1, unit: '%' },
-      ],
-      metrics: {
-        temperature: 21.0,
-        humidity: 65,
-        soilMoisture: 42.0,
-        battery: 92.1,
-        solarPanelVoltage: 5.1,
-      },
-      history: {
-        temperature: [],
-        humidity: [],
-        soilMoisture: [],
-      }
-    }
-  ])
+  const predios = ref([])
 
   // --- CASO 2: CERROS (RADIOCOMUNICACIONES) ---
-  const cerros = ref([
-    {
-      id: 'cerro-1',
-      name: 'Cerro Caracol',
-      client: 'client-2',
-      lat: -36.8374,
-      lng: -73.0423,
-      zoom: 16,
-      repeaters: [
-        { id: 'rep-1', name: 'Repetidora VHF R1', serial: 'SN-RF-101' }
-      ],
-      metrics: {
-        voltage: 13.8,      // Voltaje banco baterías repetidora (ej. 12V nominal)
-        power: 45,          // Potencia de salida Watts
-        doorOpen: false,    // Sensor magnético de puerta abierta
-        relayState: false,  // Pulsador/switch para activar algo remoto (Ej. Ventilador o Generador)
-        windSpeed: 14.5,    // Velocidad del viento km/h
-        batteryTemp: 18.2,  // Temperatura interna baterías
-        battery: 95.0,
-      },
-      history: {
-        voltage: [],
-        power: [],
-      },
-      weatherForecast: [
-        { day: 'Lun', temp: '15°C', status: 'Despejado', icon: 'Sun' },
-        { day: 'Mar', temp: '14°C', status: 'Parcial', icon: 'CloudSun' },
-        { day: 'Mié', temp: '12°C', status: 'Lluvia', icon: 'CloudRain' },
-        { day: 'Jue', temp: '11°C', status: 'Lluvia', icon: 'CloudRain' },
-        { day: 'Vie', temp: '13°C', status: 'Nublado', icon: 'Cloud' },
-      ]
-    },
-    {
-      id: 'cerro-2',
-      name: 'Cerro La Virgen',
-      client: 'client-2',
-      lat: -36.8012,
-      lng: -73.1501,
-      zoom: 16,
-      repeaters: [
-        { id: 'rep-2', name: 'Repetidora VHF R2', serial: 'SN-RF-102' }
-      ],
-      metrics: {
-        voltage: 12.1,
-        power: 42,
-        doorOpen: true,    // Puerta abierta simulada
-        relayState: true,
-        windSpeed: 28.1,
-        batteryTemp: 22.5,
-        battery: 45.2,
-      },
-      history: {
-        voltage: [],
-        power: [],
-      },
-      weatherForecast: [
-        { day: 'Lun', temp: '13°C', status: 'Nublado', icon: 'Cloud' },
-        { day: 'Mar', temp: '12°C', status: 'Lluvia', icon: 'CloudRain' },
-        { day: 'Mié', temp: '11°C', status: 'Lluvia fuerte', icon: 'CloudLightning' },
-        { day: 'Jue', temp: '12°C', status: 'Despejado', icon: 'Sun' },
-        { day: 'Vie', temp: '14°C', status: 'Parcial', icon: 'CloudSun' },
-      ]
-    }
-  ])
+  const cerros = ref([])
 
   // --- ACCIONES TÉCNICO NETZONA ---
   const addClient = async (name) => {
@@ -184,45 +50,9 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
           activo: true
         })
       })
+      await fetchDataFromBackend()
     } catch (error) {
-      console.warn('Backend API missing or failed, using local state fallback for registerNode', error)
-    }
-
-    const id = `node-${globalNodes.value.length + 1}`
-    globalNodes.value.push({
-      id,
-      serial,
-      model,
-      type,
-      clientId,
-      assigned: true
-    })
-
-    // Agregar al predio o cerro correspondiente
-    if (type === 'agricola') {
-      // Buscar el primer predio del cliente
-      const predio = predios.value.find(p => p.client === clientId)
-      if (predio) {
-        predio.sensors.push({
-          id: `sens-${Math.random().toString(36).substr(2, 9)}`,
-          name: `Nuevo Sensor - ${model}`,
-          serial,
-          latOffset: (Math.random() - 0.5) * 0.005,
-          lngOffset: (Math.random() - 0.5) * 0.005,
-          value: 20 + Math.random() * 10,
-          unit: '°C'
-        })
-      }
-    } else {
-      // Buscar el primer cerro del cliente
-      const cerro = cerros.value.find(c => c.client === clientId)
-      if (cerro) {
-        cerro.repeaters.push({
-          id: `rep-${Math.random().toString(36).substr(2, 9)}`,
-          name: `Repetidora - ${model}`,
-          serial
-        })
-      }
+      console.error('Error on registerNode', error)
     }
   }
 
@@ -381,16 +211,17 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
           lat: sitio.latitud ? parseFloat(sitio.latitud) : -36.6083,
           lng: sitio.longitud ? parseFloat(sitio.longitud) : -72.1022,
           zoom: 15,
+          dashboard_template_id: null,
           sensors: [],
           repeaters: [],
           metrics: {
-            temperature: 0,
-            humidity: 0,
-            soilMoisture: 0,
-            battery: 0,
-            solarPanelVoltage: 0,
-            voltage: 0,
-            power: 0,
+            temperature: 0, temp_widget_id: 'widget-temp',
+            humidity: 0, hum_widget_id: 'widget-hum',
+            soilMoisture: 0, soil_widget_id: 'widget-soil',
+            battery: 0, bat_widget_id: 'widget-bat',
+            solarPanelVoltage: 0, solar_widget_id: 'widget-solar',
+            voltage: 0, volt_widget_id: 'widget-volt',
+            power: 0, pow_widget_id: 'widget-pow',
             windSpeed: 0,
             batteryTemp: 0,
             doorOpen: false,
@@ -436,13 +267,20 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
               const resDash = await api(`/dispositivos/${d.serial}/dashboard/`)
               if (resDash.ok) {
                 const dash = await resDash.json()
-                dash.dashboard.widgets.forEach(w => {
+                if (dash.dashboard && dash.dashboard.id) {
+                  mapped.dashboard_template_id = dash.dashboard.id
+                }
+                const widgets = dash.dashboard ? dash.dashboard.widgets : dash.widgets || []
+                widgets.forEach(w => {
                   const val = w.valor || 0
-                  if (w.codigo_sensor === 'TEMPERATURA' || w.titulo.toLowerCase().includes('temp')) mapped.metrics.temperature = val
-                  if (w.codigo_sensor === 'HUMEDAD' || w.titulo.toLowerCase().includes('hum')) mapped.metrics.humidity = val
-                  if (w.codigo_sensor === 'BATERIA' || w.titulo.toLowerCase().includes('bat')) mapped.metrics.battery = val
-                  if (w.codigo_sensor === 'VOLTAJE' || w.titulo.toLowerCase().includes('volt')) mapped.metrics.voltage = val
-                  if (w.codigo_sensor === 'POTENCIA' || w.titulo.toLowerCase().includes('pot')) mapped.metrics.power = val
+                  if (w.codigo_sensor === 'TEMPERATURA' || w.titulo.toLowerCase().includes('temp')) { mapped.metrics.temperature = val; mapped.metrics.temp_widget_id = w.id }
+                  if (w.codigo_sensor === 'HUMEDAD' || w.titulo.toLowerCase().includes('hum')) { mapped.metrics.humidity = val; mapped.metrics.hum_widget_id = w.id }
+                  if (w.codigo_sensor === 'BATERIA' || w.titulo.toLowerCase().includes('bat')) { mapped.metrics.battery = val; mapped.metrics.bat_widget_id = w.id }
+                  if (w.codigo_sensor === 'VOLTAJE' || w.titulo.toLowerCase().includes('volt')) { mapped.metrics.voltage = val; mapped.metrics.volt_widget_id = w.id }
+                  if (w.codigo_sensor === 'POTENCIA' || w.titulo.toLowerCase().includes('pot')) { mapped.metrics.power = val; mapped.metrics.pow_widget_id = w.id }
+                  // Asumimos soil moisture y solar panel con los restantes
+                  if (w.codigo_sensor === 'HUMEDAD_SUELO' || w.titulo.toLowerCase().includes('suelo')) { mapped.metrics.soilMoisture = val; mapped.metrics.soil_widget_id = w.id }
+                  if (w.codigo_sensor === 'VOLTAJE_PANEL' || w.titulo.toLowerCase().includes('panel')) { mapped.metrics.solarPanelVoltage = val; mapped.metrics.solar_widget_id = w.id }
                 })
               }
 

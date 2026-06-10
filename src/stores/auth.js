@@ -14,11 +14,6 @@ export const useAuthStore = defineStore('auth', () => {
     const token = localStorage.getItem('access_token')
     if (token) {
       await fetchCurrentUser()
-      return
-    }
-    const mockRole = localStorage.getItem('mock_role')
-    if (mockRole) {
-      loginAs(mockRole)
     }
   }
 
@@ -44,9 +39,9 @@ export const useAuthStore = defineStore('auth', () => {
         currentUser.value = {
           id: userData.id,
           username: userData.email,
-          name: `${userData.nombres} ${userData.apellidos || ''}`.trim(),
+          name: `${userData.first_name || userData.nombres || ''} ${userData.last_name || userData.apellidos || ''}`.trim() || userData.email,
           role: role,
-          permissions: userData.permission_codenames || [], // Provisional, conectar a /accesos/ si es necesario
+          permissions: userData.permission_codenames || userData.accesos_ids || [], // Provisional, conectar a /accesos/ si es necesario
         }
       } else {
         logout()
@@ -56,26 +51,8 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Simulación de credenciales y login real
+  // Login real con el backend
   const login = async (username, password) => {
-    const lowerUser = username.toLowerCase()
-    // Mantener mocks para no romper pruebas
-    if (lowerUser === 'tecnico' || lowerUser === 'admin' || lowerUser === 'trabajador') {
-      return loginAs(lowerUser)
-    }
-
-    if (username === 'juan' && password === '1234') {
-      currentUser.value = {
-        id: 'admin-1',
-        username: 'juan',
-        name: 'Juan Erices',
-        role: 'admin',
-        permissions: ['predio-a', 'predio-b', 'cerro-1', 'cerro-2'],
-      }
-      return true
-    }
-
-    // Login real con el backend
     try {
       const response = await fetch(`${API_URL}/auth/token/`, {
         method: 'POST',
@@ -97,41 +74,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  const loginAs = (role) => {
-    localStorage.setItem('mock_role', role)
-    if (role === 'tecnico') {
-      currentUser.value = {
-        id: 'tech-1',
-        username: 'netzona_tech',
-        name: 'Soporte Netzona',
-        role: 'tecnico',
-        permissions: [],
-      }
-    } else if (role === 'admin') {
-      currentUser.value = {
-        id: 'admin-1',
-        username: 'admin_cliente',
-        name: 'Juan Erices (Admin)',
-        role: 'admin',
-        permissions: ['predio-1', 'predio-2', 'cerro-1', 'cerro-2'],
-      }
-    } else if (role === 'trabajador') {
-      currentUser.value = {
-        id: 'worker-1',
-        username: 'trabajador_cliente',
-        name: 'Pedro Díaz (Trabajador)',
-        role: 'trabajador',
-        permissions: ['predio-1', 'cerro-1'], // Acceso limitado por defecto
-      }
-    }
-    return true
-  }
-
   const logout = () => {
     currentUser.value = null
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
-    localStorage.removeItem('mock_role')
   }
 
   const hasPermission = (itemId) => {
@@ -145,7 +91,6 @@ export const useAuthStore = defineStore('auth', () => {
     userRole,
     accessibleItems,
     login,
-    loginAs,
     logout,
     hasPermission,
     initializeAuth,

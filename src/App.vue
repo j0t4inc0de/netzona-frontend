@@ -1,16 +1,7 @@
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
-import { startMockService, stopMockService } from './services/mockService'
 import { Toaster } from 'vue-sonner'
 
-onMounted(() => {
-  // Inicializa el generador de simulación de datos en tiempo real de Telemetrics
-  startMockService()
-})
-
-onUnmounted(() => {
-  stopMockService()
-})
+// El polling de métricas reales ahora se manejará desde los componentes o layout.
 </script>
 
 <template>

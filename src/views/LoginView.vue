@@ -10,18 +10,18 @@ const username = ref('')
 const password = ref('')
 const errorMsg = ref('')
 
-const handleLogin = () => {
+const handleLogin = async () => {
   errorMsg.value = ''
   if (!username.value) {
     errorMsg.value = 'Por favor ingrese su usuario.'
     return
   }
 
-  const success = auth.login(username.value, password.value)
+  const success = await auth.login(username.value, password.value)
   if (success) {
     redirectAfterLogin()
   } else {
-    errorMsg.value = 'Credenciales inválidas (Pruebe con: juan / 1234)'
+    errorMsg.value = 'Credenciales inválidas o error de conexión.'
   }
 }
 

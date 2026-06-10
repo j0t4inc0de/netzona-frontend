@@ -53,15 +53,64 @@ const initGrid = async () => {
     grid.destroy(false)
     grid = null
   }
-  setTimeout(() => {
+  setTimeout(async () => {
     const el = document.querySelector('.grid-stack')
     if (el) {
       grid = GridStack.init({
-        cellHeight: '145px',
+        cellHeight: '135px',
         margin: 16,
         minRow: 1,
       })
-      // Ajustar dimensiones del mapa Leaflet cuando el grid termina de posicionar
+
+      // Load Layout from Backend
+      if (selectedCerro.value && selectedCerro.value.dashboard_template_id) {
+        try {
+          const res = await api(`/cuentas/preferencias/?sitio=${selectedCerro.value.id}&dashboard_template=${selectedCerro.value.dashboard_template_id}`)
+          if (res.ok) {
+            const data = await res.json()
+            if (data.layout_dashboard && data.layout_dashboard.length > 0) {
+              const mappedLayout = data.layout_dashboard.map(item => ({
+                id: item.widget_id,
+                x: item.x,
+                y: item.y,
+                w: item.w,
+                h: item.h
+              }))
+              grid.load(mappedLayout)
+            }
+          }
+        } catch (e) {
+          console.warn('No se pudo cargar el layout personalizado', e)
+        }
+      }
+
+      // Handle Save
+      grid.on('change', async (event, items) => {
+        if (!selectedCerro.value || !selectedCerro.value.dashboard_template_id) return
+        
+        const layout = grid.save()
+        const backendLayout = layout.map(item => ({
+          widget_id: item.id,
+          x: item.x,
+          y: item.y,
+          w: item.w,
+          h: item.h
+        })).filter(item => item.widget_id)
+
+        try {
+          await api('/cuentas/preferencias/', {
+            method: 'PUT',
+            body: JSON.stringify({
+              sitio_id: selectedCerro.value.id,
+              dashboard_template_id: selectedCerro.value.dashboard_template_id,
+              layout_dashboard: backendLayout
+            })
+          })
+        } catch (e) {
+          console.error('Error al guardar layout', e)
+        }
+      })
+
       setTimeout(() => {
         if (map.value && map.value.leafletObject) {
           map.value.leafletObject.invalidateSize()
@@ -223,7 +272,7 @@ const getWeatherSvg = (iconName) => {
       <!-- Cuadrícula Drag and Drop (Gridstack) -->
       <div class="grid-stack mt-4">
         <!-- Voltaje Banco -->
-        <div class="grid-stack-item" gs-w="3" gs-h="1" gs-x="0" gs-y="0">
+        <div class="grid-stack-item" gs-id="widget-voltage" gs-w="3" gs-h="1" gs-x="0" gs-y="0">
           <div class="grid-stack-item-content glass-card-radio">
             <p class="label-radio">Voltaje Banco</p>
             <h3
@@ -240,7 +289,7 @@ const getWeatherSvg = (iconName) => {
         </div>
 
         <!-- Potencia Tx -->
-        <div class="grid-stack-item" gs-w="3" gs-h="1" gs-x="3" gs-y="0">
+        <div class="grid-stack-item" gs-id="widget-power" gs-w="3" gs-h="1" gs-x="3" gs-y="0">
           <div class="grid-stack-item-content glass-card-radio">
             <p class="label-radio">Potencia Tx</p>
             <h3 class="value-radio text-primary">
@@ -250,7 +299,7 @@ const getWeatherSvg = (iconName) => {
         </div>
 
         <!-- Temp. Baterías -->
-        <div class="grid-stack-item" gs-w="3" gs-h="1" gs-x="6" gs-y="0">
+        <div class="grid-stack-item" :gs-id="selectedCerro?.metrics.bat_widget_id || 'widget-bat'" gs-w="3" gs-h="1" gs-x="6" gs-y="0">
           <div class="grid-stack-item-content glass-card-radio">
             <p class="label-radio">Temp. Baterías</p>
             <h3 class="value-radio">
@@ -260,7 +309,7 @@ const getWeatherSvg = (iconName) => {
         </div>
 
         <!-- Velocidad Viento -->
-        <div class="grid-stack-item" gs-w="3" gs-h="1" gs-x="9" gs-y="0">
+        <div class="grid-stack-item" gs-id="widget-wind" gs-w="3" gs-h="1" gs-x="9" gs-y="0">
           <div class="grid-stack-item-content glass-card-radio">
             <p class="label-radio">Velocidad Viento</p>
             <h3
@@ -273,7 +322,7 @@ const getWeatherSvg = (iconName) => {
         </div>
 
         <!-- Control Magnético Puerta -->
-        <div class="grid-stack-item" gs-w="4" gs-h="2" gs-x="0" gs-y="1">
+        <div class="grid-stack-item" gs-id="widget-status" gs-w="4" gs-h="2" gs-x="0" gs-y="1">
           <div
             class="grid-stack-item-content p-6 rounded-[2rem] border transition-all duration-300 flex flex-col justify-between"
             :class="
@@ -330,7 +379,7 @@ const getWeatherSvg = (iconName) => {
         </div>
 
         <!-- Pulsador / Actuador Remoto -->
-        <div class="grid-stack-item" gs-w="4" gs-h="2" gs-x="4" gs-y="1">
+        <div class="grid-stack-item" gs-id="widget-relay" gs-w="4" gs-h="2" gs-x="4" gs-y="1">
           <div
             class="grid-stack-item-content p-6 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md flex flex-col justify-between"
           >
@@ -363,7 +412,7 @@ const getWeatherSvg = (iconName) => {
         </div>
 
         <!-- Mapa de Cerro (Leaflet) -->
-        <div class="grid-stack-item" gs-w="4" gs-h="2" gs-x="8" gs-y="1">
+        <div class="grid-stack-item" gs-id="widget-map" gs-w="4" gs-h="2" gs-x="8" gs-y="1">
           <div
             class="grid-stack-item-content bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] overflow-hidden shadow-md relative"
           >
@@ -386,7 +435,7 @@ const getWeatherSvg = (iconName) => {
         </div>
 
         <!-- Gráfico Histórico -->
-        <div class="grid-stack-item" gs-w="8" gs-h="3" gs-x="0" gs-y="3">
+        <div class="grid-stack-item" gs-id="widget-history" gs-w="8" gs-h="3" gs-x="0" gs-y="3">
           <div
             class="grid-stack-item-content p-6 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md flex flex-col justify-between"
           >

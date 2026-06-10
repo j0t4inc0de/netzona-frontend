@@ -103,6 +103,87 @@ const handleAddClient = async () => {
   }
 }
 
+// Registro de Sitio
+const newSitioName = ref('')
+const newSitioEmpresa = ref('')
+
+const handleAddSitio = async () => {
+  if (!newSitioName.value.trim() || !newSitioEmpresa.value) {
+    toast.error('Complete todos los campos del sitio.')
+    return
+  }
+  
+  try {
+    const res = await api('/empresas/sitios/', {
+      method: 'POST',
+      body: JSON.stringify({
+        nombre: newSitioName.value.trim(),
+        empresa: newSitioEmpresa.value
+      })
+    })
+    
+    if (res.ok) {
+      toast.success(`Sitio "${newSitioName.value}" registrado con éxito.`)
+      newSitioName.value = ''
+      if (selectedEmpresa.value === newSitioEmpresa.value) {
+        fetchSitios(selectedEmpresa.value)
+      }
+    } else {
+      toast.error('Error al registrar sitio.')
+    }
+  } catch(e) {
+    toast.error('Error de conexión al registrar sitio.')
+  }
+}
+
+// Registro de Zona
+const newZonaName = ref('')
+const newZonaEmpresa = ref('')
+const newZonaSitio = ref('')
+const zonasSitios = ref([])
+
+watch(newZonaEmpresa, async (newVal) => {
+  newZonaSitio.value = ''
+  zonasSitios.value = []
+  if (!newVal) return
+  try {
+    const res = await api(`/empresas/sitios/?empresa=${newVal}`)
+    if (res.ok) {
+      const data = await res.json()
+      zonasSitios.value = data.results || data
+    }
+  } catch(e) {}
+})
+
+const handleAddZona = async () => {
+  if (!newZonaName.value.trim() || !newZonaSitio.value) {
+    toast.error('Complete todos los campos de la zona.')
+    return
+  }
+  
+  try {
+    const res = await api('/empresas/zonas/', {
+      method: 'POST',
+      body: JSON.stringify({
+        nombre: newZonaName.value.trim(),
+        sitio: newZonaSitio.value
+      })
+    })
+    
+    if (res.ok) {
+      toast.success(`Zona "${newZonaName.value}" registrada con éxito.`)
+      newZonaName.value = ''
+      if (selectedSitio.value === newZonaSitio.value) {
+        fetchZonas(selectedSitio.value)
+      }
+    } else {
+      toast.error('Error al registrar zona.')
+    }
+  } catch(e) {
+    toast.error('Error de conexión al registrar zona.')
+  }
+}
+
 // Registro de Dispositivo (Nodo)
 const selectedEmpresa = ref('')
 const selectedSitio = ref('')
@@ -289,7 +370,78 @@ onMounted(async () => {
           Al aprovisionar un nodo de forma completa, el backend genera automáticamente el tópico MQTT en base a los códigos de la Empresa, Sitio y Zona elegidas.
         </div>
       </div>
-    </div>
+      
+      <!-- Tarjeta 3: Registrar Nuevo Sitio -->
+      <div class="p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg flex flex-col justify-between">
+        <div>
+          <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Crear Sitio (Predio o Cerro)
+          </h2>
+
+          <form @submit.prevent="handleAddSitio" class="space-y-4">
+            <div>
+              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Empresa Cliente</label>
+              <select v-model="newSitioEmpresa" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm">
+                <option value="" disabled>Seleccione...</option>
+                <option v-for="empresa in empresas" :key="empresa.id" :value="empresa.id">{{ empresa.nombre }}</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre del Sitio</label>
+              <input v-model="newSitioName" type="text" placeholder="Ej. Fundo El Carmen / Cerro Caracol" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm" />
+            </div>
+
+            <button type="submit" class="w-full py-3.5 rounded-xl bg-primary text-mako-950 font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.3)] transition-all duration-300">
+              Registrar Sitio
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Tarjeta 4: Registrar Nueva Zona -->
+      <div class="p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg flex flex-col justify-between">
+        <div>
+          <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+            </svg>
+            Crear Zona (Sector o Caseta)
+          </h2>
+
+          <form @submit.prevent="handleAddZona" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Empresa</label>
+                <select v-model="newZonaEmpresa" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm">
+                  <option value="" disabled>Seleccione...</option>
+                  <option v-for="empresa in empresas" :key="empresa.id" :value="empresa.id">{{ empresa.nombre }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Sitio</label>
+                <select v-model="newZonaSitio" :disabled="!newZonaEmpresa" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm disabled:opacity-50">
+                  <option value="" disabled>Seleccione...</option>
+                  <option v-for="sitio in zonasSitios" :key="sitio.id" :value="sitio.id">{{ sitio.nombre }}</option>
+                </select>
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre de la Zona</label>
+              <input v-model="newZonaName" type="text" placeholder="Ej. Sector Norte / Caseta 1" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm" />
+            </div>
+
+            <button type="submit" class="w-full py-3.5 rounded-xl bg-primary text-mako-950 font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.3)] transition-all duration-300">
+              Registrar Zona
+            </button>
+          </form>
+        </div>
+      </div>
 
     <!-- Tabla de Nodos Globales del Sistema -->
     <div class="p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg">

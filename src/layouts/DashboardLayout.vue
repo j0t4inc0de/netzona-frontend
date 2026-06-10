@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useTelemetricsStore } from '../stores/telemetrics'
@@ -15,8 +15,16 @@ const toggleDarkBase = useToggle(isDark)
 
 import { api } from '../services/api'
 
+let pollingInterval = null
+
 onMounted(async () => {
   telemetrics.fetchDataFromBackend()
+  
+  // Iniciar polling
+  pollingInterval = setInterval(() => {
+    telemetrics.updateRealtimeMetrics()
+  }, 5000)
+
   
   // Cargar preferencia del tema desde el backend
   try {
@@ -30,6 +38,10 @@ onMounted(async () => {
   } catch (e) {
     console.warn('Backend API missing or failed, using local dark mode preference')
   }
+})
+
+onUnmounted(() => {
+  if (pollingInterval) clearInterval(pollingInterval)
 })
 
 const toggleDark = () => {

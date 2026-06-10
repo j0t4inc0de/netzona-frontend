@@ -46,6 +46,8 @@ const updateMapLocation = () => {
   }
 }
 
+import { api } from '../services/api'
+
 let grid = null
 const initGrid = async () => {
   await nextTick()
@@ -53,7 +55,7 @@ const initGrid = async () => {
     grid.destroy(false)
     grid = null
   }
-  setTimeout(() => {
+  setTimeout(async () => {
     const el = document.querySelector('.grid-stack')
     if (el) {
       grid = GridStack.init({
@@ -61,6 +63,57 @@ const initGrid = async () => {
         margin: 16,
         minRow: 1,
       })
+
+      // Load Layout from Backend
+      if (selectedPredio.value && selectedPredio.value.dashboard_template_id) {
+        try {
+          const res = await api(`/cuentas/preferencias/?sitio=${selectedPredio.value.id}&dashboard_template=${selectedPredio.value.dashboard_template_id}`)
+          if (res.ok) {
+            const data = await res.json()
+            if (data.layout_dashboard && data.layout_dashboard.length > 0) {
+              // Convert backend layout format (widget_id, w, h, x, y) to GridStack format (id, w, h, x, y)
+              const mappedLayout = data.layout_dashboard.map(item => ({
+                id: item.widget_id,
+                x: item.x,
+                y: item.y,
+                w: item.w,
+                h: item.h
+              }))
+              grid.load(mappedLayout)
+            }
+          }
+        } catch (e) {
+          console.warn('No se pudo cargar el layout personalizado', e)
+        }
+      }
+
+      // Handle Save
+      grid.on('change', async (event, items) => {
+        if (!selectedPredio.value || !selectedPredio.value.dashboard_template_id) return
+        
+        const layout = grid.save()
+        const backendLayout = layout.map(item => ({
+          widget_id: item.id,
+          x: item.x,
+          y: item.y,
+          w: item.w,
+          h: item.h
+        })).filter(item => item.widget_id) // solo guardar los que tengan id válido
+
+        try {
+          await api('/cuentas/preferencias/', {
+            method: 'PUT',
+            body: JSON.stringify({
+              sitio_id: selectedPredio.value.id,
+              dashboard_template_id: selectedPredio.value.dashboard_template_id,
+              layout_dashboard: backendLayout
+            })
+          })
+        } catch (e) {
+          console.error('Error al guardar layout', e)
+        }
+      })
+
       // Ajustar dimensiones del mapa Leaflet cuando el grid termina de posicionar
       setTimeout(() => {
         if (map.value && map.value.leafletObject) {
@@ -211,7 +264,7 @@ const chartOptions = computed(() => {
       <!-- Cuadrícula Drag and Drop (Gridstack) -->
       <div class="grid-stack mt-4">
         <!-- Temperatura -->
-        <div class="grid-stack-item" gs-w="3" gs-h="1" gs-x="0" gs-y="0">
+        <div class="grid-stack-item" :gs-id="selectedPredio?.metrics.temp_widget_id || 'widget-temp'" gs-w="3" gs-h="1" gs-x="0" gs-y="0">
           <div class="grid-stack-item-content glass-card-agro">
             <p class="label-agro">Temp. Aire</p>
             <h3 class="value-agro">
@@ -221,7 +274,7 @@ const chartOptions = computed(() => {
         </div>
 
         <!-- Humedad del Aire -->
-        <div class="grid-stack-item" gs-w="3" gs-h="1" gs-x="3" gs-y="0">
+        <div class="grid-stack-item" :gs-id="selectedPredio?.metrics.hum_widget_id || 'widget-hum'" gs-w="3" gs-h="1" gs-x="3" gs-y="0">
           <div class="grid-stack-item-content glass-card-agro">
             <p class="label-agro">Humedad Aire</p>
             <h3 class="value-agro">
@@ -231,7 +284,7 @@ const chartOptions = computed(() => {
         </div>
 
         <!-- Humedad del Suelo -->
-        <div class="grid-stack-item" gs-w="3" gs-h="1" gs-x="6" gs-y="0">
+        <div class="grid-stack-item" :gs-id="selectedPredio?.metrics.soil_widget_id || 'widget-soil'" gs-w="3" gs-h="1" gs-x="6" gs-y="0">
           <div class="grid-stack-item-content glass-card-agro">
             <p class="label-agro">Hum. Suelo</p>
             <h3 class="value-agro text-primary">
@@ -241,7 +294,7 @@ const chartOptions = computed(() => {
         </div>
 
         <!-- Voltaje Panel Solar -->
-        <div class="grid-stack-item" gs-w="3" gs-h="1" gs-x="9" gs-y="0">
+        <div class="grid-stack-item" :gs-id="selectedPredio?.metrics.solar_widget_id || 'widget-solar'" gs-w="3" gs-h="1" gs-x="9" gs-y="0">
           <div class="grid-stack-item-content glass-card-agro">
             <p class="label-agro">Panel Solar</p>
             <h3 class="value-agro">
@@ -251,7 +304,7 @@ const chartOptions = computed(() => {
         </div>
 
         <!-- Batería del Sensor -->
-        <div class="grid-stack-item" gs-w="8" gs-h="1" gs-x="0" gs-y="1">
+        <div class="grid-stack-item" :gs-id="selectedPredio?.metrics.bat_widget_id || 'widget-bat'" gs-w="8" gs-h="1" gs-x="0" gs-y="1">
           <div class="grid-stack-item-content glass-card-agro">
             <p class="label-agro">Batería Nodo</p>
             <h3
@@ -264,7 +317,7 @@ const chartOptions = computed(() => {
         </div>
 
         <!-- Mapa de Predio -->
-        <div class="grid-stack-item" gs-w="4" gs-h="2" gs-x="8" gs-y="1">
+        <div class="grid-stack-item" gs-id="widget-map" gs-w="4" gs-h="2" gs-x="8" gs-y="1">
           <div
             class="grid-stack-item-content !p-0 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] overflow-hidden shadow-md relative"
           >
@@ -310,7 +363,7 @@ const chartOptions = computed(() => {
         </div>
 
         <!-- Historial Gráfico -->
-        <div class="grid-stack-item" gs-w="8" gs-h="3" gs-x="0" gs-y="2">
+        <div class="grid-stack-item" gs-id="widget-history" gs-w="8" gs-h="3" gs-x="0" gs-y="2">
           <div
             class="grid-stack-item-content p-6 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md flex flex-col justify-between"
           >
