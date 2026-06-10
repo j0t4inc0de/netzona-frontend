@@ -25,7 +25,14 @@ Este documento es un registro histórico de los últimos avances, refactorizacio
   - **Validaciones Regex:** El campo `Serial` exige la regla nativa de Python `^[A-Za-z0-9_-]+$`, mostrando error en pantalla antes de enviar la petición.
   - **Población de la Tabla Central:** Se apuntó a `GET /api/dispositivos/equipos/` para mostrar todos los nodos creados por el backend y renderizar su `mqtt_topic`.
 
-## 5. Próximos Pasos Recomendados
+## 5. Mejoras Estéticas y Modo Oscuro Dinámico
+- **Fondo Animado (Aurora Drift):** Implementación de un fondo dinámico con CSS en la pantalla de Login, empleando colores corporativos (`#0a4ee5` y `#03b1ed`) con micro-animaciones en bucle para una experiencia premium.
+- **Loader Global Unificado:** Creación del componente `AppLoader.vue`, reemplazando todas las cargas en bloque de la app por un spinner flotante con efecto *backdrop-blur*, reduciendo la cantidad de esqueletos de carga repetidos.
+- **Formulario de Cambio de Contraseña:** Se integró en la parte superior del Modal de Configuraciones un formulario fluido con sus validaciones de longitud y coincidencia. Se simula una petición POST a `/cuentas/cambiar-password/` con un loader y alertas de éxito.
+- **Color Primario Dinámico en Dark Mode:** Refactorización de Tailwind (`tailwind.config.js` y `tailwind.css`) usando variables CSS con sintaxis robusta `rgba()`. Ahora, todos los elementos azules (`bg-primary`, `text-primary`) pasan automáticamente de un azul vibrante (`#0C4CE4`) a un azul apastelado (`#6D92F8`) cuando el usuario activa el modo oscuro.
+- **Reactividad en ApexCharts:** Los gráficos de los tableros no detectaban el cambio de tema en tiempo real al usar Canvas Javascript puro. Se inyectó `useDark()` de `@vueuse/core` en las Vistas y Widgets, logrando que los ejes, fondos y líneas de datos muten de color instantáneamente sin recargar la página.
+
+## 6. Próximos Pasos Recomendados
 1. **Gestión de Sensores (`DispositivoSensor`):** Crear una ventana que permita asignar o desactivar distintos Tipos de Sensor a un Equipo particular directamente en la Vista del Técnico.
 2. **Conectar Telemetría (Dashboards):** Hacer que el almacén global `telemetrics.js` consuma los datos de los endpoints `/estado-actual/` y `/historial/` en vez de usar datos simulados.
 3. **Filtros Temporales en Gráficos:** Poner un selector desplegable encima de ApexCharts (Ej: Últimas 24h) y habilitar la función de descargar los datos del gráfico como `.csv`.
