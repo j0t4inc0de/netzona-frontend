@@ -1,45 +1,177 @@
 <script setup>
-import { ref } from 'vue'
-import { useTelemetricsStore } from '../stores/telemetrics'
+import { ref, onMounted, watch } from 'vue'
+import { api } from '../services/api'
 import { toast } from 'vue-sonner'
 
-const store = useTelemetricsStore()
+// Estado Global
+const isLoading = ref(true)
 
-// Registro de Cliente
+// Listas de Datos desde Backend
+const empresas = ref([])
+const sitios = ref([])
+const zonas = ref([])
+const tiposDispositivo = ref([])
+const equipos = ref([])
+
+// Registro de Empresa (Cliente)
 const newClientName = ref('')
-const clientSuccessMsg = ref('')
+const newClientCode = ref('')
+const newClientRut = ref('')
 
-const handleAddClient = async () => {
-  if (!newClientName.value.trim()) return
-  await store.addClient(newClientName.value.trim())
-  toast.success(`Cliente "${newClientName.value}" registrado con éxito.`)
-  newClientName.value = ''
+const fetchEmpresas = async () => {
+  try {
+    const res = await api('/empresas/clientes/')
+    if (res.ok) {
+      const data = await res.json()
+      empresas.value = data.results || data // dependiendo de paginación DRF
+    }
+  } catch(e) {}
 }
 
-// Registro de Nodo
-const selectedClient = ref('')
-const serial = ref('')
-const model = ref('')
-const nodeType = ref('agricola')
-const nodeSuccessMsg = ref('')
+const fetchSitios = async (empresaId) => {
+  sitios.value = []
+  zonas.value = []
+  if (!empresaId) return
+  try {
+    const res = await api(`/empresas/sitios/?empresa=${empresaId}`)
+    if (res.ok) {
+      const data = await res.json()
+      sitios.value = data.results || data
+    }
+  } catch(e) {}
+}
 
-const handleRegisterNode = async () => {
-  if (!selectedClient.value || !serial.value.trim() || !model.value.trim()) {
-    toast.error('Por favor complete todos los campos.')
+const fetchZonas = async (sitioId) => {
+  zonas.value = []
+  if (!sitioId) return
+  try {
+    const res = await api(`/empresas/zonas/?sitio=${sitioId}`)
+    if (res.ok) {
+      const data = await res.json()
+      zonas.value = data.results || data
+    }
+  } catch(e) {}
+}
+
+const fetchTiposDispositivo = async () => {
+  try {
+    const res = await api('/dispositivos/tipos/')
+    if (res.ok) {
+      const data = await res.json()
+      tiposDispositivo.value = data.results || data
+    }
+  } catch(e) {}
+}
+
+const fetchEquipos = async () => {
+  try {
+    const res = await api('/dispositivos/equipos/')
+    if (res.ok) {
+      const data = await res.json()
+      equipos.value = data.results || data
+    }
+  } catch(e) {}
+}
+
+const handleAddClient = async () => {
+  if (!newClientName.value.trim() || !newClientCode.value.trim() || !newClientRut.value.trim()) {
+    toast.error('Complete todos los campos del cliente.')
     return
   }
   
-  await store.registerNode(
-    serial.value.trim(),
-    model.value.trim(),
-    nodeType.value,
-    selectedClient.value
-  )
-  
-  toast.success(`Nodo ${serial.value} asociado al cliente con éxito.`)
-  serial.value = ''
-  model.value = ''
+  try {
+    const res = await api('/empresas/clientes/', {
+      method: 'POST',
+      body: JSON.stringify({
+        nombre: newClientName.value.trim(),
+        codigo: newClientCode.value.trim(),
+        rut: newClientRut.value.trim()
+      })
+    })
+    
+    if (res.ok) {
+      toast.success(`Cliente "${newClientName.value}" registrado con éxito.`)
+      newClientName.value = ''
+      newClientCode.value = ''
+      newClientRut.value = ''
+      fetchEmpresas()
+    } else {
+      toast.error('Error al registrar cliente. Verifique el código o permisos.')
+    }
+  } catch(e) {
+    toast.error('Error de conexión al registrar cliente.')
+  }
 }
+
+// Registro de Dispositivo (Nodo)
+const selectedEmpresa = ref('')
+const selectedSitio = ref('')
+const selectedZona = ref('')
+const selectedTipoDispositivo = ref('')
+const serial = ref('')
+const deviceName = ref('')
+
+watch(selectedEmpresa, (newVal) => {
+  selectedSitio.value = ''
+  selectedZona.value = ''
+  fetchSitios(newVal)
+})
+
+watch(selectedSitio, (newVal) => {
+  selectedZona.value = ''
+  fetchZonas(newVal)
+})
+
+const handleRegisterNode = async () => {
+  if (!selectedEmpresa.value || !selectedSitio.value || !selectedZona.value || !selectedTipoDispositivo.value || !serial.value.trim() || !deviceName.value.trim()) {
+    toast.error('Por favor complete todos los campos obligatorios, incluyendo la zona.')
+    return
+  }
+  
+  // Validar Regex SN (A-Za-z0-9_-)
+  const regex = /^[A-Za-z0-9_-]+$/
+  if (!regex.test(serial.value.trim())) {
+    toast.error('El Serial solo puede contener letras, números, guiones o guiones bajos.')
+    return
+  }
+  
+  try {
+    const payload = {
+      empresa: selectedEmpresa.value,
+      sitio: selectedSitio.value,
+      zona: selectedZona.value,
+      tipo_dispositivo: selectedTipoDispositivo.value,
+      serial: serial.value.trim(),
+      nombre: deviceName.value.trim()
+    }
+    
+    const res = await api('/dispositivos/equipos/', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+    
+    if (res.ok) {
+      toast.success(`Nodo ${serial.value} provisionado con éxito.`)
+      serial.value = ''
+      deviceName.value = ''
+      fetchEquipos()
+    } else {
+      const errorData = await res.json()
+      toast.error('Error al registrar: ' + JSON.stringify(errorData))
+    }
+  } catch(e) {
+    toast.error('Error de conexión al registrar dispositivo.')
+  }
+}
+
+onMounted(async () => {
+  await Promise.all([
+    fetchEmpresas(),
+    fetchTiposDispositivo(),
+    fetchEquipos()
+  ])
+  isLoading.value = false
+})
 </script>
 
 <template>
@@ -47,8 +179,8 @@ const handleRegisterNode = async () => {
     <!-- Encabezado de Vista -->
     <div class="flex justify-between items-center">
       <div>
-        <h1 class="text-3xl font-bold tracking-tight">Panel Técnico Netzona</h1>
-        <p class="text-sm text-mako-500 dark:text-mako-400 mt-1">Aprovisionamiento de nodos, sensores y gestión de clientes.</p>
+        <h1 class="text-3xl font-bold tracking-tight">Gestor de Dispositivos (Técnico)</h1>
+        <p class="text-sm text-mako-500 dark:text-mako-400 mt-1">Aprovisionamiento de nodos, asignación a zonas y clientes.</p>
       </div>
       <div class="px-4 py-2 bg-primary/10 border border-primary/20 rounded-full text-xs font-bold text-primary">
         Rol: Técnico
@@ -56,151 +188,164 @@ const handleRegisterNode = async () => {
     </div>
 
     <!-- Bloque de Formularios -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+      
       <!-- Tarjeta 1: Aprovisionar Nodo -->
       <div class="p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg">
         <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          Registrar e Instalar Nodo
+          Registrar e Instalar Dispositivo
         </h2>
 
         <form @submit.prevent="handleRegisterNode" class="space-y-4">
+          <!-- Cascada: Empresa -> Sitio -> Zona -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">1. Empresa</label>
+              <select v-model="selectedEmpresa" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm">
+                <option value="" disabled>Seleccione...</option>
+                <option v-for="empresa in empresas" :key="empresa.id" :value="empresa.id">{{ empresa.nombre }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">2. Sitio</label>
+              <select v-model="selectedSitio" :disabled="!selectedEmpresa" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm disabled:opacity-50">
+                <option value="" disabled>Seleccione...</option>
+                <option v-for="sitio in sitios" :key="sitio.id" :value="sitio.id">{{ sitio.nombre }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">3. Zona</label>
+              <select v-model="selectedZona" :disabled="!selectedSitio" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm disabled:opacity-50">
+                <option value="" disabled>Seleccione...</option>
+                <option v-for="zona in zonas" :key="zona.id" :value="zona.id">{{ zona.nombre }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Número de Serie</label>
+              <input v-model="serial" type="text" placeholder="Ej. SN_AG_999" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-mono" />
+              <p class="text-[10px] text-mako-400 mt-1">Letras, números y guiones permitidos.</p>
+            </div>
+            <div>
+              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre del Nodo</label>
+              <input v-model="deviceName" type="text" placeholder="Ej. Estación Clima Norte" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm" />
+            </div>
+          </div>
+
           <div>
-            <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Cliente Destino</label>
-            <select
-              v-model="selectedClient"
-              class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm transition-all"
-            >
-              <option value="" disabled>Seleccione un cliente...</option>
-              <option v-for="client in store.clients" :key="client.id" :value="client.id">
-                {{ client.name }}
-              </option>
+            <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Tipo de Dispositivo</label>
+            <select v-model="selectedTipoDispositivo" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm">
+              <option value="" disabled>Seleccione el modelo o tipo...</option>
+              <option v-for="tipo in tiposDispositivo" :key="tipo.id" :value="tipo.id">{{ tipo.nombre }} ({{ tipo.modelo }})</option>
             </select>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Número de Serie</label>
-              <input
-                v-model="serial"
-                type="text"
-                placeholder="Ej. SN-AG-999"
-                class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm transition-all"
-              />
-            </div>
-            <div>
-              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Modelo de Equipo</label>
-              <input
-                v-model="model"
-                type="text"
-                placeholder="Ej. AgroSoil-V2"
-                class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm transition-all"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Tipo de Frecuencia/Nodo</label>
-            <div class="flex gap-4">
-              <label class="flex items-center gap-2 cursor-pointer text-sm">
-                <input type="radio" v-model="nodeType" value="agricola" class="accent-primary" />
-                Agrícola (Wifi / NB-IoT)
-              </label>
-              <label class="flex items-center gap-2 cursor-pointer text-sm">
-                <input type="radio" v-model="nodeType" value="telecom" class="accent-primary" />
-                Radiocomunicaciones (VHF / LoRa)
-              </label>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            class="w-full py-3.5 rounded-xl bg-primary text-mako-950 font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.3)] transition-all duration-300"
-          >
-            Aprovisionar Nodo a Cliente
+          <button type="submit" class="w-full py-3.5 rounded-xl bg-primary text-mako-950 font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.3)] transition-all duration-300 mt-4">
+            Registrar e Instalar Dispositivo
           </button>
         </form>
       </div>
 
-      <!-- Tarjeta 2: Registrar Nuevo Cliente -->
+      <!-- Tarjeta 2: Registrar Nuevo Cliente (Empresa) -->
       <div class="p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg flex flex-col justify-between">
         <div>
           <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
             <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
-            Dar de Alta Cliente
+            Dar de Alta Cliente (Empresa)
           </h2>
 
           <form @submit.prevent="handleAddClient" class="space-y-4">
             <div>
-              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre de la Empresa</label>
-              <input
-                v-model="newClientName"
-                type="text"
-                placeholder="Ej. Viñedos San Pedro"
-                class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm transition-all"
-              />
+              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre Legal</label>
+              <input v-model="newClientName" type="text" placeholder="Ej. Viñedos San Pedro S.A." class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm" />
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">RUT / Identificador</label>
+                <input v-model="newClientRut" type="text" placeholder="Ej. 76.543.210-K" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Código Único</label>
+                <input v-model="newClientCode" type="text" placeholder="Ej. VIN-SP" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-mono" />
+              </div>
             </div>
 
-            <button
-              type="submit"
-              class="w-full py-3.5 rounded-xl bg-primary text-mako-950 font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.3)] transition-all duration-300"
-            >
+            <button type="submit" class="w-full py-3.5 rounded-xl bg-primary text-mako-950 font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.3)] transition-all duration-300">
               Registrar Cliente
             </button>
           </form>
         </div>
 
-        <!-- Mini Info Informativo -->
         <div class="mt-6 p-4 rounded-2xl bg-mako-100/50 dark:bg-mako-800/20 border border-mako-200 dark:border-white/5 text-xs text-mako-500 dark:text-mako-400">
-          <p class="font-bold text-mako-700 dark:text-mako-300 mb-1">💡 Procedimiento de Instalación:</p>
-          Una vez instalado físicamente el nodo Lora o Nb-IoT en terreno, el técnico Netzona registra el número de serie único del hardware y lo vincula a la cuenta del cliente para que aparezca disponible en sus tableros.
+          <p class="font-bold text-mako-700 dark:text-mako-300 mb-1">💡 Flujo de Creación MQTT:</p>
+          Al aprovisionar un nodo de forma completa, el backend genera automáticamente el tópico MQTT en base a los códigos de la Empresa, Sitio y Zona elegidas.
         </div>
       </div>
     </div>
 
     <!-- Tabla de Nodos Globales del Sistema -->
     <div class="p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg">
-      <h2 class="text-xl font-semibold mb-4">Nodos Activos Registrados en el Servidor</h2>
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-semibold">Equipos Activos Registrados</h2>
+        <button @click="fetchEquipos" class="px-3 py-1.5 text-xs font-bold bg-mako-200 dark:bg-mako-800 hover:bg-mako-300 dark:hover:bg-mako-700 rounded-lg transition-colors flex items-center gap-2">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+          Actualizar
+        </button>
+      </div>
 
-      <div class="overflow-x-auto">
+      <div v-if="isLoading" class="animate-pulse space-y-4">
+        <div class="h-10 bg-mako-200 dark:bg-mako-800 rounded-xl w-full"></div>
+        <div class="h-10 bg-mako-200 dark:bg-mako-800 rounded-xl w-full"></div>
+      </div>
+
+      <div v-else class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
             <tr class="border-b border-mako-200 dark:border-white/5 text-xs uppercase tracking-wider text-mako-400">
-              <th class="py-3 px-4">Número Serial</th>
-              <th class="py-3 px-4">Modelo</th>
+              <th class="py-3 px-4">Serial / Equipo</th>
+              <th class="py-3 px-4">Ubicación (Tópico MQTT)</th>
               <th class="py-3 px-4">Tipo</th>
-              <th class="py-3 px-4">Cliente Asignado</th>
               <th class="py-3 px-4">Estado Red</th>
+              <th class="py-3 px-4 text-right">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr
-              v-for="node in store.globalNodes"
-              :key="node.id"
-              class="border-b border-mako-100 dark:border-white/5 hover:bg-mako-100/40 dark:hover:bg-white/5 transition-colors text-sm"
-            >
-              <td class="py-3.5 px-4 font-mono font-semibold">{{ node.serial }}</td>
-              <td class="py-3.5 px-4">{{ node.model }}</td>
+            <tr v-if="equipos.length === 0">
+              <td colspan="5" class="py-8 text-center text-mako-400 italic">No hay equipos registrados en el backend.</td>
+            </tr>
+            <tr v-for="node in equipos" :key="node.id" class="border-b border-mako-100 dark:border-white/5 hover:bg-mako-100/40 dark:hover:bg-white/5 transition-colors text-sm">
               <td class="py-3.5 px-4">
-                <span
-                  class="px-2.5 py-1 rounded-full text-xs font-semibold"
-                  :class="node.type === 'agricola' ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'"
-                >
-                  {{ node.type === 'agricola' ? 'Agrícola' : 'Telecom' }}
-                </span>
+                <div class="font-mono font-bold text-primary">{{ node.serial }}</div>
+                <div class="text-xs text-mako-500 mt-0.5">{{ node.nombre }}</div>
               </td>
               <td class="py-3.5 px-4 font-medium">
-                {{ store.clients.find(c => c.id === node.clientId)?.name || 'Sin Asignar' }}
+                <div class="text-xs max-w-xs truncate text-mako-500 font-mono" :title="node.mqtt_topic">
+                  {{ node.mqtt_topic || 'Pendiente' }}
+                </div>
               </td>
               <td class="py-3.5 px-4">
-                <span class="inline-flex items-center gap-1.5 text-xs text-green-500 font-semibold">
-                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                  Conectado
+                <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-mako-200 dark:bg-mako-800">
+                  {{ tiposDispositivo.find(t => t.id === node.tipo_dispositivo)?.nombre || 'Sensor' }}
                 </span>
+              </td>
+              <td class="py-3.5 px-4">
+                <span v-if="node.activo" class="inline-flex items-center gap-1.5 text-xs text-green-500 font-semibold">
+                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Activo
+                </span>
+                <span v-else class="inline-flex items-center gap-1.5 text-xs text-red-500 font-semibold">
+                  <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Inactivo
+                </span>
+              </td>
+              <td class="py-3.5 px-4 text-right">
+                <button class="text-xs font-bold text-blue-500 hover:text-blue-400 transition-colors">Ver Sensores</button>
               </td>
             </tr>
           </tbody>
