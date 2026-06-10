@@ -3,6 +3,7 @@ import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useTelemetricsStore } from '../stores/telemetrics'
 import { themeColors } from '../theme'
+import { useDark } from '@vueuse/core'
 import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { GridStack } from 'gridstack'
@@ -10,6 +11,7 @@ import 'gridstack/dist/gridstack.min.css'
 
 const auth = useAuthStore()
 const store = useTelemetricsStore()
+const isDark = useDark()
 
 // Filtrar predios por permisos
 const allowedPredios = computed(() => {
@@ -114,7 +116,6 @@ const chartSeries = computed(() => {
 })
 
 const chartOptions = computed(() => {
-  const isDark = document.documentElement.classList.contains('dark')
   return {
     chart: {
       type: 'area',
@@ -130,7 +131,7 @@ const chartOptions = computed(() => {
       foreColor: '#9ca3af',
     },
     theme: {
-      mode: isDark ? 'dark' : 'light',
+      mode: isDark.value ? 'dark' : 'light',
     },
     stroke: {
       curve: 'smooth',
@@ -145,7 +146,7 @@ const chartOptions = computed(() => {
         stops: [0, 90, 100],
       },
     },
-    colors: [themeColors.primary.DEFAULT, '#f59e0b'],
+    colors: [isDark.value ? '#6D92F8' : '#0C4CE4', '#f59e0b'],
     dataLabels: { enabled: false },
     grid: {
       borderColor: 'rgba(156, 163, 175, 0.15)',

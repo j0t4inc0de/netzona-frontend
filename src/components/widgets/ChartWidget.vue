@@ -1,9 +1,10 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useMetricsStore } from '../../stores/metrics'
-import { themeColors } from '../../theme'
+import { useDark } from '@vueuse/core'
 
 const store = useMetricsStore()
+const isDark = useDark()
 
 const maxPoints = 30
 
@@ -48,7 +49,7 @@ const chartOptions = computed(() => ({
   },
 
   theme: {
-    mode: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+    mode: isDark.value ? 'dark' : 'light',
   },
 
   stroke: {
@@ -66,7 +67,7 @@ const chartOptions = computed(() => ({
     },
   },
 
-  colors: [themeColors.primary.DEFAULT],
+  colors: [isDark.value ? '#6D92F8' : '#0C4CE4'],
 
   dataLabels: {
     enabled: false,
@@ -110,7 +111,7 @@ const chartOptions = computed(() => ({
   },
 
   tooltip: {
-    theme: document.documentElement.classList.contains('dark') ? 'dark' : 'light',
+    theme: isDark.value ? 'dark' : 'light',
     y: {
       formatter(value) {
         return `${value.toFixed(1)} W`

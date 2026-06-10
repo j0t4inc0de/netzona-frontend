@@ -3,13 +3,13 @@
 
 export const themeColors = {
   primary: {
-    DEFAULT: 'rgb(var(--color-primary-rgb) / <alpha-value>)',
+    DEFAULT: 'rgba(var(--color-primary-rgb), <alpha-value>)',
     50: '#CFE8FA',
     100: '#CFE8FA',
     200: '#66B4F1',
     300: '#3DC4F4',
     400: '#04B4EC',
-    500: '#0C4CE4',
+    500: 'rgba(var(--color-primary-rgb), <alpha-value>)',
     600: '#0A3EB8',
     700: '#083194',
     800: '#062570',

@@ -3,6 +3,7 @@ import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useTelemetricsStore } from '../stores/telemetrics'
 import { themeColors } from '../theme'
+import { useDark } from '@vueuse/core'
 import { LMap, LTileLayer, LMarker } from '@vue-leaflet/vue-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { GridStack } from 'gridstack'
@@ -10,6 +11,7 @@ import 'gridstack/dist/gridstack.min.css'
 
 const auth = useAuthStore()
 const store = useTelemetricsStore()
+const isDark = useDark()
 
 // Filtrar cerros por permisos
 const allowedCerros = computed(() => {
@@ -114,7 +116,6 @@ const chartSeries = computed(() => {
 })
 
 const chartOptions = computed(() => {
-  const isDark = document.documentElement.classList.contains('dark')
   return {
     chart: {
       type: 'line',
@@ -130,13 +131,13 @@ const chartOptions = computed(() => {
       foreColor: '#9ca3af',
     },
     theme: {
-      mode: isDark ? 'dark' : 'light',
+      mode: isDark.value ? 'dark' : 'light',
     },
     stroke: {
       curve: 'smooth',
       width: [3, 3],
     },
-    colors: [themeColors.primary.DEFAULT, '#3b82f6'],
+    colors: [isDark.value ? '#6D92F8' : '#0C4CE4', '#3b82f6'],
     dataLabels: { enabled: false },
     grid: {
       borderColor: 'rgba(156, 163, 175, 0.15)',
@@ -153,7 +154,7 @@ const chartOptions = computed(() => {
     },
     yaxis: [
       {
-        title: { text: 'Watts', style: { color: themeColors.primary.DEFAULT } },
+        title: { text: 'Watts', style: { color: isDark.value ? '#6D92F8' : '#0C4CE4' } },
         labels: { style: { fontSize: '10px' } },
       },
       {
