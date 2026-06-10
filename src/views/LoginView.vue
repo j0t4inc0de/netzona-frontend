@@ -175,21 +175,21 @@ const redirectAfterLogin = () => {
       0% 0%,
       0% 0%,
       0% 0%;
-    filter: hue-rotate(0deg) brightness(1);
+    filter: brightness(1);
   }
   50% {
     background-position:
       -10% -5%,
       5% 10%,
       0% 15%;
-    filter: hue-rotate(30deg) brightness(1.2);
+    filter: brightness(1.2);
   }
   100% {
     background-position:
       5% 10%,
       -10% -5%,
       15% 0%;
-    filter: hue-rotate(60deg) brightness(1);
+    filter: brightness(1);
   }
 }
 
