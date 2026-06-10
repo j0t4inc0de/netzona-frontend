@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useTelemetricsStore } from '../stores/telemetrics'
+import { toast } from 'vue-sonner'
 
 const store = useTelemetricsStore()
 
@@ -8,14 +9,11 @@ const store = useTelemetricsStore()
 const newClientName = ref('')
 const clientSuccessMsg = ref('')
 
-const handleAddClient = () => {
+const handleAddClient = async () => {
   if (!newClientName.value.trim()) return
-  store.addClient(newClientName.value.trim())
-  clientSuccessMsg.value = `Cliente "${newClientName.value}" registrado con éxito.`
+  await store.addClient(newClientName.value.trim())
+  toast.success(`Cliente "${newClientName.value}" registrado con éxito.`)
   newClientName.value = ''
-  setTimeout(() => {
-    clientSuccessMsg.value = ''
-  }, 3000)
 }
 
 // Registro de Nodo
@@ -25,25 +23,22 @@ const model = ref('')
 const nodeType = ref('agricola')
 const nodeSuccessMsg = ref('')
 
-const handleRegisterNode = () => {
+const handleRegisterNode = async () => {
   if (!selectedClient.value || !serial.value.trim() || !model.value.trim()) {
-    alert('Por favor complete todos los campos.')
+    toast.error('Por favor complete todos los campos.')
     return
   }
   
-  store.registerNode(
+  await store.registerNode(
     serial.value.trim(),
     model.value.trim(),
     nodeType.value,
     selectedClient.value
   )
   
-  nodeSuccessMsg.value = `Nodo ${serial.value} asociado al cliente con éxito.`
+  toast.success(`Nodo ${serial.value} asociado al cliente con éxito.`)
   serial.value = ''
   model.value = ''
-  setTimeout(() => {
-    nodeSuccessMsg.value = ''
-  }, 3000)
 }
 </script>
 
@@ -120,10 +115,6 @@ const handleRegisterNode = () => {
             </div>
           </div>
 
-          <p v-if="nodeSuccessMsg" class="text-green-500 text-xs font-semibold bg-green-500/10 border border-green-500/20 px-3 py-2 rounded-xl text-center">
-            {{ nodeSuccessMsg }}
-          </p>
-
           <button
             type="submit"
             class="w-full py-3.5 rounded-xl bg-primary text-mako-950 font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.3)] transition-all duration-300"
@@ -153,10 +144,6 @@ const handleRegisterNode = () => {
                 class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm transition-all"
               />
             </div>
-
-            <p v-if="clientSuccessMsg" class="text-green-500 text-xs font-semibold bg-green-500/10 border border-green-500/20 px-3 py-2 rounded-xl text-center">
-              {{ clientSuccessMsg }}
-            </p>
 
             <button
               type="submit"

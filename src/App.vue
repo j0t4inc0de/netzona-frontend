@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, onUnmounted } from 'vue'
 import { startMockService, stopMockService } from './services/mockService'
+import { Toaster } from 'vue-sonner'
 
 onMounted(() => {
   // Inicializa el generador de simulación de datos en tiempo real de Telemetrics
@@ -15,6 +16,8 @@ onUnmounted(() => {
 <template>
   <!-- Router shell principal de la aplicación -->
   <router-view />
+  <!-- Sistema de notificaciones (Toasts) -->
+  <Toaster position="top-right" richColors closeButton />
 </template>
 
 <style lang="postcss">

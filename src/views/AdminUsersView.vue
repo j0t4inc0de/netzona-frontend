@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useTelemetricsStore } from '../stores/telemetrics'
+import { toast } from 'vue-sonner'
 
 const store = useTelemetricsStore()
 
@@ -10,27 +11,24 @@ const workerUsername = ref('')
 const selectedPermissions = ref([])
 const successMsg = ref('')
 
-const handleAddWorker = () => {
+const handleAddWorker = async () => {
   if (!workerName.value.trim() || !workerUsername.value.trim()) {
-    alert('Por favor complete todos los datos.')
+    toast.error('Por favor complete todos los datos.')
     return
   }
 
-  store.addWorker(workerName.value.trim(), workerUsername.value.trim(), selectedPermissions.value)
+  await store.addWorker(workerName.value.trim(), workerUsername.value.trim(), selectedPermissions.value)
 
-  successMsg.value = `Trabajador "${workerName.value}" registrado con éxito.`
+  toast.success(`Trabajador "${workerName.value}" registrado con éxito.`)
   workerName.value = ''
   workerUsername.value = ''
   selectedPermissions.value = []
-
-  setTimeout(() => {
-    successMsg.value = ''
-  }, 3000)
 }
 
-const handleRemoveWorker = (id) => {
+const handleRemoveWorker = async (id) => {
   if (confirm('¿Está seguro de eliminar este trabajador?')) {
-    store.removeWorker(id)
+    await store.removeWorker(id)
+    toast.success('Trabajador eliminado correctamente')
   }
 }
 
@@ -43,8 +41,9 @@ const startEditPermissions = (worker) => {
   editingPermissions.value = [...worker.permissions]
 }
 
-const savePermissions = () => {
-  store.updateWorkerPermissions(editingWorkerId.value, editingPermissions.value)
+const savePermissions = async () => {
+  await store.updateWorkerPermissions(editingWorkerId.value, editingPermissions.value)
+  toast.success('Accesos actualizados correctamente')
   editingWorkerId.value = null
   editingPermissions.value = []
 }
@@ -161,13 +160,6 @@ const getPermissionNames = (permissionIds) => {
                 </div>
               </div>
             </div>
-
-            <p
-              v-if="successMsg"
-              class="text-green-500 text-xs font-semibold bg-green-500/10 border border-green-500/20 px-3 py-2 rounded-xl text-center"
-            >
-              {{ successMsg }}
-            </p>
 
             <button
               type="submit"
