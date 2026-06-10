@@ -59,6 +59,17 @@ const logout = () => {
   router.push('/login')
 }
 
+// Configuración (Modal)
+const showSettings = ref(false)
+const resetLayouts = async () => {
+  if (confirm('¿Estás seguro de que quieres restaurar las posiciones por defecto de todas las tarjetas?')) {
+    try {
+      await api('/cuentas/preferencias/dashboard/', { method: 'DELETE' })
+    } catch(e) {}
+    window.location.reload()
+  }
+}
+
 // Control del menú lateral en móviles
 const isSidebarOpen = ref(false)
 const toggleSidebar = () => {
@@ -392,11 +403,19 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico' || auth.userR
             </svg>
           </button>
 
-
+          <!-- Settings Button -->
+          <button
+            @click="showSettings = true"
+            class="hover:bg-mako-200 dark:hover:bg-white/10 p-2 rounded-full transition-colors flex items-center justify-center text-mako-800 dark:text-mako-200"
+          >
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+          </button>
         </div>
       </header>
 
-      <!-- VIEW CONTENT -->
       <main class="flex-1 p-6 relative">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
@@ -404,6 +423,48 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico' || auth.userR
           </transition>
         </router-view>
       </main>
+    </div>
+
+    <!-- Modal de Configuración -->
+    <div v-if="showSettings" class="fixed inset-0 bg-mako-950/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div class="bg-white/95 dark:bg-mako-900/95 border border-mako-200 dark:border-white/10 rounded-[2rem] shadow-2xl w-full max-w-md p-6 relative">
+        <button @click="showSettings = false" class="absolute top-4 right-4 p-2 rounded-full hover:bg-mako-100 dark:hover:bg-white/10">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        
+        <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+          <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+          Configuraciones
+        </h2>
+
+        <div class="space-y-6">
+          <!-- Tema -->
+          <div class="flex items-center justify-between p-4 bg-mako-50 dark:bg-mako-800/40 rounded-2xl border border-mako-200 dark:border-white/5">
+            <div>
+              <h3 class="font-bold text-sm">Apariencia</h3>
+              <p class="text-xs text-mako-500 mt-0.5">Alternar modo claro u oscuro</p>
+            </div>
+            <button
+              @click="toggleDark"
+              class="relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 outline-none"
+              :class="isDark ? 'bg-primary' : 'bg-mako-300'"
+            >
+              <span class="inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-300" :class="isDark ? 'translate-x-6' : 'translate-x-1'"></span>
+            </button>
+          </div>
+
+          <!-- Restablecer Layout -->
+          <div class="p-4 bg-red-500/5 rounded-2xl border border-red-500/20">
+            <div>
+              <h3 class="font-bold text-sm text-red-500">Restaurar Diseño (GridStack)</h3>
+              <p class="text-xs text-mako-500 dark:text-mako-400 mt-1 mb-3">Si alguna vez desordenaste tus tarjetas, presiona este botón para devolverlas a su posición original de fábrica.</p>
+            </div>
+            <button @click="resetLayouts" class="w-full py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold text-xs rounded-xl border border-red-500/30 transition-colors">
+              Restaurar todas las tarjetas
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>

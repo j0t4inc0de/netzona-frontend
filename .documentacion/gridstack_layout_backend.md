@@ -106,6 +106,12 @@ class PreferenciasUsuarioAPIView(APIView):
             )
             
         return Response({"status": "Preferencias actualizadas con éxito"})
+        
+    def delete(self, request):
+        # 3. Eliminar Preferencias de Layout (Botón Restaurar Diseño por defecto)
+        # El frontend envía un DELETE para borrar las posiciones de todas las tarjetas de un usuario
+        PreferenciaDashboard.objects.filter(usuario=request.user).delete()
+        return Response({"status": "Layouts restaurados por defecto"})
 ```
 
 ### 3. Consideraciones Adicionales
