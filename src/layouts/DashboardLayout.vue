@@ -11,18 +11,46 @@ const router = useRouter()
 const isDark = useDark()
 const toggleDarkBase = useToggle(isDark)
 
-onMounted(() => {
+import { api } from '../services/api'
+
+onMounted(async () => {
   telemetrics.fetchDataFromBackend()
+  
+  // Cargar preferencia del tema desde el backend
+  try {
+    const res = await api('/cuentas/preferencias/')
+    if (res.ok) {
+      const pref = await res.json()
+      if (typeof pref.tema_oscuro === 'boolean') {
+        isDark.value = pref.tema_oscuro
+      }
+    }
+  } catch (e) {
+    console.warn('Backend API missing or failed, using local dark mode preference')
+  }
 })
 
 const toggleDark = () => {
-  if (!document.startViewTransition) {
+  const switchTheme = () => {
     toggleDarkBase()
+    // Guardar preferencia en el backend
+    try {
+      api('/cuentas/preferencias/', {
+        method: 'PUT',
+        body: JSON.stringify({ tema_oscuro: isDark.value })
+      })
+    } catch (e) {
+      // Fallback silencioso si el backend no está listo
+    }
+  }
+
+  if (!document.startViewTransition) {
+    switchTheme()
     return
   }
 
   document.startViewTransition(() => {
-    toggleDarkBase()
+    switchTheme()
   })
 }
 
