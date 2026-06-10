@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useTelemetricsStore } from '../stores/telemetrics'
 import { themeColors } from '../theme'
@@ -21,9 +21,12 @@ const allowedCerros = computed(() => {
 
 // Cerro Seleccionado
 const selectedCerroId = ref('')
-if (allowedCerros.value.length > 0) {
-  selectedCerroId.value = allowedCerros.value[0].id
-}
+
+watch(allowedCerros, (newVal) => {
+  if (newVal.length > 0 && !selectedCerroId.value) {
+    selectedCerroId.value = newVal[0].id
+  }
+}, { immediate: true })
 
 const selectedCerro = computed(() => {
   return store.cerros.find((c) => c.id === selectedCerroId.value) || null
@@ -42,9 +45,11 @@ const updateMapLocation = () => {
 }
 
 let grid = null
-const initGrid = () => {
+const initGrid = async () => {
+  await nextTick()
   if (grid) {
     grid.destroy(false)
+    grid = null
   }
   setTimeout(() => {
     const el = document.querySelector('.grid-stack')
@@ -73,9 +78,20 @@ watch(
   selectedCerroId,
   () => {
     updateMapLocation()
-    initGrid()
+    if (!store.isLoading) {
+      initGrid()
+    }
   },
   { immediate: true },
+)
+
+watch(
+  () => store.isLoading,
+  (loading) => {
+    if (!loading) {
+      initGrid()
+    }
+  }
 )
 
 onUnmounted(() => {

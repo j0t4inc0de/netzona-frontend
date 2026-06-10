@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useTelemetricsStore } from '../stores/telemetrics'
 import { themeColors } from '../theme'
@@ -21,9 +21,12 @@ const allowedPredios = computed(() => {
 
 // Predio Seleccionado
 const selectedPredioId = ref('')
-if (allowedPredios.value.length > 0) {
-  selectedPredioId.value = allowedPredios.value[0].id
-}
+
+watch(allowedPredios, (newVal) => {
+  if (newVal.length > 0 && !selectedPredioId.value) {
+    selectedPredioId.value = newVal[0].id
+  }
+}, { immediate: true })
 
 const selectedPredio = computed(() => {
   return store.predios.find((p) => p.id === selectedPredioId.value) || null
@@ -42,9 +45,11 @@ const updateMapLocation = () => {
 }
 
 let grid = null
-const initGrid = () => {
+const initGrid = async () => {
+  await nextTick()
   if (grid) {
     grid.destroy(false)
+    grid = null
   }
   setTimeout(() => {
     const el = document.querySelector('.grid-stack')
@@ -69,14 +74,24 @@ onMounted(() => {
   initGrid()
 })
 
-// Escuchar cambios de predio seleccionado
 watch(
   selectedPredioId,
   () => {
     updateMapLocation()
-    initGrid()
+    if (!store.isLoading) {
+      initGrid()
+    }
   },
   { immediate: true },
+)
+
+watch(
+  () => store.isLoading,
+  (loading) => {
+    if (!loading) {
+      initGrid()
+    }
+  }
 )
 
 onUnmounted(() => {
