@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '../services/api'
+import { fetchWeatherForecast } from '../services/weatherService'
 
 export const useTelemetricsStore = defineStore('telemetrics', () => {
   // --- ESTADO DE CARGA ---
@@ -476,6 +477,11 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
         // Clasificar como Cerro o Predio (Simplificación: si tiene "cerro", "radio" o "repeater" en nombre/desc)
         const isCerro = sitio.nombre.toLowerCase().includes('cerro') || sitio.descripcion?.toLowerCase().includes('radio')
         if (isCerro) {
+          // Intentar cargar el clima de OpenWeatherMap usando las coordenadas
+          const realWeather = await fetchWeatherForecast(mapped.lat, mapped.lng)
+          if (realWeather) {
+            mapped.weatherForecast = realWeather
+          }
           newCerros.push(mapped)
         } else {
           newPredios.push(mapped)
