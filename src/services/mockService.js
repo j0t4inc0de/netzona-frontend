@@ -5,10 +5,10 @@ let intervalId = null
 export const startMockService = () => {
   const store = useTelemetricsStore()
 
-  // Generar datos cada 2 segundos para simular el tiempo real de todos los nodos
+  // Actualizar datos cada 5 segundos mediante Long Polling al backend
   intervalId = setInterval(() => {
     store.updateRealtimeMetrics()
-  }, 2000)
+  }, 5000)
 }
 
 export const stopMockService = () => {

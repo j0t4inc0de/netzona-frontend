@@ -156,7 +156,16 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
   ])
 
   // --- ACCIONES TÉCNICO NETZONA ---
-  const addClient = (name) => {
+  const addClient = async (name) => {
+    try {
+      await api('/empresas/empresas/', {
+        method: 'POST',
+        body: JSON.stringify({ nombre: name, activo: true })
+      })
+    } catch (error) {
+      console.warn('Backend API missing or failed, using local state fallback for addClient', error)
+    }
+
     const id = `client-${clients.value.length + 1}`
     clients.value.push({ id, name })
     return id
@@ -242,11 +251,26 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
     })
   }
 
-  const removeWorker = (id) => {
+  const removeWorker = async (id) => {
+    try {
+      const realId = id.toString().replace('worker-', '')
+      await api(`/cuentas/usuarios/${realId}/`, { method: 'DELETE' })
+    } catch (error) {
+      console.warn('Backend API fail on DELETE /cuentas/usuarios/', error)
+    }
     workers.value = workers.value.filter(w => w.id !== id)
   }
 
-  const updateWorkerPermissions = (id, newPermissions) => {
+  const updateWorkerPermissions = async (id, newPermissions) => {
+    try {
+      const realId = id.toString().replace('worker-', '')
+      await api(`/cuentas/usuarios/${realId}/`, {
+        method: 'PUT',
+        body: JSON.stringify({ permisos_ids: newPermissions })
+      })
+    } catch (error) {
+      console.warn('Backend API fail on PUT /cuentas/usuarios/', error)
+    }
     const worker = workers.value.find(w => w.id === id)
     if (worker) {
       worker.permissions = [...newPermissions]
@@ -275,59 +299,62 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
     }
   }
 
-  // --- ACTUALIZACIÓN DE MÉTRICAS (Simulación) ---
-  const updateRealtimeMetrics = () => {
-    // 1. Predios
-    predios.value.forEach(p => {
-      // Modificar ligeramente
-      p.metrics.temperature = +(p.metrics.temperature + (Math.random() - 0.5) * 0.4).toFixed(1)
-      p.metrics.humidity = Math.max(10, Math.min(100, +(p.metrics.humidity + (Math.random() - 0.5) * 1.0).toFixed(0)))
-      p.metrics.soilMoisture = Math.max(0, Math.min(100, +(p.metrics.soilMoisture + (Math.random() - 0.5) * 0.8).toFixed(1)))
-      p.metrics.battery = Math.max(0, +(p.metrics.battery - 0.02).toFixed(2))
-      p.metrics.solarPanelVoltage = Math.max(0, Math.min(6, +(p.metrics.solarPanelVoltage + (Math.random() - 0.5) * 0.1).toFixed(2)))
-
-      // Sensores individuales
-      p.sensors.forEach(s => {
-        if (s.unit === '°C') {
-          s.value = p.metrics.temperature
-        } else if (s.unit === '%') {
-          s.value = p.metrics.soilMoisture
+  // --- ACTUALIZACIÓN DE MÉTRICAS (LONG POLLING API REAL) ---
+  const updateRealtimeMetrics = async () => {
+    try {
+      // Polling para Predios Agrícolas
+      for (const p of predios.value) {
+        for (const s of p.sensors) {
+          try {
+            const res = await api(`/dispositivos/${s.serial}/estado-actual/`)
+            if (res.ok) {
+              const data = await res.json()
+              const time = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+              // Data es usualmente un listado o diccionario. Actualizamos si encontramos el código:
+              if (data['TEMPERATURA']) {
+                p.metrics.temperature = data['TEMPERATURA'].valor
+                p.history.temperature.push({ x: time, y: data['TEMPERATURA'].valor })
+                if (p.history.temperature.length > 30) p.history.temperature.shift()
+              }
+              if (data['HUMEDAD']) {
+                p.metrics.humidity = data['HUMEDAD'].valor
+                p.history.humidity.push({ x: time, y: data['HUMEDAD'].valor })
+                if (p.history.humidity.length > 30) p.history.humidity.shift()
+              }
+              if (data['BATERIA']) p.metrics.battery = data['BATERIA'].valor
+              if (data['VOLTAJE_PANEL']) p.metrics.solarPanelVoltage = data['VOLTAJE_PANEL'].valor
+            }
+          } catch(e) {}
         }
-      })
-
-      // Guardar historial
-      const time = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-      p.history.temperature.push({ x: time, y: p.metrics.temperature })
-      p.history.humidity.push({ x: time, y: p.metrics.humidity })
-      p.history.soilMoisture.push({ x: time, y: p.metrics.soilMoisture })
-
-      // Limitar historial
-      if (p.history.temperature.length > 30) {
-        p.history.temperature.shift()
-        p.history.humidity.shift()
-        p.history.soilMoisture.shift()
       }
-    })
 
-    // 2. Cerros
-    cerros.value.forEach(c => {
-      c.metrics.voltage = Math.max(10.5, Math.min(15.0, +(c.metrics.voltage + (Math.random() - 0.5) * 0.1).toFixed(2)))
-      c.metrics.power = Math.max(30, Math.min(60, +(c.metrics.power + (Math.random() - 0.5) * 2).toFixed(0)))
-      c.metrics.windSpeed = Math.max(0, +(c.metrics.windSpeed + (Math.random() - 0.5) * 1.5).toFixed(1))
-      c.metrics.batteryTemp = Math.max(5, Math.min(45, +(c.metrics.batteryTemp + (Math.random() - 0.5) * 0.3).toFixed(1)))
-      c.metrics.battery = Math.max(0, +(c.metrics.battery - 0.01).toFixed(2))
-
-      // Guardar historial
-      const time = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-      c.history.voltage.push({ x: time, y: c.metrics.voltage })
-      c.history.power.push({ x: time, y: c.metrics.power })
-
-      // Limitar historial
-      if (c.history.voltage.length > 30) {
-        c.history.voltage.shift()
-        c.history.power.shift()
+      // Polling para Cerros Telecomunicaciones
+      for (const c of cerros.value) {
+        for (const r of c.repeaters) {
+          try {
+            const res = await api(`/dispositivos/${r.serial}/estado-actual/`)
+            if (res.ok) {
+              const data = await res.json()
+              const time = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+              
+              if (data['VOLTAJE']) {
+                c.metrics.voltage = data['VOLTAJE'].valor
+                c.history.voltage.push({ x: time, y: data['VOLTAJE'].valor })
+                if (c.history.voltage.length > 30) c.history.voltage.shift()
+              }
+              if (data['POTENCIA']) {
+                c.metrics.power = data['POTENCIA'].valor
+                c.history.power.push({ x: time, y: data['POTENCIA'].valor })
+                if (c.history.power.length > 30) c.history.power.shift()
+              }
+              if (data['BATERIA']) c.metrics.battery = data['BATERIA'].valor
+            }
+          } catch(e) {}
+        }
       }
-    })
+    } catch (e) {
+      console.warn("Polling de estado actual fallido", e)
+    }
   }
 
   // --- INTEGRACIÓN REAL CON BACKEND ---
@@ -414,7 +441,31 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                   if (w.codigo_sensor === 'HUMEDAD' || w.titulo.toLowerCase().includes('hum')) mapped.metrics.humidity = val
                   if (w.codigo_sensor === 'BATERIA' || w.titulo.toLowerCase().includes('bat')) mapped.metrics.battery = val
                   if (w.codigo_sensor === 'VOLTAJE' || w.titulo.toLowerCase().includes('volt')) mapped.metrics.voltage = val
+                  if (w.codigo_sensor === 'POTENCIA' || w.titulo.toLowerCase().includes('pot')) mapped.metrics.power = val
                 })
+              }
+
+              // Llamar endpoints reales para Gráficos Históricos
+              const codigosHistorial = ['TEMPERATURA', 'HUMEDAD', 'VOLTAJE', 'POTENCIA']
+              for (const cod of codigosHistorial) {
+                try {
+                  const resHist = await api(`/dispositivos/${d.serial}/sensores/${cod}/historial/`)
+                  if (resHist.ok) {
+                    const dataHist = await resHist.json()
+                    // dataHist = [{ valor: 12.5, timestamp: '2023-10-05T10:00:00Z' }, ...]
+                    const chartData = dataHist.map(h => ({
+                      x: new Date(h.timestamp || h.fecha).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                      y: h.valor
+                    }))
+                    
+                    if (chartData.length > 0) {
+                      if (cod === 'TEMPERATURA') mapped.history.temperature = chartData
+                      if (cod === 'HUMEDAD') mapped.history.humidity = chartData
+                      if (cod === 'VOLTAJE') mapped.history.voltage = chartData
+                      if (cod === 'POTENCIA') mapped.history.power = chartData
+                    }
+                  }
+                } catch(e) {}
               }
             } catch (err) {
               // Ignore if dashboard not configured
