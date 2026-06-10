@@ -111,18 +111,18 @@ const redirectAfterLogin = () => {
   height: 100%;
   background: radial-gradient(
       ellipse at 20% 30%,
-      rgba(138, 43, 226, 0.8) 0%,
-      rgba(138, 43, 226, 0) 60%
+      rgba(10, 78, 229, 0.8) 0%,
+      rgba(10, 78, 229, 0) 60%
     ),
     radial-gradient(
       ellipse at 80% 50%,
-      rgba(0, 191, 255, 0.7) 0%,
-      rgba(0, 191, 255, 0) 70%
+      rgba(3, 177, 237, 0.7) 0%,
+      rgba(3, 177, 237, 0) 70%
     ),
     radial-gradient(
       ellipse at 50% 80%,
-      rgba(50, 205, 50, 0.6) 0%,
-      rgba(50, 205, 50, 0) 65%
+      rgba(10, 78, 229, 0.6) 0%,
+      rgba(10, 78, 229, 0) 65%
     ),
     linear-gradient(135deg, #000000 0%, #0a0520 100%);
   background-blend-mode: overlay, screen, hard-light;
