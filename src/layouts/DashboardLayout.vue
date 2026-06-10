@@ -110,6 +110,7 @@ const toggleDesktopSidebar = () => {
   isDesktopSidebarCollapsed.value = !isDesktopSidebarCollapsed.value
 }
 
+
 // Filtro de links visibles según rol/permisos
 const showAgroLink = computed(() => {
   if (auth.userRole === 'tecnico' || auth.userRole === 'admin') return true
