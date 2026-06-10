@@ -59,6 +59,7 @@ const initGrid = () => {
         if (map.value && map.value.leafletObject) {
           map.value.leafletObject.invalidateSize()
         }
+        window.dispatchEvent(new Event('resize'))
       }, 300)
     }
   }, 100)
@@ -253,7 +254,7 @@ const getWeatherSvg = (iconName) => {
         </div>
 
         <!-- Control Magnético Puerta -->
-        <div class="grid-stack-item" gs-w="4" gs-h="1" gs-x="0" gs-y="1">
+        <div class="grid-stack-item" gs-w="4" gs-h="2" gs-x="0" gs-y="1">
           <div
             class="grid-stack-item-content p-6 rounded-[2rem] border transition-all duration-300 flex flex-col justify-between"
             :class="
@@ -310,9 +311,9 @@ const getWeatherSvg = (iconName) => {
         </div>
 
         <!-- Pulsador / Actuador Remoto -->
-        <div class="grid-stack-item" gs-w="4" gs-h="1" gs-x="4" gs-y="1">
+        <div class="grid-stack-item" gs-w="4" gs-h="2" gs-x="4" gs-y="1">
           <div
-            class="grid-stack-item-content p-6 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md flex flex-col justify-between h-full w-full"
+            class="grid-stack-item-content p-6 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md flex flex-col justify-between"
           >
             <div>
               <p class="text-xs uppercase font-bold text-mako-400 mb-2">Comandos Remotos</p>
@@ -345,7 +346,7 @@ const getWeatherSvg = (iconName) => {
         <!-- Mapa de Cerro (Leaflet) -->
         <div class="grid-stack-item" gs-w="4" gs-h="2" gs-x="8" gs-y="1">
           <div
-            class="grid-stack-item-content bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] overflow-hidden shadow-md relative h-full w-full"
+            class="grid-stack-item-content bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] overflow-hidden shadow-md relative"
           >
             <l-map
               v-if="selectedCerro"
@@ -366,9 +367,9 @@ const getWeatherSvg = (iconName) => {
         </div>
 
         <!-- Gráfico Histórico -->
-        <div class="grid-stack-item" gs-w="8" gs-h="2" gs-x="0" gs-y="2">
+        <div class="grid-stack-item" gs-w="8" gs-h="3" gs-x="0" gs-y="3">
           <div
-            class="grid-stack-item-content p-6 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md flex flex-col justify-between h-full w-full"
+            class="grid-stack-item-content p-6 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md flex flex-col justify-between"
           >
             <div class="flex justify-between items-center mb-3">
               <p class="text-xs uppercase font-bold text-mako-400">Historial Potencia & Voltaje</p>
@@ -393,9 +394,9 @@ const getWeatherSvg = (iconName) => {
         </div>
 
         <!-- Pronósticos del Clima Semanal -->
-        <div class="grid-stack-item" gs-w="4" gs-h="2" gs-x="8" gs-y="3">
+        <div class="grid-stack-item" gs-w="4" gs-h="3" gs-x="8" gs-y="3">
           <div
-            class="grid-stack-item-content p-6 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md flex flex-col justify-between h-full w-full"
+            class="grid-stack-item-content p-6 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md flex flex-col justify-between"
           >
             <div>
               <p class="text-xs uppercase font-bold text-mako-400 mb-4">

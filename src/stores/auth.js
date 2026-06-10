@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
+import { api, API_URL, parseJwt } from '../services/api'
 
 export const useAuthStore = defineStore('auth', () => {
   const currentUser = ref(null)
@@ -8,15 +9,56 @@ export const useAuthStore = defineStore('auth', () => {
   const userRole = computed(() => currentUser.value?.role || null)
   const accessibleItems = computed(() => currentUser.value?.permissions || [])
 
-  // Simulación de credenciales y roles para desarrollo
-  const login = (username, password) => {
-    // Si se pasa un rol en el nombre de usuario (ej: 'admin', 'tecnico', 'trabajador'), loguear directamente
+  // Cargar usuario desde local storage si existe el token
+  const initializeAuth = async () => {
+    const token = localStorage.getItem('access_token')
+    if (token) {
+      await fetchCurrentUser()
+    }
+  }
+
+  const fetchCurrentUser = async () => {
+    const token = localStorage.getItem('access_token')
+    if (!token) return
+
+    const payload = parseJwt(token)
+    if (!payload || !payload.user_id) return
+
+    try {
+      const res = await api(`/cuentas/usuarios/${payload.user_id}/`)
+      if (res.ok) {
+        const userData = await res.json()
+        
+        let role = 'trabajador'
+        if (userData.is_superuser || (userData.group_names && userData.group_names.includes('admin_netzona'))) {
+          role = 'admin'
+        } else if (userData.group_names && userData.group_names.includes('tecnico')) {
+          role = 'tecnico'
+        }
+
+        currentUser.value = {
+          id: userData.id,
+          username: userData.email,
+          name: `${userData.nombres} ${userData.apellidos || ''}`.trim(),
+          role: role,
+          permissions: userData.permission_codenames || [], // Provisional, conectar a /accesos/ si es necesario
+        }
+      } else {
+        logout()
+      }
+    } catch (err) {
+      console.error("Error fetching current user", err)
+    }
+  }
+
+  // Simulación de credenciales y login real
+  const login = async (username, password) => {
     const lowerUser = username.toLowerCase()
+    // Mantener mocks para no romper pruebas
     if (lowerUser === 'tecnico' || lowerUser === 'admin' || lowerUser === 'trabajador') {
       return loginAs(lowerUser)
     }
 
-    // Login por defecto
     if (username === 'juan' && password === '1234') {
       currentUser.value = {
         id: 'admin-1',
@@ -28,7 +70,26 @@ export const useAuthStore = defineStore('auth', () => {
       return true
     }
 
-    return false
+    // Login real con el backend
+    try {
+      const response = await fetch(`${API_URL}/auth/token/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: username, password })
+      })
+
+      if (!response.ok) return false
+
+      const data = await response.json()
+      localStorage.setItem('access_token', data.access)
+      localStorage.setItem('refresh_token', data.refresh)
+
+      await fetchCurrentUser()
+      return true
+    } catch (err) {
+      console.error('Login error:', err)
+      return false
+    }
   }
 
   const loginAs = (role) => {
@@ -62,6 +123,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   const logout = () => {
     currentUser.value = null
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
   }
 
   const hasPermission = (itemId) => {
@@ -78,5 +141,6 @@ export const useAuthStore = defineStore('auth', () => {
     loginAs,
     logout,
     hasPermission,
+    initializeAuth,
   }
 })

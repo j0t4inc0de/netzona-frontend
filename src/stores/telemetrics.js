@@ -1,7 +1,11 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { api } from '../services/api'
 
 export const useTelemetricsStore = defineStore('telemetrics', () => {
+  // --- ESTADO DE CARGA ---
+  const isLoading = ref(false)
+
   // --- CLIENTES ---
   const clients = ref([
     { id: 'client-1', name: 'Agrícola Biobío Ltda.' },
@@ -283,7 +287,120 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
     })
   }
 
+  // --- INTEGRACIÓN REAL CON BACKEND ---
+  const fetchDataFromBackend = async () => {
+    isLoading.value = true
+    try {
+      // 1. Obtener Sitios
+      const resSitios = await api('/empresas/sitios/')
+      if (!resSitios.ok) throw new Error('Error al obtener sitios')
+      const dataSitios = await resSitios.json()
+      const sitios = dataSitios.results || dataSitios
+
+      const newPredios = []
+      const newCerros = []
+
+      // Procesar cada sitio
+      for (const sitio of sitios) {
+        // Estructura base mapeada al frontend
+        const mapped = {
+          id: sitio.id,
+          name: sitio.nombre,
+          client: sitio.empresa_id,
+          lat: sitio.latitud ? parseFloat(sitio.latitud) : -36.6083,
+          lng: sitio.longitud ? parseFloat(sitio.longitud) : -72.1022,
+          zoom: 15,
+          sensors: [],
+          repeaters: [],
+          metrics: {
+            temperature: 0,
+            humidity: 0,
+            soilMoisture: 0,
+            battery: 0,
+            solarPanelVoltage: 0,
+            voltage: 0,
+            power: 0,
+            windSpeed: 0,
+            batteryTemp: 0,
+            doorOpen: false,
+            relayState: false,
+          },
+          history: {
+            temperature: [],
+            humidity: [],
+            soilMoisture: [],
+            voltage: [],
+            power: [],
+          },
+          weatherForecast: [
+            { day: 'Lun', temp: '15°C', status: 'Despejado', icon: 'Sun' }
+          ]
+        }
+
+        // Obtener dispositivos del sitio
+        const resDisp = await api(`/dispositivos/equipos/?sitio=${sitio.id}`)
+        if (resDisp.ok) {
+          const dataDisp = await resDisp.json()
+          const dispositivos = dataDisp.results || dataDisp
+
+          for (const d of dispositivos) {
+            mapped.sensors.push({
+              id: d.id,
+              name: d.nombre,
+              serial: d.serial,
+              latOffset: (Math.random() - 0.5) * 0.005,
+              lngOffset: (Math.random() - 0.5) * 0.005,
+              value: 0,
+              unit: ''
+            })
+
+            mapped.repeaters.push({
+              id: d.id,
+              name: d.nombre,
+              serial: d.serial
+            })
+
+            // Intentar obtener el dashboard del dispositivo para extraer métricas actuales
+            try {
+              const resDash = await api(`/dispositivos/${d.serial}/dashboard/`)
+              if (resDash.ok) {
+                const dash = await resDash.json()
+                dash.dashboard.widgets.forEach(w => {
+                  const val = w.valor || 0
+                  if (w.codigo_sensor === 'TEMPERATURA' || w.titulo.toLowerCase().includes('temp')) mapped.metrics.temperature = val
+                  if (w.codigo_sensor === 'HUMEDAD' || w.titulo.toLowerCase().includes('hum')) mapped.metrics.humidity = val
+                  if (w.codigo_sensor === 'BATERIA' || w.titulo.toLowerCase().includes('bat')) mapped.metrics.battery = val
+                  if (w.codigo_sensor === 'VOLTAJE' || w.titulo.toLowerCase().includes('volt')) mapped.metrics.voltage = val
+                })
+              }
+            } catch (err) {
+              // Ignore if dashboard not configured
+            }
+          }
+        }
+
+        // Clasificar como Cerro o Predio (Simplificación: si tiene "cerro", "radio" o "repeater" en nombre/desc)
+        const isCerro = sitio.nombre.toLowerCase().includes('cerro') || sitio.descripcion?.toLowerCase().includes('radio')
+        if (isCerro) {
+          newCerros.push(mapped)
+        } else {
+          newPredios.push(mapped)
+        }
+      }
+
+      // Si el backend retornó sitios, reemplazamos los mocks
+      if (newPredios.length > 0) predios.value = newPredios
+      if (newCerros.length > 0) cerros.value = newCerros
+
+    } catch (e) {
+      console.error('Failed to sync telemetrics from backend:', e)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   return {
+    isLoading,
     clients,
     globalNodes,
     workers,
@@ -296,5 +413,6 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
     updateWorkerPermissions,
     toggleRelay,
     updateRealtimeMetrics,
+    fetchDataFromBackend,
   }
 })

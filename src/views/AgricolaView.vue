@@ -59,6 +59,7 @@ const initGrid = () => {
         if (map.value && map.value.leafletObject) {
           map.value.leafletObject.invalidateSize()
         }
+        window.dispatchEvent(new Event('resize'))
       }, 300)
     }
   }, 100)
@@ -247,7 +248,7 @@ const chartOptions = computed(() => {
         <!-- Mapa de Predio -->
         <div class="grid-stack-item" gs-w="4" gs-h="2" gs-x="8" gs-y="1">
           <div
-            class="grid-stack-item-content !p-0 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] overflow-hidden shadow-md relative h-full w-full"
+            class="grid-stack-item-content !p-0 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] overflow-hidden shadow-md relative"
           >
             <l-map
               v-if="selectedPredio"
@@ -291,9 +292,9 @@ const chartOptions = computed(() => {
         </div>
 
         <!-- Historial Gráfico -->
-        <div class="grid-stack-item" gs-w="8" gs-h="2" gs-x="0" gs-y="2">
+        <div class="grid-stack-item" gs-w="8" gs-h="3" gs-x="0" gs-y="2">
           <div
-            class="grid-stack-item-content p-6 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md flex flex-col justify-between h-full w-full"
+            class="grid-stack-item-content p-6 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md flex flex-col justify-between"
           >
             <div class="flex justify-between items-center mb-3">
               <p class="text-xs uppercase font-bold text-mako-400">Lecturas de Humedad & Temp</p>
