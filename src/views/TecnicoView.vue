@@ -301,10 +301,7 @@ onMounted(async () => {
         </button>
       </div>
 
-      <div v-if="isLoading" class="animate-pulse space-y-4">
-        <div class="h-10 bg-mako-200 dark:bg-mako-800 rounded-xl w-full"></div>
-        <div class="h-10 bg-mako-200 dark:bg-mako-800 rounded-xl w-full"></div>
-      </div>
+      <AppLoader v-if="isLoading" />
 
       <div v-else class="overflow-x-auto">
         <table class="w-full text-left border-collapse">

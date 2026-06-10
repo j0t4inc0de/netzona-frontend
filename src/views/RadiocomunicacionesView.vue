@@ -191,24 +191,7 @@ const getWeatherSvg = (iconName) => {
 </script>
 
 <template>
-  <div v-if="store.isLoading" class="grid grid-cols-1 xl:grid-cols-4 gap-8 animate-pulse mt-4">
-    <!-- Panel Principal Esqueleto -->
-    <div class="xl:col-span-3 grid grid-cols-12 gap-4">
-      <div class="col-span-3 h-[145px] bg-mako-200 dark:bg-mako-800 rounded-3xl"></div>
-      <div class="col-span-3 h-[145px] bg-mako-200 dark:bg-mako-800 rounded-3xl"></div>
-      <div class="col-span-3 h-[145px] bg-mako-200 dark:bg-mako-800 rounded-3xl"></div>
-      <div class="col-span-3 h-[145px] bg-mako-200 dark:bg-mako-800 rounded-3xl"></div>
-      
-      <div class="col-span-4 h-[306px] bg-mako-200 dark:bg-mako-800 rounded-[2rem]"></div>
-      <div class="col-span-4 h-[306px] bg-mako-200 dark:bg-mako-800 rounded-[2rem]"></div>
-      <div class="col-span-4 h-[306px] bg-mako-200 dark:bg-mako-800 rounded-[2rem]"></div>
-
-      <div class="col-span-8 h-[467px] bg-mako-200 dark:bg-mako-800 rounded-[2rem]"></div>
-      <div class="col-span-4 h-[467px] bg-mako-200 dark:bg-mako-800 rounded-[2rem]"></div>
-    </div>
-    <!-- Sidebar Esqueleto -->
-    <div class="xl:col-span-1 h-[600px] bg-mako-200 dark:bg-mako-800 rounded-[2rem]"></div>
-  </div>
+  <AppLoader v-if="store.isLoading" />
 
   <div
     v-else-if="allowedCerros.length === 0"
