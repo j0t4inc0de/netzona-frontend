@@ -162,7 +162,22 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
     return id
   }
 
-  const registerNode = (serial, model, type, clientId) => {
+  const registerNode = async (serial, model, type, clientId) => {
+    try {
+      // Intento de conexión real al backend
+      await api('/dispositivos/equipos/', {
+        method: 'POST',
+        body: JSON.stringify({
+          serial: serial,
+          nombre: model,
+          empresa: clientId,
+          activo: true
+        })
+      })
+    } catch (error) {
+      console.warn('Backend API missing or failed, using local state fallback for registerNode', error)
+    }
+
     const id = `node-${globalNodes.value.length + 1}`
     globalNodes.value.push({
       id,
@@ -202,7 +217,21 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
   }
 
   // --- ACCIONES CLIENTE ADMIN ---
-  const addWorker = (name, username, selectedPermissions) => {
+  const addWorker = async (name, username, selectedPermissions) => {
+    try {
+      // Intento de conexión real al backend
+      await api('/cuentas/usuarios/', {
+        method: 'POST',
+        body: JSON.stringify({
+          first_name: name,
+          email: `${username}@netzona.local`,
+          password: 'Password123!',
+        })
+      })
+    } catch (error) {
+      console.warn('Backend API missing or failed, using local state fallback for addWorker', error)
+    }
+
     const id = `worker-${workers.value.length + 1}`
     workers.value.push({
       id,
@@ -225,10 +254,24 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
   }
 
   // --- ACCIONES DE DISPOSITIVO ---
-  const toggleRelay = (cerroId) => {
+  const toggleRelay = async (cerroId) => {
     const cerro = cerros.value.find(c => c.id === cerroId)
     if (cerro) {
       cerro.metrics.relayState = !cerro.metrics.relayState
+      
+      try {
+        // Enviar señal MQTT mediante API backend
+        const repSerial = cerro.repeaters[0]?.serial || 'UNKNOWN'
+        await api(`/dispositivos/${repSerial}/comando/`, {
+          method: 'POST',
+          body: JSON.stringify({ 
+            accion: 'toggle_relay', 
+            estado: cerro.metrics.relayState 
+          })
+        })
+      } catch (error) {
+        console.warn('Backend API missing or failed, using local state fallback for toggleRelay', error)
+      }
     }
   }
 
