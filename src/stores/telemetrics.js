@@ -158,7 +158,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
   // --- ACCIONES TÉCNICO NETZONA ---
   const addClient = async (name) => {
     try {
-      await api('/empresas/empresas/', {
+      await api('/empresas/clientes/', {
         method: 'POST',
         body: JSON.stringify({ nombre: name, activo: true })
       })
@@ -485,6 +485,49 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
       // Si el backend retornó sitios, reemplazamos los mocks
       if (newPredios.length > 0) predios.value = newPredios
       if (newCerros.length > 0) cerros.value = newCerros
+
+      // 2. Obtener Clientes (Empresas)
+      try {
+        const resClientes = await api('/empresas/clientes/')
+        if (resClientes.ok) {
+          const dataClientes = await resClientes.json()
+          const clientesList = dataClientes.results || dataClientes
+          clients.value = clientesList.map(c => ({ id: c.id, name: c.nombre }))
+        }
+      } catch(e) {}
+
+      // 3. Obtener Trabajadores (Usuarios)
+      try {
+        const resWorkers = await api('/cuentas/usuarios/')
+        if (resWorkers.ok) {
+          const dataWorkers = await resWorkers.json()
+          const workersList = dataWorkers.results || dataWorkers
+          workers.value = workersList.map(w => ({
+            id: w.id,
+            name: w.first_name || w.username,
+            username: w.username,
+            role: 'trabajador',
+            permissions: w.accesos_ids || []
+          }))
+        }
+      } catch(e) {}
+
+      // 4. Obtener Nodos Globales (Todos los Dispositivos)
+      try {
+        const resGlobal = await api('/dispositivos/equipos/')
+        if (resGlobal.ok) {
+          const dataGlobal = await resGlobal.json()
+          const globalList = dataGlobal.results || dataGlobal
+          globalNodes.value = globalList.map(d => ({
+            id: d.id,
+            serial: d.serial,
+            model: d.nombre,
+            type: d.sitio_id ? 'asignado' : 'sin_asignar', // O la lógica real
+            clientId: d.empresa_id,
+            assigned: !!d.sitio_id
+          }))
+        }
+      } catch(e) {}
 
     } catch (e) {
       console.error('Failed to sync telemetrics from backend:', e)
