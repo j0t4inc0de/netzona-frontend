@@ -65,16 +65,25 @@ const logout = () => {
 const showSettings = ref(false)
 const reloadKey = ref(0)
 
-const resetLayouts = async () => {
-  if (confirm('¿Estás seguro de que quieres restaurar las posiciones por defecto de todas las tarjetas?')) {
-    try {
-      await api('/cuentas/preferencias/dashboard/', { method: 'DELETE' })
-    } catch(e) {}
-    
-    toast.success('Diseño restaurado por defecto exitosamente')
-    showSettings.value = false
-    reloadKey.value += 1
-  }
+const resetLayouts = () => {
+  toast.warning('¿Restaurar diseño de tarjetas?', {
+    description: 'Se perderán las posiciones personalizadas de todo el sistema.',
+    action: {
+      label: 'Sí, restaurar',
+      onClick: async () => {
+        try {
+          await api('/cuentas/preferencias/dashboard/', { method: 'DELETE' })
+        } catch(e) {}
+        
+        toast.success('Diseño restaurado por defecto exitosamente')
+        showSettings.value = false
+        reloadKey.value += 1
+      }
+    },
+    cancel: {
+      label: 'Cancelar'
+    }
+  })
 }
 
 // Control del menú lateral en móviles
