@@ -3,7 +3,7 @@
 
 export const themeColors = {
   primary: {
-    DEFAULT: '#0C4CE4',
+    DEFAULT: 'rgb(var(--color-primary-rgb) / <alpha-value>)',
     50: '#CFE8FA',
     100: '#CFE8FA',
     200: '#66B4F1',

@@ -3,6 +3,13 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --color-primary-rgb: 12 76 228; /* #0C4CE4 */
+  }
+  .dark {
+    --color-primary-rgb: 109 146 248; /* #6D92F8 */
+  }
+
   /* Personalización de Scrollbars globales para coincidir con el modo claro/oscuro */
   ::-webkit-scrollbar {
     width: 8px;
