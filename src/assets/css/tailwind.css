@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Personalización de Scrollbars globales para coincidir con el modo claro/oscuro */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-mako-100 dark:bg-mako-950/40;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-mako-300 dark:bg-mako-700 rounded-full hover:bg-mako-400 dark:hover:bg-mako-600 transition-colors duration-200;
+  }
+
+  /* Scrollbars para Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(134, 150, 174, 0.4) transparent;
+  }
+
+  .dark * {
+    scrollbar-color: rgba(64, 74, 96, 0.6) transparent;
+  }
+
+  /* Filtros CSS de Modo Oscuro para Mapas Leaflet */
+  .dark .leaflet-tile-pane {
+    filter: brightness(0.6) invert(1) contrast(3) hue-rotate(200deg) saturate(0.3) brightness(0.7);
+  }
+  
+  .dark .leaflet-marker-icon,
+  .dark .leaflet-marker-shadow {
+    filter: invert(1) hue-rotate(-200deg) brightness(1.5);
+  }
+
+  /* Corrección de apilamiento Leaflet */
+  .leaflet-container {
+    z-index: 1 !important;
+    background: transparent !important;
+  }
+}
