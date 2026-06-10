@@ -64,26 +64,21 @@ const logout = () => {
 // Configuración (Modal)
 const showSettings = ref(false)
 const reloadKey = ref(0)
+const showConfirmReset = ref(false)
 
-const resetLayouts = () => {
-  toast.warning('¿Restaurar diseño de tarjetas?', {
-    description: 'Se perderán las posiciones personalizadas de todo el sistema.',
-    action: {
-      label: 'Sí, restaurar',
-      onClick: async () => {
-        try {
-          await api('/cuentas/preferencias/dashboard/', { method: 'DELETE' })
-        } catch(e) {}
-        
-        toast.success('Diseño restaurado por defecto exitosamente')
-        showSettings.value = false
-        reloadKey.value += 1
-      }
-    },
-    cancel: {
-      label: 'Cancelar'
-    }
-  })
+const triggerResetConfirmation = () => {
+  showConfirmReset.value = true
+}
+
+const resetLayouts = async () => {
+  try {
+    await api('/cuentas/preferencias/dashboard/', { method: 'DELETE' })
+  } catch(e) {}
+  
+  toast.success('Diseño restaurado por defecto exitosamente')
+  showConfirmReset.value = false
+  showSettings.value = false
+  reloadKey.value += 1
 }
 
 // Control del menú lateral en móviles
@@ -470,14 +465,31 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico' || auth.userR
           </div>
 
           <!-- Restablecer Layout -->
-          <div class="p-4 bg-red-500/5 rounded-2xl border border-red-500/20">
-            <div>
-              <h3 class="font-bold text-sm text-red-500">Restaurar Diseño (GridStack)</h3>
-              <p class="text-xs text-mako-500 dark:text-mako-400 mt-1 mb-3">Si alguna vez desordenaste tus tarjetas, presiona este botón para devolverlas a su posición original de fábrica.</p>
+          <div class="p-4 bg-red-500/5 rounded-2xl border border-red-500/20 transition-all duration-300">
+            <div v-if="!showConfirmReset">
+              <div>
+                <h3 class="font-bold text-sm text-red-500">Restaurar Diseño (GridStack)</h3>
+                <p class="text-xs text-mako-500 dark:text-mako-400 mt-1 mb-3">Si alguna vez desordenaste tus tarjetas, presiona este botón para devolverlas a su posición original de fábrica.</p>
+              </div>
+              <button @click="triggerResetConfirmation" class="w-full py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold text-xs rounded-xl border border-red-500/30 transition-colors">
+                Restaurar todas las tarjetas
+              </button>
             </div>
-            <button @click="resetLayouts" class="w-full py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold text-xs rounded-xl border border-red-500/30 transition-colors">
-              Restaurar todas las tarjetas
-            </button>
+            
+            <div v-else class="text-center space-y-3 animate-pulse">
+              <div>
+                <h3 class="font-bold text-sm text-red-500">¿Estás seguro?</h3>
+                <p class="text-xs text-mako-500 dark:text-mako-400 mt-1">Se perderán las posiciones personalizadas de todo el sistema. Esta acción no se puede deshacer.</p>
+              </div>
+              <div class="flex gap-2 justify-center mt-3">
+                <button @click="showConfirmReset = false" class="px-4 py-2 text-xs font-bold bg-mako-200 dark:bg-mako-700 text-mako-700 dark:text-mako-200 rounded-xl hover:bg-mako-300 dark:hover:bg-mako-600 transition-colors">
+                  Cancelar
+                </button>
+                <button @click="resetLayouts" class="px-4 py-2 text-xs font-bold bg-red-500 hover:bg-red-600 text-white rounded-xl shadow-lg shadow-red-500/30 transition-colors">
+                  Sí, restaurar
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
