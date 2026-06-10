@@ -14,6 +14,11 @@ export const useAuthStore = defineStore('auth', () => {
     const token = localStorage.getItem('access_token')
     if (token) {
       await fetchCurrentUser()
+      return
+    }
+    const mockRole = localStorage.getItem('mock_role')
+    if (mockRole) {
+      loginAs(mockRole)
     }
   }
 
@@ -93,6 +98,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   const loginAs = (role) => {
+    localStorage.setItem('mock_role', role)
     if (role === 'tecnico') {
       currentUser.value = {
         id: 'tech-1',
@@ -125,6 +131,7 @@ export const useAuthStore = defineStore('auth', () => {
     currentUser.value = null
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
+    localStorage.removeItem('mock_role')
   }
 
   const hasPermission = (itemId) => {

@@ -1,13 +1,15 @@
 <script setup>
 import { computed, ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useTelemetricsStore } from '../stores/telemetrics'
 import { useDark, useToggle } from '@vueuse/core'
+import { toast } from 'vue-sonner'
 
 const auth = useAuthStore()
 const telemetrics = useTelemetricsStore()
 const router = useRouter()
+const route = useRoute()
 const isDark = useDark()
 const toggleDarkBase = useToggle(isDark)
 
@@ -61,12 +63,17 @@ const logout = () => {
 
 // Configuración (Modal)
 const showSettings = ref(false)
+const reloadKey = ref(0)
+
 const resetLayouts = async () => {
   if (confirm('¿Estás seguro de que quieres restaurar las posiciones por defecto de todas las tarjetas?')) {
     try {
       await api('/cuentas/preferencias/dashboard/', { method: 'DELETE' })
     } catch(e) {}
-    window.location.reload()
+    
+    toast.success('Diseño restaurado por defecto exitosamente')
+    showSettings.value = false
+    reloadKey.value += 1
   }
 }
 
@@ -419,7 +426,7 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico' || auth.userR
       <main class="flex-1 p-6 relative">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
-            <component :is="Component" />
+            <component :is="Component" :key="route.fullPath + reloadKey" />
           </transition>
         </router-view>
       </main>
