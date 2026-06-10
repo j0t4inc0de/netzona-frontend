@@ -65,20 +65,37 @@ const logout = () => {
 const showSettings = ref(false)
 const reloadKey = ref(0)
 const showConfirmReset = ref(false)
+const isResetting = ref(false)
 
 const triggerResetConfirmation = () => {
   showConfirmReset.value = true
 }
 
 const resetLayouts = async () => {
-  try {
-    await api('/cuentas/preferencias/dashboard/', { method: 'DELETE' })
-  } catch(e) {}
+  if (isResetting.value) return
+  isResetting.value = true
   
-  toast.success('Diseño restaurado por defecto exitosamente')
-  showConfirmReset.value = false
-  showSettings.value = false
-  reloadKey.value += 1
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 3000)
+    
+    await api('/cuentas/preferencias/dashboard/', { 
+      method: 'DELETE',
+      signal: controller.signal
+    })
+    clearTimeout(timeoutId)
+  } catch(e) {
+    console.warn("Backend no disponible, procediendo con reseteo visual.")
+  } finally {
+    toast.success('Diseño restaurado por defecto exitosamente')
+    showConfirmReset.value = false
+    showSettings.value = false
+    reloadKey.value += 1
+    
+    setTimeout(() => {
+      isResetting.value = false
+    }, 500)
+  }
 }
 
 // Control del menú lateral en móviles
@@ -485,8 +502,12 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico' || auth.userR
                 <button @click="showConfirmReset = false" class="px-4 py-2 text-xs font-bold bg-mako-200 dark:bg-mako-700 text-mako-700 dark:text-mako-200 rounded-xl hover:bg-mako-300 dark:hover:bg-mako-600 transition-colors">
                   Cancelar
                 </button>
-                <button @click="resetLayouts" class="px-4 py-2 text-xs font-bold bg-red-500 hover:bg-red-600 text-white rounded-xl shadow-lg shadow-red-500/30 transition-colors">
-                  Sí, restaurar
+                <button @click="resetLayouts" :disabled="isResetting" class="px-4 py-2 text-xs font-bold bg-red-500 hover:bg-red-600 text-white rounded-xl shadow-lg shadow-red-500/30 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <svg v-if="isResetting" class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {{ isResetting ? 'Restaurando...' : 'Sí, restaurar' }}
                 </button>
               </div>
             </div>
