@@ -120,7 +120,7 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico' || auth.userR
           </svg>
           <span class="whitespace-nowrap overflow-hidden transition-all duration-300"
                 :class="isDesktopSidebarCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[200px] opacity-100 ml-3'">
-            Sitios de Telecom.
+            Cerros
           </span>
         </router-link>
 
