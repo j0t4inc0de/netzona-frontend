@@ -39,11 +39,9 @@ const redirectAfterLogin = () => {
 </script>
 
 <template>
-  <div
-    class="min-h-screen flex items-center justify-center bg-mako-50 text-mako-900 font-sans overflow-hidden relative"
-  >
+  <div class="min-h-screen w-full flex items-center justify-center bg-mako-950 text-mako-900 font-sans overflow-hidden relative">
     <!-- Fondo Animado Aurora Drift -->
-    <div class="container z-0"></div>
+    <div class="aurora-bg z-0"></div>
 
     <!-- Contenedor Principal Card -->
     <div
@@ -105,7 +103,7 @@ const redirectAfterLogin = () => {
 </template>
 
 <style scoped>
-.container {
+.aurora-bg {
   position: absolute;
   top: 0;
   left: 0;
@@ -132,7 +130,7 @@ const redirectAfterLogin = () => {
   animation: aurora-drift 25s infinite alternate ease-in-out;
 }
 
-.container::before {
+.aurora-bg::before {
   content: "";
   position: absolute;
   width: 200%;
@@ -157,7 +155,7 @@ const redirectAfterLogin = () => {
   pointer-events: none;
 }
 
-.container::after {
+.aurora-bg::after {
   content: "";
   position: absolute;
   width: 100%;
