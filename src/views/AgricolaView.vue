@@ -70,8 +70,8 @@ const initGrid = async () => {
           const res = await api(`/cuentas/preferencias/?sitio=${selectedPredio.value.id}&dashboard_template=${selectedPredio.value.dashboard_template_id}`)
           if (res.ok) {
             const data = await res.json()
+            const finalLayout = []
             if (data.layout_dashboard && data.layout_dashboard.length > 0) {
-              // Convert backend layout format (widget_id, w, h, x, y) to GridStack format (id, w, h, x, y)
               const mappedLayout = data.layout_dashboard.map(item => ({
                 id: item.widget_id,
                 x: item.x,
@@ -79,7 +79,15 @@ const initGrid = async () => {
                 w: item.w,
                 h: item.h
               }))
-              grid.load(mappedLayout)
+              finalLayout.push(...mappedLayout)
+            }
+            // Load static components from localStorage
+            const localStr = localStorage.getItem(`grid_static_${selectedPredio.value.id}`)
+            if (localStr) {
+              finalLayout.push(...JSON.parse(localStr))
+            }
+            if (finalLayout.length > 0) {
+              grid.load(finalLayout, false)
             }
           }
         } catch (e) {
@@ -92,25 +100,39 @@ const initGrid = async () => {
         if (!selectedPredio.value || !selectedPredio.value.dashboard_template_id) return
         
         const layout = grid.save()
-        const backendLayout = layout.map(item => ({
+        
+        // Split layout: Backend handles UUIDs, LocalStorage handles static 'widget-' items
+        const backendLayout = layout.filter(item => item.id && !item.id.startsWith('widget-')).map(item => ({
           widget_id: item.id,
           x: item.x,
           y: item.y,
           w: item.w,
           h: item.h
-        })).filter(item => item.widget_id) // solo guardar los que tengan id válido
+        }))
+        
+        const staticLayout = layout.filter(item => item.id && item.id.startsWith('widget-')).map(item => ({
+          id: item.id,
+          x: item.x,
+          y: item.y,
+          w: item.w,
+          h: item.h
+        }))
+        
+        localStorage.setItem(`grid_static_${selectedPredio.value.id}`, JSON.stringify(staticLayout))
 
-        try {
-          await api('/cuentas/preferencias/', {
-            method: 'PUT',
-            body: JSON.stringify({
-              sitio_id: selectedPredio.value.id,
-              dashboard_template_id: selectedPredio.value.dashboard_template_id,
-              layout_dashboard: backendLayout
+        if (backendLayout.length > 0) {
+          try {
+            await api('/cuentas/preferencias/', {
+              method: 'PUT',
+              body: JSON.stringify({
+                sitio_id: selectedPredio.value.id,
+                dashboard_template_id: selectedPredio.value.dashboard_template_id,
+                layout_dashboard: backendLayout
+              })
             })
-          })
-        } catch (e) {
-          console.error('Error al guardar layout', e)
+          } catch (e) {
+            console.error('Error al guardar layout', e)
+          }
         }
       })
 

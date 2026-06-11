@@ -68,6 +68,7 @@ const initGrid = async () => {
           const res = await api(`/cuentas/preferencias/?sitio=${selectedCerro.value.id}&dashboard_template=${selectedCerro.value.dashboard_template_id}`)
           if (res.ok) {
             const data = await res.json()
+            const finalLayout = []
             if (data.layout_dashboard && data.layout_dashboard.length > 0) {
               const mappedLayout = data.layout_dashboard.map(item => ({
                 id: item.widget_id,
@@ -76,7 +77,14 @@ const initGrid = async () => {
                 w: item.w,
                 h: item.h
               }))
-              grid.load(mappedLayout)
+              finalLayout.push(...mappedLayout)
+            }
+            const localStr = localStorage.getItem(`grid_static_${selectedCerro.value.id}`)
+            if (localStr) {
+              finalLayout.push(...JSON.parse(localStr))
+            }
+            if (finalLayout.length > 0) {
+              grid.load(finalLayout, false)
             }
           }
         } catch (e) {
@@ -89,25 +97,37 @@ const initGrid = async () => {
         if (!selectedCerro.value || !selectedCerro.value.dashboard_template_id) return
         
         const layout = grid.save()
-        const backendLayout = layout.map(item => ({
+        const backendLayout = layout.filter(item => item.id && !item.id.startsWith('widget-')).map(item => ({
           widget_id: item.id,
           x: item.x,
           y: item.y,
           w: item.w,
           h: item.h
-        })).filter(item => item.widget_id)
+        }))
+        
+        const staticLayout = layout.filter(item => item.id && item.id.startsWith('widget-')).map(item => ({
+          id: item.id,
+          x: item.x,
+          y: item.y,
+          w: item.w,
+          h: item.h
+        }))
+        
+        localStorage.setItem(`grid_static_${selectedCerro.value.id}`, JSON.stringify(staticLayout))
 
-        try {
-          await api('/cuentas/preferencias/', {
-            method: 'PUT',
-            body: JSON.stringify({
-              sitio_id: selectedCerro.value.id,
-              dashboard_template_id: selectedCerro.value.dashboard_template_id,
-              layout_dashboard: backendLayout
+        if (backendLayout.length > 0) {
+          try {
+            await api('/cuentas/preferencias/', {
+              method: 'PUT',
+              body: JSON.stringify({
+                sitio_id: selectedCerro.value.id,
+                dashboard_template_id: selectedCerro.value.dashboard_template_id,
+                layout_dashboard: backendLayout
+              })
             })
-          })
-        } catch (e) {
-          console.error('Error al guardar layout', e)
+          } catch (e) {
+            console.error('Error al guardar layout', e)
+          }
         }
       })
 
@@ -272,7 +292,7 @@ const getWeatherSvg = (iconName) => {
       <!-- Cuadrícula Drag and Drop (Gridstack) -->
       <div class="grid-stack mt-4">
         <!-- Voltaje Banco -->
-        <div class="grid-stack-item" gs-id="widget-voltage" gs-w="3" gs-h="1" gs-x="0" gs-y="0">
+        <div class="grid-stack-item" :gs-id="selectedCerro?.metrics.volt_widget_id || 'widget-voltage'" gs-w="3" gs-h="1" gs-x="0" gs-y="0">
           <div class="grid-stack-item-content glass-card-radio">
             <p class="label-radio">Voltaje Banco</p>
             <h3
@@ -289,7 +309,7 @@ const getWeatherSvg = (iconName) => {
         </div>
 
         <!-- Potencia Tx -->
-        <div class="grid-stack-item" gs-id="widget-power" gs-w="3" gs-h="1" gs-x="3" gs-y="0">
+        <div class="grid-stack-item" :gs-id="selectedCerro?.metrics.pow_widget_id || 'widget-power'" gs-w="3" gs-h="1" gs-x="3" gs-y="0">
           <div class="grid-stack-item-content glass-card-radio">
             <p class="label-radio">Potencia Tx</p>
             <h3 class="value-radio text-primary">
@@ -309,7 +329,7 @@ const getWeatherSvg = (iconName) => {
         </div>
 
         <!-- Velocidad Viento -->
-        <div class="grid-stack-item" gs-id="widget-wind" gs-w="3" gs-h="1" gs-x="9" gs-y="0">
+        <div class="grid-stack-item" :gs-id="selectedCerro?.metrics.wind_widget_id || 'widget-wind'" gs-w="3" gs-h="1" gs-x="9" gs-y="0">
           <div class="grid-stack-item-content glass-card-radio">
             <p class="label-radio">Velocidad Viento</p>
             <h3
