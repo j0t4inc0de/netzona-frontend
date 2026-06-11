@@ -5,6 +5,7 @@ import { toast } from 'vue-sonner'
 
 const store = useTelemetricsStore()
 
+
 // Formulario de Trabajador Nuevo
 const workerName = ref('')
 const workerUsername = ref('')
