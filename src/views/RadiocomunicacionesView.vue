@@ -113,21 +113,29 @@ const initGrid = async () => {
         if (!selectedCerro.value || !selectedCerro.value.dashboard_template_id) return
         
         const layout = grid.save()
-        const backendLayout = layout.filter(item => item.id && !item.id.startsWith('widget-')).map(item => ({
-          widget_id: item.id,
-          x: item.x,
-          y: item.y,
-          w: item.w ?? item.width,
-          h: item.h ?? item.height
-        }))
+        const backendLayout = layout.filter(item => item.id && !item.id.startsWith('widget-')).map(item => {
+          const el = document.querySelector(`[gs-id="${item.id}"]`)
+          const node = el ? el.gridstackNode : null
+          return {
+            widget_id: item.id,
+            x: item.x ?? node?.x ?? 0,
+            y: item.y ?? node?.y ?? 0,
+            w: item.w ?? node?.w ?? parseInt(el?.getAttribute('gs-w')) ?? 1,
+            h: item.h ?? node?.h ?? parseInt(el?.getAttribute('gs-h')) ?? 1
+          }
+        })
         
-        const staticLayout = layout.filter(item => item.id && item.id.startsWith('widget-')).map(item => ({
-          id: item.id,
-          x: item.x,
-          y: item.y,
-          w: item.w ?? item.width,
-          h: item.h ?? item.height
-        }))
+        const staticLayout = layout.filter(item => item.id && item.id.startsWith('widget-')).map(item => {
+          const el = document.querySelector(`[gs-id="${item.id}"]`)
+          const node = el ? el.gridstackNode : null
+          return {
+            id: item.id,
+            x: item.x ?? node?.x ?? 0,
+            y: item.y ?? node?.y ?? 0,
+            w: item.w ?? node?.w ?? parseInt(el?.getAttribute('gs-w')) ?? 1,
+            h: item.h ?? node?.h ?? parseInt(el?.getAttribute('gs-h')) ?? 1
+          }
+        })
         
         localStorage.setItem(`grid_static_${selectedCerro.value.id}`, JSON.stringify(staticLayout))
 
