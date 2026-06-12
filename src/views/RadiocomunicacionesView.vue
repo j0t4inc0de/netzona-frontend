@@ -117,16 +117,16 @@ const initGrid = async () => {
           widget_id: item.id,
           x: item.x,
           y: item.y,
-          w: item.w,
-          h: item.h
+          w: item.w ?? item.width,
+          h: item.h ?? item.height
         }))
         
         const staticLayout = layout.filter(item => item.id && item.id.startsWith('widget-')).map(item => ({
           id: item.id,
           x: item.x,
           y: item.y,
-          w: item.w,
-          h: item.h
+          w: item.w ?? item.width,
+          h: item.h ?? item.height
         }))
         
         localStorage.setItem(`grid_static_${selectedCerro.value.id}`, JSON.stringify(staticLayout))
