@@ -1,13 +1,10 @@
 <script setup>
 import { Toaster } from 'vue-sonner'
 
-// El polling de métricas reales ahora se manejará desde los componentes o layout.
 </script>
 
 <template>
-  <!-- Router shell principal de la aplicación -->
   <router-view />
-  <!-- Sistema de notificaciones (Toasts) -->
   <Toaster position="top-right" richColors closeButton />
 </template>
 
