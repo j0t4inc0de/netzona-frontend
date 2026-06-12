@@ -59,6 +59,7 @@ const initGrid = async () => {
   setTimeout(async () => {
     const el = document.querySelector('.grid-stack')
     if (el) {
+      const isMobile = window.innerWidth <= 768
       grid = GridStack.init({
         cellHeight: '135px',
         margin: 16,
@@ -68,7 +69,9 @@ const initGrid = async () => {
           breakpoints: [
             { w: 768, c: 1 }
           ]
-        }
+        },
+        disableDrag: isMobile,
+        disableResize: isMobile
       })
 
       isGridLoading.value = true
