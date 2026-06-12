@@ -48,6 +48,9 @@ const updateMapLocation = () => {
 
 import { api } from '../services/api'
 
+const selectedRange = ref('24h')
+const isGridLoading = ref(false)
+
 let grid = null
 const initGrid = async () => {
   await nextTick()
@@ -69,6 +72,8 @@ const initGrid = async () => {
           ]
         }
       })
+
+      isGridLoading.value = true
 
       // Load Layout from Backend
       if (selectedPredio.value && selectedPredio.value.dashboard_template_id) {
@@ -101,13 +106,17 @@ const initGrid = async () => {
         }
       }
 
+      setTimeout(() => {
+        isGridLoading.value = false
+      }, 500)
+
       // Handle Save
       grid.on('change', async (event, items) => {
+        if (isGridLoading.value) return
         if (!selectedPredio.value || !selectedPredio.value.dashboard_template_id) return
         
         const layout = grid.save()
         
-        // Split layout: Backend handles UUIDs, LocalStorage handles static 'widget-' items
         const backendLayout = layout.filter(item => item.id && !item.id.startsWith('widget-')).map(item => ({
           widget_id: item.id,
           x: item.x,
@@ -158,9 +167,12 @@ onMounted(() => {
 })
 
 watch(
-  selectedPredioId,
-  () => {
+  [selectedPredioId, selectedRange],
+  async ([predioId, range]) => {
     updateMapLocation()
+    if (predioId) {
+      await store.fetchSiteHistory(predioId, false, range)
+    }
     if (!store.isLoading) {
       initGrid()
     }
@@ -397,10 +409,14 @@ const chartOptions = computed(() => {
           >
             <div class="flex justify-between items-center mb-3">
               <p class="text-xs uppercase font-bold text-mako-400">Lecturas de Humedad & Temp</p>
-              <span
-                class="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full font-bold"
-                >Tiempo Real</span
+              <select
+                v-model="selectedRange"
+                class="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full font-bold outline-none cursor-pointer dark:bg-mako-900"
               >
+                <option value="24h">24 Horas</option>
+                <option value="7d">7 Días</option>
+                <option value="30d">30 Días</option>
+              </select>
             </div>
             <div class="flex-1 min-h-[250px] relative">
               <apexchart

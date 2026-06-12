@@ -46,6 +46,9 @@ const updateMapLocation = () => {
   }
 }
 
+const selectedRange = ref('24h')
+const isGridLoading = ref(false)
+
 let grid = null
 const initGrid = async () => {
   await nextTick()
@@ -67,6 +70,8 @@ const initGrid = async () => {
           ]
         }
       })
+
+      isGridLoading.value = true
 
       // Load Layout from Backend
       if (selectedCerro.value && selectedCerro.value.dashboard_template_id) {
@@ -98,8 +103,13 @@ const initGrid = async () => {
         }
       }
 
+      setTimeout(() => {
+        isGridLoading.value = false
+      }, 500)
+
       // Handle Save
       grid.on('change', async (event, items) => {
+        if (isGridLoading.value) return
         if (!selectedCerro.value || !selectedCerro.value.dashboard_template_id) return
         
         const layout = grid.save()
@@ -152,9 +162,12 @@ onMounted(() => {
 })
 
 watch(
-  selectedCerroId,
-  () => {
+  [selectedCerroId, selectedRange],
+  async ([cerroId, range]) => {
     updateMapLocation()
+    if (cerroId) {
+      await store.fetchSiteHistory(cerroId, true, range)
+    }
     if (!store.isLoading) {
       initGrid()
     }
@@ -467,6 +480,14 @@ const getWeatherSvg = (iconName) => {
           >
             <div class="flex justify-between items-center mb-3">
               <p class="text-xs uppercase font-bold text-mako-400">Historial Potencia & Voltaje</p>
+              <select
+                v-model="selectedRange"
+                class="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full font-bold outline-none cursor-pointer dark:bg-mako-900"
+              >
+                <option value="24h">24 Horas</option>
+                <option value="7d">7 Días</option>
+                <option value="30d">30 Días</option>
+              </select>
             </div>
             <div class="flex-1 min-h-[250px] relative">
               <apexchart

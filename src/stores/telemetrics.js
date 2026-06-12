@@ -285,7 +285,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
               }
 
               // Llamar endpoints reales para Gráficos Históricos
-              const codigosHistorial = ['TEMPERATURA', 'HUMEDAD', 'VOLTAJE', 'POTENCIA']
+              const codigosHistorial = ['TEMPERATURA', 'HUMEDAD', 'HUMEDAD_SUELO', 'VOLTAJE_PANEL', 'VOLTAJE', 'POTENCIA']
               for (const cod of codigosHistorial) {
                 try {
                   const resHist = await api(`/dispositivos/${d.serial}/sensores/${cod}/historial/`)
@@ -300,6 +300,8 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                     if (chartData.length > 0) {
                       if (cod === 'TEMPERATURA') mapped.history.temperature = chartData
                       if (cod === 'HUMEDAD') mapped.history.humidity = chartData
+                      if (cod === 'HUMEDAD_SUELO') mapped.history.soilMoisture = chartData
+                      if (cod === 'VOLTAJE_PANEL') mapped.history.solarPanelVoltage = chartData
                       if (cod === 'VOLTAJE') mapped.history.voltage = chartData
                       if (cod === 'POTENCIA') mapped.history.power = chartData
                     }
@@ -388,6 +390,51 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
     }
   }
 
+  const fetchSiteHistory = async (siteId, isCerro, range = '24h') => {
+    try {
+      const resDisp = await api(`/dispositivos/equipos/?sitio=${siteId}`)
+      if (!resDisp.ok) return
+      
+      const dispositivos = await resDisp.json()
+      const listDisp = dispositivos.results || dispositivos
+      
+      const siteList = isCerro ? cerros.value : predios.value
+      const site = siteList.find(s => s.id === siteId)
+      if (!site) return
+
+      const codigosHistorial = ['TEMPERATURA', 'HUMEDAD', 'HUMEDAD_SUELO', 'VOLTAJE_PANEL', 'VOLTAJE', 'POTENCIA']
+      
+      for (const d of listDisp) {
+        for (const cod of codigosHistorial) {
+          try {
+            const resHist = await api(`/dispositivos/${d.serial}/sensores/${cod}/historial/?rango=${range}`)
+            if (resHist.ok) {
+              const dataHist = await resHist.json()
+              const chartData = dataHist.map(h => {
+                const date = new Date(h.timestamp || h.fecha)
+                const label = range === '24h' 
+                  ? date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                  : date.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' }) + ' ' + date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+                return { x: label, y: h.valor }
+              })
+              
+              if (chartData.length > 0) {
+                if (cod === 'TEMPERATURA') site.history.temperature = chartData
+                if (cod === 'HUMEDAD') site.history.humidity = chartData
+                if (cod === 'HUMEDAD_SUELO') site.history.soilMoisture = chartData
+                if (cod === 'VOLTAJE_PANEL') site.history.solarPanelVoltage = chartData
+                if (cod === 'VOLTAJE') site.history.voltage = chartData
+                if (cod === 'POTENCIA') site.history.power = chartData
+              }
+            }
+          } catch {}
+        }
+      }
+    } catch (e) {
+      console.error('Error al actualizar historial', e)
+    }
+  }
+
   return {
     isLoading,
     clients,
@@ -403,5 +450,6 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
     toggleRelay,
     updateRealtimeMetrics,
     fetchDataFromBackend,
+    fetchSiteHistory,
   }
 })
