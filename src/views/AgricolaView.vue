@@ -2,7 +2,6 @@
 import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useTelemetricsStore } from '../stores/telemetrics'
-import { themeColors } from '../theme'
 import { useDark } from '@vueuse/core'
 import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -114,7 +113,7 @@ const initGrid = async () => {
       }, 500)
 
       // Handle Save
-      grid.on('change', async (event, items) => {
+      grid.on('change', async () => {
         if (isGridLoading.value) return
         if (!selectedPredio.value || !selectedPredio.value.dashboard_template_id) return
         

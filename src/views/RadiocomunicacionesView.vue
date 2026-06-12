@@ -111,7 +111,7 @@ const initGrid = async () => {
       }, 500)
 
       // Handle Save
-      grid.on('change', async (event, items) => {
+      grid.on('change', async () => {
         if (isGridLoading.value) return
         if (!selectedCerro.value || !selectedCerro.value.dashboard_template_id) return
         
