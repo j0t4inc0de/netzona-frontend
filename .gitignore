@@ -1,4 +1,3 @@
-# Logs
 logs
 .antigravitycli
 .documentos
@@ -10,15 +9,12 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-
 node_modules
 .DS_Store
 dist
 dist-ssr
 coverage
 *.local
-
-# Editor directories and files
 .env
 .vscode/*
 !.vscode/extensions.json
@@ -28,17 +24,9 @@ coverage
 *.njsproj
 *.sln
 *.sw?
-
 *.tsbuildinfo
-
 .eslintcache
-
-# Cypress
 /cypress/videos/
 /cypress/screenshots/
-
-# Vitest
 __screenshots__/
-
-# Vite
 *.timestamp-*-*.mjs
