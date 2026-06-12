@@ -155,7 +155,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
               if (data['BATERIA']) p.metrics.battery = data['BATERIA'].valor
               if (data['VOLTAJE_PANEL']) p.metrics.solarPanelVoltage = data['VOLTAJE_PANEL'].valor
             }
-          } catch(e) {}
+          } catch {}
         }
       }
 
@@ -180,7 +180,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
               }
               if (data['BATERIA']) c.metrics.battery = data['BATERIA'].valor
             }
-          } catch(e) {}
+          } catch {}
         }
       }
     } catch (e) {
@@ -304,9 +304,9 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                       if (cod === 'POTENCIA') mapped.history.power = chartData
                     }
                   }
-                } catch(e) {}
+                } catch {}
               }
-            } catch (err) {
+            } catch {
               // Ignore if dashboard not configured
             }
           }
@@ -338,7 +338,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
           const clientesList = dataClientes.results || dataClientes
           clients.value = clientesList.map(c => ({ id: c.id, name: c.nombre }))
         }
-      } catch(e) {}
+      } catch {}
 
       // 3. Obtener Trabajadores (Usuarios)
       try {
@@ -362,7 +362,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
             }
           })
         }
-      } catch(e) {}
+      } catch {}
 
       // 4. Obtener Nodos Globales (Todos los Dispositivos)
       try {
@@ -379,7 +379,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
             assigned: !!d.sitio_id
           }))
         }
-      } catch(e) {}
+      } catch {}
 
     } catch (e) {
       console.error('Failed to sync telemetrics from backend:', e)

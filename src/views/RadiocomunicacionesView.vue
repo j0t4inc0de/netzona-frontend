@@ -2,12 +2,12 @@
 import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { useTelemetricsStore } from '../stores/telemetrics'
-import { themeColors } from '../theme'
 import { useDark } from '@vueuse/core'
 import { LMap, LTileLayer, LMarker } from '@vue-leaflet/vue-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { GridStack } from 'gridstack'
 import 'gridstack/dist/gridstack.min.css'
+import { api } from '../services/api'
 
 const auth = useAuthStore()
 const store = useTelemetricsStore()
