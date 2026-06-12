@@ -346,13 +346,21 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
         if (resWorkers.ok) {
           const dataWorkers = await resWorkers.json()
           const workersList = dataWorkers.results || dataWorkers
-          workers.value = workersList.map(w => ({
-            id: w.id,
-            name: w.first_name || w.username,
-            username: w.username,
-            role: 'trabajador',
-            permissions: w.accesos_ids || []
-          }))
+          workers.value = workersList.map(w => {
+            let role = 'trabajador'
+            if (w.is_superuser || (w.group_names && w.group_names.includes('admin_netzona'))) {
+              role = 'admin'
+            } else if (w.group_names && w.group_names.includes('tecnico')) {
+              role = 'tecnico'
+            }
+            return {
+              id: w.id,
+              name: `${w.first_name || w.nombres || ''} ${w.last_name || w.apellidos || ''}`.trim() || w.username,
+              username: w.username,
+              role: role,
+              permissions: w.accesos_ids || []
+            }
+          })
         }
       } catch(e) {}
 

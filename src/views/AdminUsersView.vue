@@ -1,9 +1,20 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useTelemetricsStore } from '../stores/telemetrics'
+import { useAuthStore } from '../stores/auth'
 import { toast } from 'vue-sonner'
 
 const store = useTelemetricsStore()
+const authStore = useAuthStore()
+
+// Filtrar trabajadores para no mostrar administradores ni al usuario actual
+const filteredWorkers = computed(() => {
+  return store.workers.filter((w) => {
+    if (w.role === 'admin') return false
+    if (authStore.currentUser && w.id === authStore.currentUser.id) return false
+    return true
+  })
+})
 
 
 // Formulario de Trabajador Nuevo
@@ -249,7 +260,7 @@ const getPermissionNames = (permissionIds) => {
               </thead>
               <tbody>
                 <tr
-                  v-for="w in store.workers"
+                  v-for="w in filteredWorkers"
                   :key="w.id"
                   class="border-b border-mako-100 dark:border-white/5 hover:bg-mako-100/40 dark:hover:bg-white/5 transition-colors text-sm"
                 >
@@ -277,7 +288,7 @@ const getPermissionNames = (permissionIds) => {
                     </button>
                   </td>
                 </tr>
-                <tr v-if="store.workers.length === 0">
+                <tr v-if="filteredWorkers.length === 0">
                   <td colspan="4" class="text-center py-6 text-mako-400 italic">
                     No hay trabajadores registrados.
                   </td>
