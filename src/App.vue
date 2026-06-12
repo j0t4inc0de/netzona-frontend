@@ -1,6 +1,6 @@
 <script setup>
+// imports
 import { Toaster } from 'vue-sonner'
-
 </script>
 
 <template>
