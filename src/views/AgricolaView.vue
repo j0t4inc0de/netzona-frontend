@@ -168,9 +168,12 @@ onMounted(() => {
 
 watch(
   [selectedPredioId, selectedRange],
-  async ([predioId, range]) => {
+  async ([predioId, range], [oldPredioId, oldRange]) => {
     updateMapLocation()
-    if (predioId) {
+    const rangeChanged = oldRange !== undefined && range !== oldRange
+    const predioChanged = oldPredioId !== undefined && oldPredioId !== '' && predioId !== oldPredioId
+    
+    if (predioId && (rangeChanged || predioChanged)) {
       await store.fetchSiteHistory(predioId, false, range)
     }
     if (!store.isLoading) {

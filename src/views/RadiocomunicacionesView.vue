@@ -163,9 +163,12 @@ onMounted(() => {
 
 watch(
   [selectedCerroId, selectedRange],
-  async ([cerroId, range]) => {
+  async ([cerroId, range], [oldCerroId, oldRange]) => {
     updateMapLocation()
-    if (cerroId) {
+    const rangeChanged = oldRange !== undefined && range !== oldRange
+    const predioChanged = oldCerroId !== undefined && oldCerroId !== '' && cerroId !== oldCerroId
+    
+    if (cerroId && (rangeChanged || predioChanged)) {
       await store.fetchSiteHistory(cerroId, true, range)
     }
     if (!store.isLoading) {
