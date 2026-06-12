@@ -137,7 +137,7 @@ const initGrid = async () => {
 
         if (backendLayout.length > 0) {
           try {
-            await api('/cuentas/preferencias/', {
+            const res = await api('/cuentas/preferencias/', {
               method: 'PUT',
               body: JSON.stringify({
                 sitio_id: selectedPredio.value.id,
@@ -145,8 +145,12 @@ const initGrid = async () => {
                 layout_dashboard: backendLayout
               })
             })
+            if (!res.ok) {
+              const errorData = await res.json().catch(() => ({}))
+              console.error('Error de validación al guardar layout en el backend:', errorData)
+            }
           } catch (e) {
-            console.error('Error al guardar layout', e)
+            console.error('Error de red al guardar layout', e)
           }
         }
       })
