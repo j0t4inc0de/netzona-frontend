@@ -62,6 +62,12 @@ const initGrid = async () => {
         cellHeight: '145px',
         margin: 16,
         minRow: 1,
+        columnOpts: {
+          breakpointForWindow: true,
+          breakpoints: [
+            { w: 768, c: 1 }
+          ]
+        }
       })
 
       // Load Layout from Backend
