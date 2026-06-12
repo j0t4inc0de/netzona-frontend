@@ -284,9 +284,9 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                 })
               }
 
-              // Llamar endpoints reales para Gráficos Históricos
-              const codigosHistorial = ['TEMPERATURA', 'HUMEDAD', 'HUMEDAD_SUELO', 'VOLTAJE_PANEL', 'VOLTAJE', 'POTENCIA']
-              for (const cod of codigosHistorial) {
+              // Llamar endpoints reales para Gráficos Históricos de sensores activos
+              const codigosPresentes = widgets.map(w => w.codigo_sensor).filter(Boolean)
+              for (const cod of codigosPresentes) {
                 try {
                   const resHist = await api(`/dispositivos/${d.serial}/sensores/${cod}/historial/`)
                   if (resHist.ok) {
@@ -402,33 +402,40 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
       const site = siteList.find(s => s.id === siteId)
       if (!site) return
 
-      const codigosHistorial = ['TEMPERATURA', 'HUMEDAD', 'HUMEDAD_SUELO', 'VOLTAJE_PANEL', 'VOLTAJE', 'POTENCIA']
-      
       for (const d of listDisp) {
-        for (const cod of codigosHistorial) {
-          try {
-            const resHist = await api(`/dispositivos/${d.serial}/sensores/${cod}/historial/?rango=${range}`)
-            if (resHist.ok) {
-              const dataHist = await resHist.json()
-              const chartData = dataHist.map(h => {
-                const date = new Date(h.timestamp || h.fecha)
-                const label = range === '24h' 
-                  ? date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                  : date.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' }) + ' ' + date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
-                return { x: label, y: h.valor }
-              })
-              
-              if (chartData.length > 0) {
-                if (cod === 'TEMPERATURA') site.history.temperature = chartData
-                if (cod === 'HUMEDAD') site.history.humidity = chartData
-                if (cod === 'HUMEDAD_SUELO') site.history.soilMoisture = chartData
-                if (cod === 'VOLTAJE_PANEL') site.history.solarPanelVoltage = chartData
-                if (cod === 'VOLTAJE') site.history.voltage = chartData
-                if (cod === 'POTENCIA') site.history.power = chartData
-              }
+        try {
+          const resDash = await api(`/dispositivos/${d.serial}/dashboard/`)
+          if (resDash.ok) {
+            const dash = await resDash.json()
+            const widgets = dash.dashboard ? dash.dashboard.widgets : dash.widgets || []
+            const codigosPresentes = widgets.map(w => w.codigo_sensor).filter(Boolean)
+            
+            for (const cod of codigosPresentes) {
+              try {
+                const resHist = await api(`/dispositivos/${d.serial}/sensores/${cod}/historial/?rango=${range}`)
+                if (resHist.ok) {
+                  const dataHist = await resHist.json()
+                  const chartData = dataHist.map(h => {
+                    const date = new Date(h.timestamp || h.fecha)
+                    const label = range === '24h' 
+                      ? date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                      : date.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' }) + ' ' + date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+                    return { x: label, y: h.valor }
+                  })
+                  
+                  if (chartData.length > 0) {
+                    if (cod === 'TEMPERATURA') site.history.temperature = chartData
+                    if (cod === 'HUMEDAD') site.history.humidity = chartData
+                    if (cod === 'HUMEDAD_SUELO') site.history.soilMoisture = chartData
+                    if (cod === 'VOLTAJE_PANEL') site.history.solarPanelVoltage = chartData
+                    if (cod === 'VOLTAJE') site.history.voltage = chartData
+                    if (cod === 'POTENCIA') site.history.power = chartData
+                  }
+                }
+              } catch {}
             }
-          } catch {}
-        }
+          }
+        } catch {}
       }
     } catch (e) {
       console.error('Error al actualizar historial', e)

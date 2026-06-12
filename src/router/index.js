@@ -70,22 +70,20 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, from) => {
   const auth = useAuthStore()
   
   if (to.meta.requiresAuth !== false && !auth.isAuthenticated) {
-    next('/login')
-  } else if (to.path === '/login' && auth.isAuthenticated) {
+    return '/login'
+  }
+  if (to.path === '/login' && auth.isAuthenticated) {
     if (auth.userRole === 'tecnico') {
-      next('/tecnico')
-    } else {
-      next('/dashboard')
+      return '/tecnico'
     }
-  } else if (to.meta.allowedRoles && !to.meta.allowedRoles.includes(auth.userRole)) {
-    // Si no tiene rol permitido, redirigir a dashboard
-    next('/dashboard')
-  } else {
-    next()
+    return '/dashboard'
+  }
+  if (to.meta.allowedRoles && !to.meta.allowedRoles.includes(auth.userRole)) {
+    return '/dashboard'
   }
 })
 
