@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { api } from '../services/api'
+import { useAuthStore } from './auth'
 import { fetchWeatherForecast } from '../services/weatherService'
 
 export const useTelemetricsStore = defineStore('telemetrics', () => {
@@ -58,28 +59,49 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
 
   // --- ACCIONES CLIENTE ADMIN ---
   const addWorker = async (name, username, selectedPermissions) => {
+    const authStore = useAuthStore()
+    const empresaId = authStore.currentUser?.empresa || 1
+
+    const nameParts = name.trim().split(/\s+/)
+    const nombres = nameParts[0] || ''
+    const apellidos = nameParts.slice(1).join(' ') || ''
+    const email = username.includes('@') ? username : `${username}@netzona.cl`
+    const rut = `12345678-9` // RUT dummy requerido por el backend
+
     try {
-      // Intento de conexión real al backend
-      await api('/cuentas/usuarios/', {
+      const res = await api('/cuentas/usuarios/', {
         method: 'POST',
         body: JSON.stringify({
-          first_name: name,
-          email: `${username}@netzona.local`,
-          password: 'Password123!',
+          nombres,
+          apellidos,
+          email,
+          rut,
+          empresa: empresaId,
+          password: 'Password123!'
         })
       })
+
+      if (res.ok) {
+        const newWorker = await res.json()
+        
+        // Asignar accesos uno a uno
+        for (const siteId of selectedPermissions) {
+          await api('/cuentas/accesos/', {
+            method: 'POST',
+            body: JSON.stringify({
+              usuario: newWorker.id,
+              empresa: empresaId,
+              sitio: siteId,
+              activo: true
+            })
+          })
+        }
+      }
     } catch (error) {
-      console.warn('Backend API missing or failed, using local state fallback for addWorker', error)
+      console.warn('Backend API missing or failed, using fallback logic for addWorker', error)
     }
 
-    const id = `worker-${workers.value.length + 1}`
-    workers.value.push({
-      id,
-      name,
-      username,
-      role: 'trabajador',
-      permissions: [...selectedPermissions]
-    })
+    await fetchDataFromBackend()
   }
 
   const removeWorker = async (id) => {
@@ -89,23 +111,51 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
     } catch (error) {
       console.warn('Backend API fail on DELETE /cuentas/usuarios/', error)
     }
-    workers.value = workers.value.filter(w => w.id !== id)
+    await fetchDataFromBackend()
   }
 
   const updateWorkerPermissions = async (id, newPermissions) => {
+    const authStore = useAuthStore()
+    const empresaId = authStore.currentUser?.empresa || 1
+    const realUserId = id.toString().replace('worker-', '')
+
     try {
-      const realId = id.toString().replace('worker-', '')
-      await api(`/cuentas/usuarios/${realId}/`, {
-        method: 'PUT',
-        body: JSON.stringify({ permisos_ids: newPermissions })
-      })
+      // 1. Obtener accesos existentes del usuario
+      const resAcc = await api(`/cuentas/accesos/?usuario=${realUserId}`)
+      let existingAccesos = []
+      if (resAcc.ok) {
+        const dataAcc = await resAcc.json()
+        existingAccesos = dataAcc.results || dataAcc
+      }
+
+      // 2. Determinar agregados y eliminados
+      const toAdd = newPermissions.filter(siteId => !existingAccesos.some(acc => acc.sitio === siteId && acc.activo))
+      const toDelete = existingAccesos.filter(acc => !newPermissions.includes(acc.sitio) && acc.activo)
+
+      // Agregar
+      for (const siteId of toAdd) {
+        await api('/cuentas/accesos/', {
+          method: 'POST',
+          body: JSON.stringify({
+            usuario: realUserId,
+            empresa: empresaId,
+            sitio: siteId,
+            activo: true
+          })
+        })
+      }
+
+      // Eliminar
+      for (const acc of toDelete) {
+        await api(`/cuentas/accesos/${acc.id}/`, {
+          method: 'DELETE'
+        })
+      }
     } catch (error) {
-      console.warn('Backend API fail on PUT /cuentas/usuarios/', error)
+      console.warn('Backend API fail on updateWorkerPermissions', error)
     }
-    const worker = workers.value.find(w => w.id === id)
-    if (worker) {
-      worker.permissions = [...newPermissions]
-    }
+
+    await fetchDataFromBackend()
   }
 
   // --- ACCIONES DE DISPOSITIVO ---
@@ -342,12 +392,20 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
         }
       } catch {}
 
-      // 3. Obtener Trabajadores (Usuarios)
+      // 3. Obtener Trabajadores (Usuarios) y sus Accesos
       try {
         const resWorkers = await api('/cuentas/usuarios/')
+        const resAccesos = await api('/cuentas/accesos/?activo=true')
         if (resWorkers.ok) {
           const dataWorkers = await resWorkers.json()
           const workersList = dataWorkers.results || dataWorkers
+          
+          let accesosList = []
+          if (resAccesos && resAccesos.ok) {
+            const dataAccesos = await resAccesos.json()
+            accesosList = dataAccesos.results || dataAccesos
+          }
+
           workers.value = workersList.map(w => {
             let role = 'trabajador'
             if (w.is_superuser || (w.group_names && w.group_names.includes('admin_netzona'))) {
@@ -355,12 +413,18 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
             } else if (w.group_names && w.group_names.includes('tecnico')) {
               role = 'tecnico'
             }
+
+            const userAccesos = accesosList
+              .filter(acc => acc.usuario === w.id)
+              .map(acc => acc.sitio)
+              .filter(Boolean)
+
             return {
               id: w.id,
-              name: `${w.first_name || w.nombres || ''} ${w.last_name || w.apellidos || ''}`.trim() || w.username,
-              username: w.username,
+              name: `${w.nombres || ''} ${w.apellidos || ''}`.trim() || w.email || w.username,
+              username: w.email || w.username,
               role: role,
-              permissions: w.accesos_ids || []
+              permissions: userAccesos
             }
           })
         }

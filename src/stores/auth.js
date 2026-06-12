@@ -36,12 +36,27 @@ export const useAuthStore = defineStore('auth', () => {
           role = 'tecnico'
         }
 
+        let permissions = []
+        if (role === 'trabajador') {
+          try {
+            const resAcc = await api(`/cuentas/accesos/?usuario=${payload.user_id}&activo=true`)
+            if (resAcc.ok) {
+              const dataAcc = await resAcc.json()
+              const accList = dataAcc.results || dataAcc
+              permissions = accList.map(a => a.sitio).filter(Boolean)
+            }
+          } catch (e) {
+            console.error("Error fetching user accesses", e)
+          }
+        }
+
         currentUser.value = {
           id: userData.id,
           username: userData.email,
           name: `${userData.first_name || userData.nombres || ''} ${userData.last_name || userData.apellidos || ''}`.trim() || userData.email,
           role: role,
-          permissions: userData.permission_codenames || userData.accesos_ids || [], // Provisional, conectar a /accesos/ si es necesario
+          empresa: userData.empresa,
+          permissions: permissions,
         }
       } else {
         logout()
