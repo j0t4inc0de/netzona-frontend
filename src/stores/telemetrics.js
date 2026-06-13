@@ -68,6 +68,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
     const email = username.includes('@') ? username : `${username}@netzona.cl`
     const rut = `12345678-9` // RUT dummy requerido por el backend
 
+    let createdId = `worker-${Date.now()}`
     try {
       const res = await api('/cuentas/usuarios/', {
         method: 'POST',
@@ -83,6 +84,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
 
       if (res.ok) {
         const newWorker = await res.json()
+        createdId = newWorker.id
         
         // Asignar accesos uno a uno
         for (const siteId of selectedPermissions) {
@@ -101,6 +103,18 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
       console.warn('Backend API missing or failed, using fallback logic for addWorker', error)
     }
 
+    // Agregar al estado local inmediatamente
+    const exists = workers.value.some(w => w.id === createdId || w.username === email)
+    if (!exists) {
+      workers.value.push({
+        id: createdId,
+        name: name.trim(),
+        username: email,
+        role: 'trabajador',
+        permissions: [...selectedPermissions]
+      })
+    }
+
     await fetchDataFromBackend()
   }
 
@@ -109,8 +123,12 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
       const realId = id.toString().replace('worker-', '')
       await api(`/cuentas/usuarios/${realId}/`, { method: 'DELETE' })
     } catch (error) {
-      console.warn('Backend API fail on DELETE /cuentas/usuarios/', error)
+      console.warn('Backend API fail on removeWorker', error)
     }
+
+    // Remover del estado local inmediatamente
+    workers.value = workers.value.filter(w => w.id !== id)
+
     await fetchDataFromBackend()
   }
 
@@ -205,7 +223,9 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
               if (data['BATERIA']) p.metrics.battery = data['BATERIA'].valor
               if (data['VOLTAJE_PANEL']) p.metrics.solarPanelVoltage = data['VOLTAJE_PANEL'].valor
             }
-          } catch {}
+          } catch {
+            // ignore error
+          }
         }
       }
 
@@ -230,7 +250,9 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
               }
               if (data['BATERIA']) c.metrics.battery = data['BATERIA'].valor
             }
-          } catch {}
+          } catch {
+            // ignore error
+          }
         }
       }
     } catch (e) {
@@ -241,223 +263,227 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
   // --- INTEGRACIÓN REAL CON BACKEND ---
   const fetchDataFromBackend = async () => {
     isLoading.value = true
+    
+    // 1. Obtener Sitios
     try {
-      // 1. Obtener Sitios
       const resSitios = await api('/empresas/sitios/')
-      if (!resSitios.ok) throw new Error('Error al obtener sitios')
-      const dataSitios = await resSitios.json()
-      const sitios = dataSitios.results || dataSitios
+      if (resSitios.ok) {
+        const dataSitios = await resSitios.json()
+        const sitios = dataSitios.results || dataSitios
 
-      const newPredios = []
-      const newCerros = []
+        const newPredios = []
+        const newCerros = []
 
-      // Procesar cada sitio
-      for (const sitio of sitios) {
-        // Estructura base mapeada al frontend
-        const mapped = {
-          id: sitio.id,
-          name: sitio.nombre,
-          client: sitio.empresa_id,
-          lat: sitio.latitud ? parseFloat(sitio.latitud) : -36.6083,
-          lng: sitio.longitud ? parseFloat(sitio.longitud) : -72.1022,
-          zoom: 15,
-          dashboard_template_id: null,
-          sensors: [],
-          repeaters: [],
-          metrics: {
-            temperature: 0, temp_widget_id: 'widget-temp',
-            humidity: 0, hum_widget_id: 'widget-hum',
-            soilMoisture: 0, soil_widget_id: 'widget-soil',
-            battery: 0, bat_widget_id: 'widget-bat',
-            solarPanelVoltage: 0, solar_widget_id: 'widget-solar',
-            voltage: 0, volt_widget_id: 'widget-volt',
-            power: 0, pow_widget_id: 'widget-pow',
-            windSpeed: 0,
-            batteryTemp: 0,
-            doorOpen: false,
-            relayState: false,
-          },
-          history: {
-            temperature: [],
-            humidity: [],
-            soilMoisture: [],
-            voltage: [],
-            power: [],
-          },
-          weatherForecast: [
-            { day: 'Lun', temp: '15°C', status: 'Despejado', icon: 'Sun' }
-          ]
-        }
+        for (const sitio of sitios) {
+          const mapped = {
+            id: sitio.id,
+            name: sitio.nombre,
+            client: sitio.empresa_id,
+            lat: sitio.latitud ? parseFloat(sitio.latitud) : -36.6083,
+            lng: sitio.longitud ? parseFloat(sitio.longitud) : -72.1022,
+            zoom: 15,
+            dashboard_template_id: null,
+            sensors: [],
+            repeaters: [],
+            metrics: {
+              temperature: 0, temp_widget_id: 'widget-temp',
+              humidity: 0, hum_widget_id: 'widget-hum',
+              soilMoisture: 0, soil_widget_id: 'widget-soil',
+              battery: 0, bat_widget_id: 'widget-bat',
+              solarPanelVoltage: 0, solar_widget_id: 'widget-solar',
+              voltage: 0, volt_widget_id: 'widget-volt',
+              power: 0, pow_widget_id: 'widget-pow',
+              windSpeed: 0,
+              batteryTemp: 0,
+              doorOpen: false,
+              relayState: false,
+            },
+            history: {
+              temperature: [],
+              humidity: [],
+              soilMoisture: [],
+              voltage: [],
+              power: [],
+            },
+            weatherForecast: [
+              { day: 'Lun', temp: '15°C', status: 'Despejado', icon: 'Sun' }
+            ]
+          }
 
-        // Obtener dispositivos del sitio
-        const resDisp = await api(`/dispositivos/equipos/?sitio=${sitio.id}`)
-        if (resDisp.ok) {
-          const dataDisp = await resDisp.json()
-          const dispositivos = dataDisp.results || dataDisp
+          try {
+            const resDisp = await api(`/dispositivos/equipos/?sitio=${sitio.id}`)
+            if (resDisp.ok) {
+              const dataDisp = await resDisp.json()
+              const dispositivos = dataDisp.results || dataDisp
 
-          for (const d of dispositivos) {
-            mapped.sensors.push({
-              id: d.id,
-              name: d.nombre,
-              serial: d.serial,
-              latOffset: (Math.random() - 0.5) * 0.005,
-              lngOffset: (Math.random() - 0.5) * 0.005,
-              value: 0,
-              unit: ''
-            })
-
-            mapped.repeaters.push({
-              id: d.id,
-              name: d.nombre,
-              serial: d.serial
-            })
-
-            // Intentar obtener el dashboard del dispositivo para extraer métricas actuales
-            try {
-              const resDash = await api(`/dispositivos/${d.serial}/dashboard/`)
-              if (resDash.ok) {
-                const dash = await resDash.json()
-                if (dash.dashboard && dash.dashboard.id) {
-                  mapped.dashboard_template_id = dash.dashboard.id
-                }
-                const widgets = dash.dashboard ? dash.dashboard.widgets : dash.widgets || []
-                widgets.forEach(w => {
-                  const val = w.valor || 0
-                  if (w.codigo_sensor === 'TEMPERATURA' || w.titulo.toLowerCase().includes('temp')) { mapped.metrics.temperature = val; mapped.metrics.temp_widget_id = w.id }
-                  if (w.codigo_sensor === 'HUMEDAD' || w.titulo.toLowerCase().includes('hum')) { mapped.metrics.humidity = val; mapped.metrics.hum_widget_id = w.id }
-                  if (w.codigo_sensor === 'BATERIA' || w.titulo.toLowerCase().includes('bat')) { mapped.metrics.battery = val; mapped.metrics.bat_widget_id = w.id }
-                  if (w.codigo_sensor === 'VOLTAJE' || w.titulo.toLowerCase().includes('volt')) { mapped.metrics.voltage = val; mapped.metrics.volt_widget_id = w.id }
-                  if (w.codigo_sensor === 'POTENCIA' || w.titulo.toLowerCase().includes('pot')) { mapped.metrics.power = val; mapped.metrics.pow_widget_id = w.id }
-                  // Asumimos soil moisture y solar panel con los restantes
-                  if (w.codigo_sensor === 'HUMEDAD_SUELO' || w.titulo.toLowerCase().includes('suelo')) { mapped.metrics.soilMoisture = val; mapped.metrics.soil_widget_id = w.id }
-                  if (w.codigo_sensor === 'VOLTAJE_PANEL' || w.titulo.toLowerCase().includes('panel')) { mapped.metrics.solarPanelVoltage = val; mapped.metrics.solar_widget_id = w.id }
+              for (const d of dispositivos) {
+                mapped.sensors.push({
+                  id: d.id,
+                  name: d.nombre,
+                  serial: d.serial,
+                  latOffset: (Math.random() - 0.5) * 0.005,
+                  lngOffset: (Math.random() - 0.5) * 0.005,
+                  value: 0,
+                  unit: ''
                 })
-              }
 
-              // Llamar endpoints reales para Gráficos Históricos de sensores activos
-              const d24 = new Date()
-              d24.setHours(d24.getHours() - 24)
-              const desde24h = d24.toISOString()
+                mapped.repeaters.push({
+                  id: d.id,
+                  name: d.nombre,
+                  serial: d.serial
+                })
 
-              const codigosPresentes = widgets.map(w => w.codigo_sensor).filter(Boolean)
-              for (const cod of codigosPresentes) {
                 try {
-                  const resHist = await api(`/dispositivos/${d.serial}/sensores/${cod}/historial/?desde=${desde24h}`)
-                  if (resHist.ok) {
-                    const dataHist = await resHist.json()
-                    // dataHist = [{ valor: 12.5, timestamp: '2023-10-05T10:00:00Z' }, ...]
-                    const chartData = dataHist.map(h => ({
-                      x: new Date(h.timestamp || h.fecha).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-                      y: h.valor
-                    }))
-                    
-                    if (chartData.length > 0) {
-                      if (cod === 'TEMPERATURA') mapped.history.temperature = chartData
-                      if (cod === 'HUMEDAD') mapped.history.humidity = chartData
-                      if (cod === 'HUMEDAD_SUELO') mapped.history.soilMoisture = chartData
-                      if (cod === 'VOLTAJE_PANEL') mapped.history.solarPanelVoltage = chartData
-                      if (cod === 'VOLTAJE') mapped.history.voltage = chartData
-                      if (cod === 'POTENCIA') mapped.history.power = chartData
+                  const resDash = await api(`/dispositivos/${d.serial}/dashboard/`)
+                  if (resDash.ok) {
+                    const dash = await resDash.json()
+                    if (dash.dashboard && dash.dashboard.id) {
+                      mapped.dashboard_template_id = dash.dashboard.id
+                    }
+                    const widgets = dash.dashboard ? dash.dashboard.widgets : dash.widgets || []
+                    widgets.forEach(w => {
+                      const val = w.valor || 0
+                      if (w.codigo_sensor === 'TEMPERATURA' || w.titulo.toLowerCase().includes('temp')) { mapped.metrics.temperature = val; mapped.metrics.temp_widget_id = w.id }
+                      if (w.codigo_sensor === 'HUMEDAD' || w.titulo.toLowerCase().includes('hum')) { mapped.metrics.humidity = val; mapped.metrics.hum_widget_id = w.id }
+                      if (w.codigo_sensor === 'BATERIA' || w.titulo.toLowerCase().includes('bat')) { mapped.metrics.battery = val; mapped.metrics.bat_widget_id = w.id }
+                      if (w.codigo_sensor === 'VOLTAJE' || w.titulo.toLowerCase().includes('volt')) { mapped.metrics.voltage = val; mapped.metrics.volt_widget_id = w.id }
+                      if (w.codigo_sensor === 'POTENCIA' || w.titulo.toLowerCase().includes('pot')) { mapped.metrics.power = val; mapped.metrics.pow_widget_id = w.id }
+                      if (w.codigo_sensor === 'HUMEDAD_SUELO' || w.titulo.toLowerCase().includes('suelo')) { mapped.metrics.soilMoisture = val; mapped.metrics.soil_widget_id = w.id }
+                      if (w.codigo_sensor === 'VOLTAJE_PANEL' || w.titulo.toLowerCase().includes('panel')) { mapped.metrics.solarPanelVoltage = val; mapped.metrics.solar_widget_id = w.id }
+                    })
+                  }
+
+                  const d24 = new Date()
+                  d24.setHours(d24.getHours() - 24)
+                  const desde24h = d24.toISOString()
+
+                  const codigosPresentes = ['TEMPERATURA', 'HUMEDAD', 'HUMEDAD_SUELO', 'VOLTAJE_PANEL', 'VOLTAJE', 'POTENCIA']
+                  for (const cod of codigosPresentes) {
+                    try {
+                      const resHist = await api(`/dispositivos/${d.serial}/sensores/${cod}/historial/?desde=${desde24h}`)
+                      if (resHist.ok) {
+                        const dataHist = await resHist.json()
+                        const chartData = dataHist.map(h => ({
+                          x: new Date(h.timestamp || h.fecha).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                          y: h.valor
+                        }))
+                        
+                        if (chartData.length > 0) {
+                          if (cod === 'TEMPERATURA') mapped.history.temperature = chartData
+                          if (cod === 'HUMEDAD') mapped.history.humidity = chartData
+                          if (cod === 'HUMEDAD_SUELO') mapped.history.soilMoisture = chartData
+                          if (cod === 'VOLTAJE_PANEL') mapped.history.solarPanelVoltage = chartData
+                          if (cod === 'VOLTAJE') mapped.history.voltage = chartData
+                          if (cod === 'POTENCIA') mapped.history.power = chartData
+                        }
+                      }
+                    } catch {
+                      // ignore error
                     }
                   }
-                } catch {}
+                } catch {
+                  // ignore error
+                }
               }
-            } catch {
-              // Ignore if dashboard not configured
             }
+          } catch {
+            // ignore error
+          }
+
+          const isCerro = sitio.nombre.toLowerCase().includes('cerro') || sitio.descripcion?.toLowerCase().includes('radio')
+          if (isCerro) {
+            const realWeather = await fetchWeatherForecast(mapped.lat, mapped.lng)
+            if (realWeather) {
+              mapped.weatherForecast = realWeather
+            }
+            newCerros.push(mapped)
+          } else {
+            newPredios.push(mapped)
           }
         }
 
-        // Clasificar como Cerro o Predio (Simplificación: si tiene "cerro", "radio" o "repeater" en nombre/desc)
-        const isCerro = sitio.nombre.toLowerCase().includes('cerro') || sitio.descripcion?.toLowerCase().includes('radio')
-        if (isCerro) {
-          // Intentar cargar el clima de OpenWeatherMap usando las coordenadas
-          const realWeather = await fetchWeatherForecast(mapped.lat, mapped.lng)
-          if (realWeather) {
-            mapped.weatherForecast = realWeather
-          }
-          newCerros.push(mapped)
-        } else {
-          newPredios.push(mapped)
-        }
+        if (newPredios.length > 0) predios.value = newPredios
+        if (newCerros.length > 0) cerros.value = newCerros
       }
+    } catch (e) {
+      console.error('Error al sincronizar sitios:', e)
+    }
 
-      // Si el backend retornó sitios, reemplazamos los mocks
-      if (newPredios.length > 0) predios.value = newPredios
-      if (newCerros.length > 0) cerros.value = newCerros
+    // 2. Obtener Clientes (Empresas)
+    try {
+      const resClientes = await api('/empresas/clientes/')
+      if (resClientes.ok) {
+        const dataClientes = await resClientes.json()
+        const clientesList = dataClientes.results || dataClientes
+        clients.value = clientesList.map(c => ({ id: c.id, name: c.nombre }))
+      }
+    } catch (e) {
+      console.error('Error al sincronizar clientes:', e)
+    }
 
-      // 2. Obtener Clientes (Empresas)
-      try {
-        const resClientes = await api('/empresas/clientes/')
-        if (resClientes.ok) {
-          const dataClientes = await resClientes.json()
-          const clientesList = dataClientes.results || dataClientes
-          clients.value = clientesList.map(c => ({ id: c.id, name: c.nombre }))
+    // 3. Obtener Trabajadores (Usuarios) y sus Accesos
+    try {
+      const resWorkers = await api('/cuentas/usuarios/')
+      const resAccesos = await api('/cuentas/accesos/?activo=true')
+      if (resWorkers.ok) {
+        const dataWorkers = await resWorkers.json()
+        const workersList = dataWorkers.results || dataWorkers
+        
+        let accesosList = []
+        if (resAccesos && resAccesos.ok) {
+          const dataAccesos = await resAccesos.json()
+          accesosList = dataAccesos.results || dataAccesos
         }
-      } catch {}
 
-      // 3. Obtener Trabajadores (Usuarios) y sus Accesos
-      try {
-        const resWorkers = await api('/cuentas/usuarios/')
-        const resAccesos = await api('/cuentas/accesos/?activo=true')
-        if (resWorkers.ok) {
-          const dataWorkers = await resWorkers.json()
-          const workersList = dataWorkers.results || dataWorkers
-          
-          let accesosList = []
-          if (resAccesos && resAccesos.ok) {
-            const dataAccesos = await resAccesos.json()
-            accesosList = dataAccesos.results || dataAccesos
+        workers.value = workersList.map(w => {
+          let role = 'trabajador'
+          if (w.is_superuser || (w.group_names && w.group_names.includes('admin_netzona'))) {
+            role = 'admin'
+          } else if (w.group_names && w.group_names.includes('tecnico')) {
+            role = 'tecnico'
           }
 
-          workers.value = workersList.map(w => {
-            let role = 'trabajador'
-            if (w.is_superuser || (w.group_names && w.group_names.includes('admin_netzona'))) {
-              role = 'admin'
-            } else if (w.group_names && w.group_names.includes('tecnico')) {
-              role = 'tecnico'
-            }
+          const userAccesos = accesosList
+            .filter(acc => acc.usuario === w.id)
+            .map(acc => acc.sitio)
+            .filter(Boolean)
 
-            const userAccesos = accesosList
-              .filter(acc => acc.usuario === w.id)
-              .map(acc => acc.sitio)
-              .filter(Boolean)
-
-            return {
-              id: w.id,
-              name: `${w.nombres || ''} ${w.apellidos || ''}`.trim() || w.email || w.username,
-              username: w.email || w.username,
-              role: role,
-              permissions: userAccesos
-            }
-          })
-        }
-      } catch {}
-
-      // 4. Obtener Nodos Globales (Todos los Dispositivos)
-      try {
-        const resGlobal = await api('/dispositivos/equipos/')
-        if (resGlobal.ok) {
-          const dataGlobal = await resGlobal.json()
-          const globalList = dataGlobal.results || dataGlobal
-          globalNodes.value = globalList.map(d => ({
-            id: d.id,
-            serial: d.serial,
-            model: d.nombre,
-            type: d.sitio_id ? 'asignado' : 'sin_asignar', // O la lógica real
-            clientId: d.empresa_id,
-            assigned: !!d.sitio_id,
-            mqtt_topic: d.mqtt_topic
-          }))
-        }
-      } catch {}
-
+          return {
+            id: w.id,
+            name: `${w.nombres || ''} ${w.apellidos || ''}`.trim() || w.email || w.username,
+            username: w.email || w.username,
+            role: role,
+            permissions: userAccesos
+          }
+        })
+      }
     } catch (e) {
-      console.error('Failed to sync telemetrics from backend:', e)
-    } finally {
-      isLoading.value = false
+      console.error('Error al sincronizar trabajadores:', e)
     }
+
+    // 4. Obtener Nodos Globales (Todos los Dispositivos)
+    try {
+      const resGlobal = await api('/dispositivos/equipos/')
+      if (resGlobal.ok) {
+        const dataGlobal = await resGlobal.json()
+        const globalList = dataGlobal.results || dataGlobal
+        globalNodes.value = globalList.map(d => ({
+          id: d.id,
+          serial: d.serial,
+          model: d.nombre,
+          type: d.sitio_id ? 'asignado' : 'sin_asignar',
+          clientId: d.empresa_id,
+          assigned: !!d.sitio_id,
+          mqtt_topic: d.mqtt_topic
+        }))
+      }
+    } catch (e) {
+      console.error('Error al sincronizar equipos globales:', e)
+    }
+
+    isLoading.value = false
   }
+
 
   const fetchSiteHistory = async (siteId, isCerro, range = '24h') => {
     try {
@@ -526,10 +552,14 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                     if (cod === 'POTENCIA') site.history.power = chartData
                   }
                 }
-              } catch {}
+              } catch {
+                // ignore error
+              }
             }
           }
-        } catch {}
+        } catch {
+          // ignore error
+        }
       }
     } catch (e) {
       console.error('Error al actualizar historial', e)

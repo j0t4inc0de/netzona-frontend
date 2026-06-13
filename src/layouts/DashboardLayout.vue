@@ -35,7 +35,7 @@ onMounted(async () => {
         isDark.value = pref.tema_oscuro
       }
     }
-  } catch (e) {
+  } catch {
     console.warn('Backend API missing or failed, using local dark mode preference')
   }
 })
@@ -53,7 +53,7 @@ const toggleDark = () => {
         method: 'PUT',
         body: JSON.stringify({ tema_oscuro: isDark.value })
       })
-    } catch (e) {
+    } catch {
       // Fallback silencioso si el backend no está listo
     }
   }
@@ -145,7 +145,7 @@ const resetLayouts = async () => {
       signal: controller.signal
     })
     clearTimeout(timeoutId)
-  } catch(e) {
+  } catch {
     console.warn("Backend no disponible, procediendo con reseteo visual.")
   } finally {
     toast.success('Diseño restaurado por defecto exitosamente')
