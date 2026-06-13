@@ -42,7 +42,7 @@ const router = createRouter({
     {
       path: '/admin',
       component: () => import('../layouts/DashboardLayout.vue'),
-      meta: { requiresAuth: true, allowedRoles: ['admin'] },
+      meta: { requiresAuth: true, allowedRoles: ['admin', 'tecnico'] },
       children: [
         {
           path: '',

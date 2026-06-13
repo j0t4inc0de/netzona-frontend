@@ -185,8 +185,8 @@ const showRadioLink = computed(() => {
   return telemetrics.cerros.length > 0
 })
 
-const showAdminLink = computed(() => auth.userRole === 'admin')
-const showTecnicoLink = computed(() => auth.userRole === 'tecnico' || auth.userRole === 'admin')
+const showAdminLink = computed(() => auth.userRole === 'admin' || auth.userRole === 'tecnico')
+const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
 </script>
 
 <template>
