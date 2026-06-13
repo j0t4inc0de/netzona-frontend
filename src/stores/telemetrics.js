@@ -438,9 +438,9 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
         workers.value = workersList.map(w => {
           let role = 'trabajador'
           if (w.is_superuser || (w.group_names && w.group_names.includes('admin_netzona'))) {
-            role = 'admin'
-          } else if (w.group_names && w.group_names.includes('tecnico')) {
             role = 'tecnico'
+          } else if (w.group_names && w.group_names.includes('cliente_empresa')) {
+            role = 'admin'
           }
 
           const userAccesos = accesosList

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { api, API_URL, parseJwt } from '../services/api'
+import { api, API_URL } from '../services/api'
 
 export const useAuthStore = defineStore('auth', () => {
   const currentUser = ref(null)
@@ -21,25 +21,22 @@ export const useAuthStore = defineStore('auth', () => {
     const token = localStorage.getItem('access_token')
     if (!token) return
 
-    const payload = parseJwt(token)
-    if (!payload || !payload.user_id) return
-
     try {
-      const res = await api(`/cuentas/usuarios/${payload.user_id}/`)
+      const res = await api('/cuentas/me/')
       if (res.ok) {
         const userData = await res.json()
         
         let role = 'trabajador'
         if (userData.is_superuser || (userData.group_names && userData.group_names.includes('admin_netzona'))) {
-          role = 'admin'
-        } else if (userData.group_names && userData.group_names.includes('tecnico')) {
           role = 'tecnico'
+        } else if (userData.group_names && userData.group_names.includes('cliente_empresa')) {
+          role = 'admin'
         }
 
         let permissions = []
         if (role === 'trabajador') {
           try {
-            const resAcc = await api(`/cuentas/accesos/?usuario=${payload.user_id}&activo=true`)
+            const resAcc = await api(`/cuentas/accesos/?usuario=${userData.id}&activo=true`)
             if (resAcc.ok) {
               const dataAcc = await resAcc.json()
               const accList = dataAcc.results || dataAcc
