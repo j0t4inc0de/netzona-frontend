@@ -3,9 +3,51 @@ import { computed, ref } from 'vue'
 import { useTelemetricsStore } from '../stores/telemetrics'
 import { useAuthStore } from '../stores/auth'
 import { toast } from 'vue-sonner'
+import { api } from '../services/api'
 
 const store = useTelemetricsStore()
 const authStore = useAuthStore()
+
+// Edición de Perfil de un Trabajador
+const editingUser = ref(null)
+
+const startEditWorker = (worker) => {
+  editingUser.value = { ...worker }
+}
+
+const saveWorkerDetails = async () => {
+  if (!editingUser.value.name.trim() || !editingUser.value.username.trim()) {
+    toast.error('Complete todos los campos.')
+    return
+  }
+
+  const nameParts = editingUser.value.name.trim().split(/\s+/)
+  const nombres = nameParts[0] || ''
+  const apellidos = nameParts.slice(1).join(' ') || ''
+  const email = editingUser.value.username.includes('@') ? editingUser.value.username : `${editingUser.value.username}@netzona.cl`
+
+  try {
+    const res = await api(`/cuentas/usuarios/${editingUser.value.id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        nombres,
+        apellidos,
+        email
+      })
+    })
+
+    if (res.ok) {
+      toast.success('Perfil de trabajador actualizado con éxito.')
+      editingUser.value = null
+      await store.fetchDataFromBackend()
+    } else {
+      const errorData = await res.json().catch(() => ({}))
+      toast.error(errorData.email?.[0] || 'Error al actualizar perfil.')
+    }
+  } catch {
+    toast.error('Error de conexión al guardar cambios.')
+  }
+}
 
 // Filtrar trabajadores para no mostrar administradores ni al usuario actual
 const filteredWorkers = computed(() => {
@@ -21,7 +63,6 @@ const filteredWorkers = computed(() => {
 const workerName = ref('')
 const workerUsername = ref('')
 const selectedPermissions = ref([])
-const successMsg = ref('')
 
 const handleAddWorker = async () => {
   if (!workerName.value.trim() || !workerUsername.value.trim()) {
@@ -275,6 +316,12 @@ const getPermissionNames = (permissionIds) => {
                   </td>
                   <td class="py-3.5 px-4 text-right space-x-2">
                     <button
+                      @click="startEditWorker(w)"
+                      class="px-2.5 py-1.5 text-xs font-semibold bg-mako-100 hover:bg-mako-200 dark:bg-white/5 dark:hover:bg-white/10 rounded-lg text-blue-400 transition-all"
+                    >
+                      Editar datos
+                    </button>
+                    <button
                       @click="startEditPermissions(w)"
                       class="px-2.5 py-1.5 text-xs font-semibold bg-mako-100 hover:bg-mako-200 dark:bg-white/5 dark:hover:bg-white/10 rounded-lg text-primary transition-all"
                     >
@@ -295,6 +342,39 @@ const getPermissionNames = (permissionIds) => {
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para Editar Datos de Trabajador -->
+    <div v-if="editingUser" class="fixed inset-0 bg-mako-950/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div class="bg-white/95 dark:bg-mako-900/95 border border-mako-200 dark:border-white/10 rounded-[2rem] shadow-2xl w-full max-w-md p-6 relative">
+        <button @click="editingUser = null" class="absolute top-4 right-4 p-2 rounded-full hover:bg-mako-100 dark:hover:bg-white/10 text-mako-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+        
+        <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+          Editar Datos del Trabajador
+        </h3>
+        
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre Completo</label>
+            <input v-model="editingUser.name" type="text" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm text-mako-900 dark:text-white" />
+          </div>
+          <div>
+            <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Email / Usuario</label>
+            <input v-model="editingUser.username" type="text" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm text-mako-900 dark:text-white" />
+          </div>
+          <div class="flex gap-2 justify-end mt-4">
+            <button @click="editingUser = null" class="px-4 py-2 border border-mako-300 dark:border-mako-700 text-xs rounded-xl hover:bg-mako-100 dark:hover:bg-white/5">
+              Cancelar
+            </button>
+            <button @click="saveWorkerDetails" class="px-4 py-2 bg-primary text-mako-950 font-bold text-xs rounded-xl hover:shadow-[0_0_10px_rgba(0,209,94,0.3)]">
+              Guardar Cambios
+            </button>
           </div>
         </div>
       </div>
