@@ -335,10 +335,14 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
               }
 
               // Llamar endpoints reales para Gráficos Históricos de sensores activos
+              const d24 = new Date()
+              d24.setHours(d24.getHours() - 24)
+              const desde24h = d24.toISOString()
+
               const codigosPresentes = widgets.map(w => w.codigo_sensor).filter(Boolean)
               for (const cod of codigosPresentes) {
                 try {
-                  const resHist = await api(`/dispositivos/${d.serial}/sensores/${cod}/historial/`)
+                  const resHist = await api(`/dispositivos/${d.serial}/sensores/${cod}/historial/?desde=${desde24h}`)
                   if (resHist.ok) {
                     const dataHist = await resHist.json()
                     // dataHist = [{ valor: 12.5, timestamp: '2023-10-05T10:00:00Z' }, ...]
@@ -457,6 +461,31 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
 
   const fetchSiteHistory = async (siteId, isCerro, range = '24h') => {
     try {
+      let desde = ''
+      let hasta = new Date().toISOString()
+      
+      if (range === '24h') {
+        const d = new Date()
+        d.setHours(d.getHours() - 24)
+        desde = d.toISOString()
+      } else if (range === '7d') {
+        const d = new Date()
+        d.setDate(d.getDate() - 7)
+        desde = d.toISOString()
+      } else if (range === '30d') {
+        const d = new Date()
+        d.setDate(d.getDate() - 30)
+        desde = d.toISOString()
+      } else if (range.startsWith('custom:')) {
+        const dates = range.replace('custom:', '').split('|')
+        if (dates[0]) desde = new Date(dates[0] + 'T00:00:00').toISOString()
+        if (dates[1]) hasta = new Date(dates[1] + 'T23:59:59').toISOString()
+      } else {
+        const d = new Date()
+        d.setHours(d.getHours() - 24)
+        desde = d.toISOString()
+      }
+
       const resDisp = await api(`/dispositivos/equipos/?sitio=${siteId}`)
       if (!resDisp.ok) return
       
@@ -477,7 +506,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
             
             for (const cod of codigosPresentes) {
               try {
-                const resHist = await api(`/dispositivos/${d.serial}/sensores/${cod}/historial/?rango=${range}`)
+                const resHist = await api(`/dispositivos/${d.serial}/sensores/${cod}/historial/?desde=${desde}&hasta=${hasta}`)
                 if (resHist.ok) {
                   const dataHist = await resHist.json()
                   const chartData = dataHist.map(h => {

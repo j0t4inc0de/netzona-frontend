@@ -112,6 +112,12 @@ const redirectAfterLogin = () => {
         >
           Iniciar Sesión
         </button>
+
+        <div class="text-center mt-3">
+          <button type="button" @click="router.push('/password/recovery')" class="text-xs font-semibold text-primary hover:underline bg-transparent border-none outline-none cursor-pointer">
+            ¿Olvidó su contraseña?
+          </button>
+        </div>
       </form>
     </div>
   </div>

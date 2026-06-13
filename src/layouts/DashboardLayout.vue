@@ -79,6 +79,55 @@ const reloadKey = ref(0)
 const showConfirmReset = ref(false)
 const isResetting = ref(false)
 
+const passwordActual = ref('')
+const passwordNueva = ref('')
+const passwordNuevaConfirmacion = ref('')
+const isChangingPassword = ref(false)
+const changePasswordError = ref('')
+const changePasswordSuccess = ref('')
+
+const handleChangePassword = async () => {
+  changePasswordError.value = ''
+  changePasswordSuccess.value = ''
+
+  if (!passwordActual.value || !passwordNueva.value || !passwordNuevaConfirmacion.value) {
+    changePasswordError.value = 'Complete todos los campos.'
+    return
+  }
+
+  if (passwordNueva.value !== passwordNuevaConfirmacion.value) {
+    changePasswordError.value = 'Las nuevas contraseñas no coinciden.'
+    return
+  }
+
+  isChangingPassword.value = true
+  try {
+    const res = await api('/cuentas/password/cambiar/', {
+      method: 'POST',
+      body: JSON.stringify({
+        password_actual: passwordActual.value,
+        password_nueva: passwordNueva.value,
+        password_nueva_confirmacion: passwordNuevaConfirmacion.value
+      })
+    })
+
+    if (res.ok) {
+      changePasswordSuccess.value = 'Contraseña actualizada correctamente.'
+      toast.success('Contraseña cambiada con éxito')
+      passwordActual.value = ''
+      passwordNueva.value = ''
+      passwordNuevaConfirmacion.value = ''
+    } else {
+      const errorData = await res.json().catch(() => ({}))
+      changePasswordError.value = errorData.password_nueva?.[0] || errorData.password_actual?.[0] || errorData.detail || 'Error al cambiar la contraseña.'
+    }
+  } catch {
+    changePasswordError.value = 'Error de conexión al cambiar la contraseña.'
+  } finally {
+    isChangingPassword.value = false
+  }
+}
+
 const triggerResetConfirmation = () => {
   showConfirmReset.value = true
 }
@@ -492,6 +541,53 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico' || auth.userR
             >
               <span class="inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-300" :class="isDark ? 'translate-x-6' : 'translate-x-1'"></span>
             </button>
+          </div>
+ 
+          <!-- Cambiar Contraseña -->
+          <div class="p-4 bg-mako-50 dark:bg-mako-800/40 rounded-2xl border border-mako-200 dark:border-white/5">
+            <h3 class="font-bold text-sm mb-3">Cambiar Contraseña</h3>
+            <form @submit.prevent="handleChangePassword" class="space-y-3">
+              <div>
+                <input
+                  v-model="passwordActual"
+                  type="password"
+                  placeholder="Contraseña actual"
+                  class="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-mako-900 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-mako-900 dark:text-white"
+                  required
+                />
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <input
+                  v-model="passwordNueva"
+                  type="password"
+                  placeholder="Nueva contraseña"
+                  class="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-mako-900 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-mako-900 dark:text-white"
+                  required
+                />
+                <input
+                  v-model="passwordNuevaConfirmacion"
+                  type="password"
+                  placeholder="Confirmar nueva"
+                  class="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-mako-900 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-mako-900 dark:text-white"
+                  required
+                />
+              </div>
+
+              <p v-if="changePasswordError" class="text-red-500 text-[10px] font-semibold text-center bg-red-500/10 border border-red-500/20 py-1 rounded-lg">
+                {{ changePasswordError }}
+              </p>
+              <p v-if="changePasswordSuccess" class="text-green-600 dark:text-green-400 text-[10px] font-semibold text-center bg-green-500/10 border border-green-500/20 py-1 rounded-lg">
+                {{ changePasswordSuccess }}
+              </p>
+
+              <button
+                type="submit"
+                :disabled="isChangingPassword"
+                class="w-full py-2 bg-primary hover:bg-primary/95 text-white font-bold text-xs rounded-xl transition-all shadow-md disabled:opacity-50"
+              >
+                {{ isChangingPassword ? 'Actualizando...' : 'Actualizar contraseña' }}
+              </button>
+            </form>
           </div>
 
           <!-- Restablecer Layout -->

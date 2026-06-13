@@ -64,6 +64,24 @@ const router = createRouter({
       ]
     },
     {
+      path: '/password/recovery',
+      name: 'password-recovery',
+      component: () => import('../views/PasswordRecoveryView.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/password/reset',
+      name: 'password-reset',
+      component: () => import('../views/PasswordResetView.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
+      path: '/verificacion/confirmar',
+      name: 'account-activation',
+      component: () => import('../views/AccountActivationView.vue'),
+      meta: { requiresAuth: false }
+    },
+    {
       path: '/:pathMatch(.*)*',
       redirect: '/dashboard'
     }

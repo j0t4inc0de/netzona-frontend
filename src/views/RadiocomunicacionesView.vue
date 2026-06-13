@@ -47,7 +47,23 @@ const updateMapLocation = () => {
 }
 
 const selectedRange = ref('24h')
+const rangeType = ref('24h')
+const customDesde = ref('')
+const customHasta = ref('')
 const isGridLoading = ref(false)
+
+const applyCustomRange = () => {
+  if (customDesde.value && customHasta.value) {
+    selectedRange.value = `custom:${customDesde.value}|${customHasta.value}`
+  }
+}
+
+import { watch as vueWatch } from 'vue'
+vueWatch(rangeType, (newVal) => {
+  if (newVal !== 'custom') {
+    selectedRange.value = newVal
+  }
+})
 
 let grid = null
 const initGrid = async () => {
@@ -498,14 +514,23 @@ const getWeatherSvg = (iconName) => {
           >
             <div class="flex justify-between items-center mb-3">
               <p class="text-xs uppercase font-bold text-mako-400">Historial Potencia & Voltaje</p>
-              <select
-                v-model="selectedRange"
-                class="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full font-bold outline-none cursor-pointer dark:bg-mako-900"
-              >
-                <option value="24h">24 Horas</option>
-                <option value="7d">7 Días</option>
-                <option value="30d">30 Días</option>
-              </select>
+              <div class="flex items-center gap-2">
+                <div v-if="rangeType === 'custom'" class="flex items-center gap-1 animate-fade-in">
+                  <input type="date" v-model="customDesde" class="text-[9px] bg-mako-100 dark:bg-mako-800 border border-mako-300 dark:border-mako-700 px-1.5 py-0.5 rounded-md outline-none text-mako-900 dark:text-white" />
+                  <span class="text-[9px] text-mako-400">a</span>
+                  <input type="date" v-model="customHasta" class="text-[9px] bg-mako-100 dark:bg-mako-800 border border-mako-300 dark:border-mako-700 px-1.5 py-0.5 rounded-md outline-none text-mako-900 dark:text-white" />
+                  <button @click="applyCustomRange" class="text-[9px] bg-primary hover:bg-primary/95 text-white px-2 py-0.5 rounded-md font-bold transition-colors">Aplicar</button>
+                </div>
+                <select
+                  v-model="rangeType"
+                  class="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full font-bold outline-none cursor-pointer dark:bg-mako-900"
+                >
+                  <option value="24h">24 Horas</option>
+                  <option value="7d">7 Días</option>
+                  <option value="30d">30 Días</option>
+                  <option value="custom">Personalizado</option>
+                </select>
+              </div>
             </div>
             <div class="flex-1 min-h-[250px] relative">
               <apexchart
