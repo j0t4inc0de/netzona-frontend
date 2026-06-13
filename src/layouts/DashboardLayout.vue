@@ -304,7 +304,9 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
           <div class="overflow-hidden transition-all duration-300"
                :class="isDesktopSidebarCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[150px] opacity-100 ml-3'">
             <h4 class="text-sm font-semibold truncate leading-tight">{{ auth.currentUser?.name }}</h4>
-            <span class="text-xs text-mako-400 capitalize">{{ auth.currentUser?.role }}</span>
+            <span class="text-xs text-mako-400">
+              {{ auth.currentUser?.role === 'tecnico' ? 'Admin Netzona' : auth.currentUser?.role === 'admin' ? 'Administrador' : 'Trabajador' }}
+            </span>
           </div>
         </div>
         <button

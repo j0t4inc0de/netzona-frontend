@@ -134,7 +134,7 @@ const getPermissionNames = (permissionIds) => {
       <div
         class="px-4 py-2 bg-primary/10 border border-primary/20 rounded-full text-xs font-bold text-primary"
       >
-        Rol: Cliente Administrador
+        Rol: {{ authStore.currentUser?.role === 'tecnico' ? 'Admin Netzona' : 'Administrador' }}
       </div>
     </div>
 

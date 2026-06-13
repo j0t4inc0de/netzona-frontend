@@ -448,7 +448,7 @@ onMounted(async () => {
         <p class="text-sm text-mako-500 dark:text-mako-400 mt-1">Aprovisionamiento de nodos, asignación a zonas y clientes.</p>
       </div>
       <div class="px-4 py-2 bg-primary/10 border border-primary/20 rounded-full text-xs font-bold text-primary">
-        Rol: Técnico
+        Rol: Admin Netzona
       </div>
     </div>
 
