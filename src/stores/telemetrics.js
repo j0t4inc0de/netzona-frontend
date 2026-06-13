@@ -442,7 +442,8 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
             model: d.nombre,
             type: d.sitio_id ? 'asignado' : 'sin_asignar', // O la lógica real
             clientId: d.empresa_id,
-            assigned: !!d.sitio_id
+            assigned: !!d.sitio_id,
+            mqtt_topic: d.mqtt_topic
           }))
         }
       } catch {}
