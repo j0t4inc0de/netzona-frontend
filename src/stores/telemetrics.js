@@ -88,11 +88,11 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
 
       if (res.ok) {
         const newWorker = await res.json()
-        
-        // Asignar accesos en paralelo (sólo si tiene accesos seleccionados)
+
+        // Asignar accesos de manera secuencial para evitar SQLite locking errors
         if (selectedPermissions && selectedPermissions.length > 0) {
-          const promises = selectedPermissions.map(siteId => {
-            return api('/cuentas/accesos/', {
+          for (const siteId of selectedPermissions) {
+            const accRes = await api('/cuentas/accesos/', {
               method: 'POST',
               body: JSON.stringify({
                 usuario: newWorker.id,
@@ -101,8 +101,8 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                 activo: true
               })
             })
-          })
-          await Promise.all(promises)
+            if (!accRes.ok) console.warn('No se pudo asignar acceso', siteId)
+          }
         }
       } else {
         const errData = await res.json().catch(() => ({}))
@@ -154,9 +154,9 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
       const toAdd = newPermissions.filter(siteId => !existingAccesos.some(acc => acc.sitio === siteId && acc.activo))
       const toDelete = existingAccesos.filter(acc => !newPermissions.includes(acc.sitio) && acc.activo)
 
-      // Agregar y Eliminar en paralelo
-      const addPromises = toAdd.map(siteId => {
-        return api('/cuentas/accesos/', {
+      // Agregar en secuencial para prevenir SQLite lock
+      for (const siteId of toAdd) {
+        const accRes = await api('/cuentas/accesos/', {
           method: 'POST',
           body: JSON.stringify({
             usuario: realUserId,
@@ -165,15 +165,15 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
             activo: true
           })
         })
-      })
+        if (!accRes.ok) console.warn('Error al agregar acceso', siteId)
+      }
 
-      const delPromises = toDelete.map(acc => {
-        return api(`/cuentas/accesos/${acc.id}/`, {
+      // Eliminar en secuencial
+      for (const acc of toDelete) {
+        await api(`/cuentas/accesos/${acc.id}/`, {
           method: 'DELETE'
         })
-      })
-
-      await Promise.all([...addPromises, ...delPromises])
+      }
     } catch (error) {
       console.error('Backend API fail on updateWorkerPermissions', error)
       throw error
@@ -320,8 +320,9 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
     isLoading.value = true
     
     // 1. Obtener Sitios
-    try {
-      const resSitios = await api('/empresas/sitios/')
+    const fetchSitios = async () => {
+      try {
+        const resSitios = await api('/empresas/sitios/')
       if (resSitios.ok) {
         const dataSitios = await resSitios.json()
         const sitios = dataSitios.results || dataSitios
@@ -463,21 +464,28 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
     } catch (e) {
       console.error('Error al sincronizar sitios:', e)
     }
+  }
 
     // 2. Obtener Clientes (Empresas)
-    try {
-      const resClientes = await api('/empresas/clientes/')
-      if (resClientes.ok) {
-        const dataClientes = await resClientes.json()
-        const clientesList = dataClientes.results || dataClientes
-        clients.value = clientesList.map(c => ({ id: c.id, name: c.nombre }))
+    const fetchClientes = async () => {
+      try {
+        const resClientes = await api('/empresas/clientes/')
+        if (resClientes.ok) {
+          const dataClientes = await resClientes.json()
+          const clientesList = dataClientes.results || dataClientes
+          clients.value = clientesList.map(c => ({ id: c.id, name: c.nombre }))
+        }
+      } catch (e) {
+        console.error('Error al sincronizar clientes:', e)
       }
-    } catch (e) {
-      console.error('Error al sincronizar clientes:', e)
     }
 
-    // 3. Obtener Trabajadores (Usuarios) y sus Accesos
-    await fetchWorkersFromBackend()
+    // Ejecutar fetchs independientes en paralelo para carga rápida
+    await Promise.all([
+      fetchSitios(),
+      fetchClientes(),
+      fetchWorkersFromBackend()
+    ])
 
     // 4. Obtener Grupos
     try {
