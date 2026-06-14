@@ -10,6 +10,7 @@ const authStore = useAuthStore()
 
 // Edición de Perfil de un Trabajador/Usuario
 const editingUser = ref(null)
+const isSavingDetails = ref(false)
 
 const startEditWorker = (worker) => {
   const selectedGroupId = worker.groups && worker.groups.length > 0 ? worker.groups[0] : null
@@ -48,6 +49,8 @@ const saveWorkerDetails = async () => {
     }
   }
 
+  isSavingDetails.value = true
+
   try {
     const res = await api(`/cuentas/usuarios/${editingUser.value.id}/`, {
       method: 'PATCH',
@@ -65,6 +68,8 @@ const saveWorkerDetails = async () => {
     }
   } catch {
     toast.error('Error de conexión al guardar cambios.')
+  } finally {
+    isSavingDetails.value = false
   }
 }
 
@@ -90,6 +95,7 @@ const selectedEmpresaId = ref(null)
 const selectedPermissions = ref([])
 const formErrors = ref({})
 const isAddModalOpen = ref(false)
+const isSubmitting = ref(false)
 
 // Grupos permitidos según el rol del usuario logueado
 const allowedGroups = computed(() => {
@@ -131,6 +137,8 @@ const handleAddWorker = async () => {
     return
   }
 
+  isSubmitting.value = true
+
   try {
     await store.addWorker(
       workerName.value.trim(),
@@ -156,6 +164,8 @@ const handleAddWorker = async () => {
     } else {
       toast.error('Error al registrar el usuario.')
     }
+  } finally {
+    isSubmitting.value = false
   }
 }
 
@@ -173,6 +183,7 @@ const handleRemoveWorker = async (id) => {
 // Edición de Permisos (Accesos) de un Trabajador
 const editingWorkerId = ref(null)
 const editingPermissions = ref([])
+const isSavingPermissions = ref(false)
 
 const startEditPermissions = (worker) => {
   editingWorkerId.value = worker.id
@@ -180,6 +191,7 @@ const startEditPermissions = (worker) => {
 }
 
 const savePermissions = async () => {
+  isSavingPermissions.value = true
   try {
     await store.updateWorkerPermissions(editingWorkerId.value, editingPermissions.value)
     toast.success('Accesos actualizados correctamente')
@@ -187,6 +199,8 @@ const savePermissions = async () => {
     editingPermissions.value = []
   } catch {
     toast.error('Error al actualizar los accesos')
+  } finally {
+    isSavingPermissions.value = false
   }
 }
 
@@ -423,11 +437,12 @@ const getPermissionNames = (permissionIds) => {
           </div>
 
           <div class="pt-4 border-t border-mako-200 dark:border-mako-700/50 flex gap-3 justify-end">
-            <button type="button" @click="isAddModalOpen = false" class="px-5 py-3.5 border border-mako-300 dark:border-mako-700 text-sm font-semibold rounded-xl hover:bg-mako-100 dark:hover:bg-white/5 transition-all w-full sm:w-auto">
+            <button type="button" @click="isAddModalOpen = false" :disabled="isSubmitting" class="px-5 py-3.5 border border-mako-300 dark:border-mako-700 text-sm font-semibold rounded-xl hover:bg-mako-100 dark:hover:bg-white/5 transition-all w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed">
               Cancelar
             </button>
-            <button type="submit" class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-primary text-white font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.4)] transition-all duration-300">
-              Registrar Usuario
+            <button type="submit" :disabled="isSubmitting" class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-primary text-white font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.4)] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              <svg v-if="isSubmitting" class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              {{ isSubmitting ? 'Registrando...' : 'Registrar Usuario' }}
             </button>
           </div>
         </form>
@@ -484,11 +499,12 @@ const getPermissionNames = (permissionIds) => {
           </div>
 
           <div class="pt-4 border-t border-mako-200 dark:border-mako-700/50 flex gap-3 justify-end mt-2">
-            <button @click="editingUser = null" class="px-5 py-3.5 border border-mako-300 dark:border-mako-700 text-sm font-semibold rounded-xl hover:bg-mako-100 dark:hover:bg-white/5 transition-all w-full sm:w-auto">
+            <button @click="editingUser = null" :disabled="isSavingDetails" class="px-5 py-3.5 border border-mako-300 dark:border-mako-700 text-sm font-semibold rounded-xl hover:bg-mako-100 dark:hover:bg-white/5 transition-all w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed">
               Cancelar
             </button>
-            <button @click="saveWorkerDetails" class="px-6 py-3.5 bg-primary text-white font-bold text-sm rounded-xl hover:shadow-[0_0_15px_rgba(0,209,94,0.4)] transition-all w-full sm:w-auto">
-              Guardar Cambios
+            <button @click="saveWorkerDetails" :disabled="isSavingDetails" class="px-6 py-3.5 bg-primary text-white font-bold text-sm rounded-xl hover:shadow-[0_0_15px_rgba(0,209,94,0.4)] transition-all w-full sm:w-auto disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+              <svg v-if="isSavingDetails" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              {{ isSavingDetails ? 'Guardando...' : 'Guardar Cambios' }}
             </button>
           </div>
         </div>
@@ -535,11 +551,12 @@ const getPermissionNames = (permissionIds) => {
         </div>
 
         <div class="pt-4 border-t border-mako-200 dark:border-mako-700/50 flex gap-3 justify-end mt-4">
-          <button @click="cancelEdit" class="px-5 py-3.5 border border-mako-300 dark:border-mako-700 text-sm font-semibold rounded-xl hover:bg-mako-100 dark:hover:bg-white/5 transition-all w-full sm:w-auto">
+          <button @click="cancelEdit" :disabled="isSavingPermissions" class="px-5 py-3.5 border border-mako-300 dark:border-mako-700 text-sm font-semibold rounded-xl hover:bg-mako-100 dark:hover:bg-white/5 transition-all w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed">
             Cancelar
           </button>
-          <button @click="savePermissions" class="px-6 py-3.5 bg-primary text-white font-bold text-sm rounded-xl hover:shadow-[0_0_15px_rgba(0,209,94,0.4)] transition-all w-full sm:w-auto">
-            Guardar Accesos
+          <button @click="savePermissions" :disabled="isSavingPermissions" class="px-6 py-3.5 bg-primary text-white font-bold text-sm rounded-xl hover:shadow-[0_0_15px_rgba(0,209,94,0.4)] transition-all w-full sm:w-auto disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+            <svg v-if="isSavingPermissions" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            {{ isSavingPermissions ? 'Guardando...' : 'Guardar Accesos' }}
           </button>
         </div>
       </div>

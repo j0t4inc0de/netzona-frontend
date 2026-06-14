@@ -6,7 +6,7 @@ import 'vue-sonner/style.css'
 
 <template>
   <router-view />
-  <Toaster position="top-center" richColors closeButton />
+  <Toaster position="top-center" richColors closeButton style="z-index: 99999" />
 </template>
 
 <style lang="postcss">
