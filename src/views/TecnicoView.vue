@@ -442,35 +442,35 @@ onMounted(async () => {
 <template>
   <div class="space-y-8 max-w-6xl mx-auto">
     <!-- Encabezado de Vista -->
-    <div class="flex justify-between items-center">
+    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
       <div>
-        <h1 class="text-3xl font-bold tracking-tight">Gestor de Dispositivos (Técnico)</h1>
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Gestor de Dispositivos</h1>
         <p class="text-sm text-mako-500 dark:text-mako-400 mt-1">Aprovisionamiento de nodos, asignación a zonas y clientes.</p>
       </div>
-      <div class="px-4 py-2 bg-primary/10 border border-primary/20 rounded-full text-xs font-bold text-primary">
+      <div class="px-4 py-2 bg-primary/10 border border-primary/20 rounded-full text-xs font-bold text-primary self-start sm:self-auto">
         Rol: Admin Netzona
       </div>
     </div>
 
     <!-- Navegación de Pestañas (Tabs) -->
-    <div class="flex border-b border-mako-200 dark:border-white/5 gap-6">
+    <div class="flex border-b border-mako-200 dark:border-white/5 gap-4 sm:gap-6 overflow-x-auto whitespace-nowrap scrollbar-hide py-1">
       <button
         @click="activeTab = 'nodos'"
-        class="py-3 px-1 text-sm font-bold border-b-2 transition-all outline-none"
+        class="py-3 px-1 text-sm font-bold border-b-2 transition-all outline-none shrink-0"
         :class="activeTab === 'nodos' ? 'border-primary text-primary' : 'border-transparent text-mako-400 hover:text-mako-600 dark:hover:text-white'"
       >
         Aprovisionamiento
       </button>
       <button
         @click="activeTab = 'estructura'"
-        class="py-3 px-1 text-sm font-bold border-b-2 transition-all outline-none"
+        class="py-3 px-1 text-sm font-bold border-b-2 transition-all outline-none shrink-0"
         :class="activeTab === 'estructura' ? 'border-primary text-primary' : 'border-transparent text-mako-400 hover:text-mako-600 dark:hover:text-white'"
       >
         Estructura (Clientes/Sitios/Zonas)
       </button>
       <button
         @click="activeTab = 'mqtt'"
-        class="py-3 px-1 text-sm font-bold border-b-2 transition-all outline-none"
+        class="py-3 px-1 text-sm font-bold border-b-2 transition-all outline-none shrink-0"
         :class="activeTab === 'mqtt' ? 'border-primary text-primary' : 'border-transparent text-mako-400 hover:text-mako-600 dark:hover:text-white'"
       >
         Diagnóstico MQTT
@@ -482,7 +482,7 @@ onMounted(async () => {
       <!-- Bloque de Formularios -->
       <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
         <!-- Tarjeta 1: Aprovisionar Nodo -->
-        <div class="p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg">
+        <div class="p-4 sm:p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg">
           <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
             <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -536,14 +536,14 @@ onMounted(async () => {
               </select>
             </div>
 
-            <button type="submit" class="w-full py-3.5 rounded-xl bg-primary text-mako-950 font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.3)] transition-all duration-300 mt-4">
+            <button type="submit" class="w-full py-3.5 rounded-xl bg-primary text-white dark:text-mako-950 font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.3)] transition-all duration-300 mt-4">
               Registrar e Instalar Dispositivo
             </button>
           </form>
         </div>
 
         <!-- Tarjeta 2: Registrar Nuevo Cliente (Empresa) -->
-        <div class="p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg flex flex-col justify-between">
+        <div class="p-4 sm:p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg flex flex-col justify-between">
           <div>
             <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
               <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -558,7 +558,7 @@ onMounted(async () => {
                 <input v-model="newClientName" type="text" placeholder="Ej. Viñedos San Pedro S.A." class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm dark:text-white" />
               </div>
               
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">RUT / Identificador</label>
                   <input v-model="newClientRut" type="text" placeholder="Ej. 76.543.210-K" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm dark:text-white" />
@@ -569,20 +569,27 @@ onMounted(async () => {
                 </div>
               </div>
 
-              <button type="submit" class="w-full py-3.5 rounded-xl bg-primary text-mako-950 font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.3)] transition-all duration-300">
+              <button type="submit" class="w-full py-3.5 rounded-xl bg-primary text-white dark:text-mako-950 font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.3)] transition-all duration-300">
                 Registrar Cliente
               </button>
             </form>
           </div>
 
           <div class="mt-6 p-4 rounded-2xl bg-mako-100/50 dark:bg-mako-800/20 border border-mako-200 dark:border-white/5 text-xs text-mako-500 dark:text-mako-400">
-            <p class="font-bold text-mako-700 dark:text-mako-300 mb-1">💡 Flujo de Creación MQTT:</p>
-            Al aprovisionar un nodo de forma completa, el backend genera automáticamente el tópico MQTT en base a los códigos de la Empresa, Sitio y Zona elegidas.
+            <div class="flex items-center gap-1.5 font-bold text-mako-700 dark:text-mako-300 mb-1">
+              <svg class="w-4 h-4 text-primary shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364.364l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+              <span>Flujo de Creación MQTT:</span>
+            </div>
+            <p class="mt-1">
+              Al aprovisionar un nodo de forma completa, el backend genera automáticamente el tópico MQTT en base a los códigos de la Empresa, Sitio y Zona elegidas.
+            </p>
           </div>
         </div>
         
         <!-- Tarjeta 3: Registrar Nuevo Sitio -->
-        <div class="p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg flex flex-col justify-between">
+        <div class="p-4 sm:p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg flex flex-col justify-between">
           <div>
             <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
               <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -606,7 +613,7 @@ onMounted(async () => {
                 <input v-model="newSitioName" type="text" placeholder="Ej. Fundo El Carmen / Cerro Caracol" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm dark:text-white" />
               </div>
 
-              <button type="submit" class="w-full py-3.5 rounded-xl bg-primary text-mako-950 font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.3)] transition-all duration-300">
+              <button type="submit" class="w-full py-3.5 rounded-xl bg-primary text-white dark:text-mako-950 font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.3)] transition-all duration-300">
                 Registrar Sitio
               </button>
             </form>
@@ -614,7 +621,7 @@ onMounted(async () => {
         </div>
 
         <!-- Tarjeta 4: Registrar Nueva Zona -->
-        <div class="p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg flex flex-col justify-between">
+        <div class="p-4 sm:p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg flex flex-col justify-between">
           <div>
             <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
               <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -624,7 +631,7 @@ onMounted(async () => {
             </h2>
 
             <form @submit.prevent="handleAddZona" class="space-y-4">
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Empresa</label>
                   <select v-model="newZonaEmpresa" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm dark:text-white dark:bg-mako-900">
@@ -646,7 +653,7 @@ onMounted(async () => {
                 <input v-model="newZonaName" type="text" placeholder="Ej. Sector Norte / Caseta 1" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm dark:text-white" />
               </div>
 
-              <button type="submit" class="w-full py-3.5 rounded-xl bg-primary text-mako-950 font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.3)] transition-all duration-300">
+              <button type="submit" class="w-full py-3.5 rounded-xl bg-primary text-white dark:text-mako-950 font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.3)] transition-all duration-300">
                 Registrar Zona
               </button>
             </form>
@@ -655,7 +662,7 @@ onMounted(async () => {
       </div>
 
       <!-- Tabla de Nodos Globales del Sistema -->
-      <div class="p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg">
+      <div class="p-4 sm:p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-semibold">Equipos Activos Registrados</h2>
           <button @click="fetchEquipos" class="px-3 py-1.5 text-xs font-bold bg-mako-200 dark:bg-mako-800 hover:bg-mako-300 dark:hover:bg-mako-700 rounded-lg transition-colors flex items-center gap-2">
@@ -713,7 +720,7 @@ onMounted(async () => {
     <!-- PESTAÑA 2: ESTRUCTURA (CLIENTES/SITIOS/ZONAS CRUD) -->
     <div v-if="activeTab === 'estructura'" class="space-y-8">
       <!-- Sección Clientes (Empresas) -->
-      <div class="p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg">
+      <div class="p-4 sm:p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg">
         <h2 class="text-xl font-semibold mb-4">Clientes Registrados</h2>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse text-sm">
@@ -753,7 +760,7 @@ onMounted(async () => {
       </div>
 
       <!-- Sección Sitios -->
-      <div class="p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg">
+      <div class="p-4 sm:p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-semibold">Sitios por Cliente</h2>
           <!-- Selector de cliente para ver sus sitios -->
@@ -797,7 +804,7 @@ onMounted(async () => {
       </div>
 
       <!-- Sección Zonas -->
-      <div class="p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg">
+      <div class="p-4 sm:p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-xl font-semibold">Zonas por Sitio</h2>
           <!-- Cascada para filtrar zona: Empresa -> Sitio -->
@@ -848,7 +855,7 @@ onMounted(async () => {
     </div>
 
     <!-- PESTAÑA 3: DIAGNÓSTICO MQTT -->
-    <div v-if="activeTab === 'mqtt'" class="p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg">
+    <div v-if="activeTab === 'mqtt'" class="p-4 sm:p-6 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-lg">
       <div class="flex justify-between items-center mb-4">
         <div>
           <h2 class="text-xl font-semibold flex items-center gap-2">
