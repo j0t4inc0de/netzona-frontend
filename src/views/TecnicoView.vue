@@ -466,7 +466,7 @@ onMounted(async () => {
         class="py-3 px-1 text-sm font-bold border-b-2 transition-all outline-none shrink-0"
         :class="activeTab === 'estructura' ? 'border-primary text-primary' : 'border-transparent text-mako-400 hover:text-mako-600 dark:hover:text-white'"
       >
-        Estructura (Clientes/Sitios/Zonas)
+        Estructura (Clientes/Cerros/Zonas)
       </button>
       <button
         @click="activeTab = 'mqtt'"
@@ -596,7 +596,7 @@ onMounted(async () => {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              Crear Sitio (Predio o Cerro)
+              Crear Sitio (Cerro)
             </h2>
 
             <form @submit.prevent="handleAddSitio" class="space-y-4">
@@ -627,7 +627,7 @@ onMounted(async () => {
               <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
               </svg>
-              Crear Zona (Sector o Caseta)
+              Crear Zona
             </h2>
 
             <form @submit.prevent="handleAddZona" class="space-y-4">

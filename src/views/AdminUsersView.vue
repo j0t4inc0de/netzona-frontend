@@ -415,7 +415,7 @@ const getPermissionNames = (permissionIds) => {
             <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-2">Permisos de Visualización (Sitios)</label>
             <div class="space-y-3 max-h-48 overflow-y-auto custom-scrollbar p-3 bg-mako-100/50 dark:bg-mako-800/20 border border-mako-200 dark:border-white/5 rounded-xl">
               <div v-if="store.predios.length > 0">
-                <p class="text-[10px] uppercase font-bold text-mako-400 mb-2">Predios Agrícolas</p>
+                <p class="text-[10px] uppercase font-bold text-mako-400 mb-2">Zonas:</p>
                 <div class="space-y-2">
                   <label v-for="p in store.predios" :key="p.id" class="flex items-center gap-3 text-sm cursor-pointer group hover:bg-mako-200/50 dark:hover:bg-mako-700/50 p-2 rounded-lg transition-colors">
                     <input type="checkbox" v-model="selectedPermissions" :value="p.id" class="w-4 h-4 text-primary bg-mako-100 border-mako-300 rounded focus:ring-primary focus:ring-2 dark:bg-mako-800 dark:border-mako-600 accent-primary" />
@@ -530,7 +530,7 @@ const getPermissionNames = (permissionIds) => {
 
         <div class="space-y-4 max-h-64 overflow-y-auto custom-scrollbar pr-2">
           <div v-if="store.predios.length > 0" class="bg-mako-50 dark:bg-mako-800/30 p-4 rounded-xl border border-mako-100 dark:border-mako-700/50">
-            <p class="text-xs uppercase font-bold text-mako-400 mb-3">Predios Agrícolas</p>
+            <p class="text-xs uppercase font-bold text-mako-400 mb-3">ZONAS:</p>
             <div class="space-y-2">
               <label v-for="p in store.predios" :key="p.id" class="flex items-center gap-3 text-sm cursor-pointer group hover:bg-mako-200/50 dark:hover:bg-mako-700/50 p-2 rounded-lg transition-colors">
                 <input type="checkbox" v-model="editingPermissions" :value="p.id" class="w-4 h-4 text-primary bg-mako-100 border-mako-300 rounded focus:ring-primary focus:ring-2 dark:bg-mako-800 dark:border-mako-600 accent-primary" />

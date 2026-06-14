@@ -338,9 +338,9 @@ const chartOptions = computed(() => {
         />
       </svg>
     </div>
-    <h2 class="text-xl font-bold">Sin predios agrícolas autorizados</h2>
+    <h2 class="text-xl font-bold">Sin Zonas autorizadas</h2>
     <p class="text-sm text-mako-500 dark:text-mako-400 mt-2 max-w-md">
-      Su usuario no cuenta con permisos para visualizar ningún predio agrícola en este momento. Por
+      Su usuario no cuenta con permisos para visualizar nada en este momento. Por
       favor, póngase en contacto con su Administrador.
     </p>
   </div>
@@ -495,12 +495,12 @@ const chartOptions = computed(() => {
       </div>
     </div>
 
-    <!-- SIDEBAR DE PREDIOS (1 columna en escritorio) -->
+    <!-- SIDEBAR DE PREDIOS (ZONAS) (1 columna en escritorio) -->
     <div class="xl:col-span-1 space-y-4">
       <div
         class="p-6 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md h-full"
       >
-        <h2 class="text-lg font-semibold mb-4 flex items-center gap-2">
+        <h2 class="text-normal font-semibold mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -509,7 +509,7 @@ const chartOptions = computed(() => {
               d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
             />
           </svg>
-          Seleccionar Predio
+          Seleccionar Zona
         </h2>
 
         <div class="space-y-3">
