@@ -210,7 +210,7 @@ const getPermissionNames = (permissionIds) => {
 <template>
   <div class="space-y-8 max-w-6xl mx-auto">
     <!-- Encabezado -->
-    <div class="flex justify-between items-center">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
       <div>
         <h1 class="text-3xl font-bold tracking-tight">Administración de Personal</h1>
         <p class="text-sm text-mako-500 dark:text-mako-400 mt-1">
@@ -419,7 +419,7 @@ const getPermissionNames = (permissionIds) => {
               </button>
               <button
                 @click="savePermissions"
-                class="px-4 py-2 bg-primary text-mako-950 font-bold text-xs rounded-xl hover:shadow-[0_0_10px_rgba(0,209,94,0.3)]"
+                class="px-4 py-2 bg-primary text-white dark:text-mako-950 font-bold text-xs rounded-xl hover:shadow-[0_0_10px_rgba(0,209,94,0.3)]"
               >
                 Guardar Accesos
               </button>
@@ -549,7 +549,7 @@ const getPermissionNames = (permissionIds) => {
             <button @click="editingUser = null" class="px-4 py-2 border border-mako-300 dark:border-mako-700 text-xs rounded-xl hover:bg-mako-100 dark:hover:bg-white/5">
               Cancelar
             </button>
-            <button @click="saveWorkerDetails" class="px-4 py-2 bg-primary text-mako-950 font-bold text-xs rounded-xl hover:shadow-[0_0_10px_rgba(0,209,94,0.3)]">
+            <button @click="saveWorkerDetails" class="px-4 py-2 bg-primary text-white dark:text-mako-950 font-bold text-xs rounded-xl hover:shadow-[0_0_10px_rgba(0,209,94,0.3)]">
               Guardar Cambios
             </button>
           </div>

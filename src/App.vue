@@ -1,11 +1,12 @@
 <script setup>
 // imports
 import { Toaster } from 'vue-sonner'
+import 'vue-sonner/style.css'
 </script>
 
 <template>
   <router-view />
-  <Toaster position="top-right" richColors closeButton />
+  <Toaster position="top-center" richColors closeButton />
 </template>
 
 <style lang="postcss">
