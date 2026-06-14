@@ -136,6 +136,9 @@ const resetLayouts = async () => {
   if (isResetting.value) return
   isResetting.value = true
   
+  // Guardar estado de reseteo para evitar que las vistas guarden posiciones incorrectas
+  localStorage.setItem('is_resetting_layout', 'true')
+  
   try {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 3000)
@@ -162,7 +165,8 @@ const resetLayouts = async () => {
     
     setTimeout(() => {
       isResetting.value = false
-    }, 500)
+      localStorage.removeItem('is_resetting_layout')
+    }, 1000)
   }
 }
 

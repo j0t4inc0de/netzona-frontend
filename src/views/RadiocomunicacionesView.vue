@@ -69,7 +69,7 @@ let grid = null
 const initGrid = async () => {
   await nextTick()
   if (grid) {
-    grid.off('change')
+    grid.off('dragstop resizestop')
     grid.destroy(false)
     grid = null
   }
@@ -127,9 +127,10 @@ const initGrid = async () => {
         isGridLoading.value = false
       }, 500)
 
-      // Handle Save
-      grid.on('change', async () => {
+      // Handle Save (solo al terminar de arrastrar o redimensionar de forma manual)
+      grid.on('dragstop resizestop', async () => {
         if (isGridLoading.value) return
+        if (localStorage.getItem('is_resetting_layout') === 'true') return
         if (!selectedCerro.value || !selectedCerro.value.dashboard_template_id) return
         
         const layout = grid.save()
@@ -221,7 +222,7 @@ watch(
 
 onUnmounted(() => {
   if (grid) {
-    grid.off('change')
+    grid.off('dragstop resizestop')
     grid.destroy(false)
   }
 })
