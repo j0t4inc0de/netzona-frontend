@@ -376,7 +376,7 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
           class="flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 text-mako-600 dark:text-mako-300 hover:bg-mako-100 dark:hover:bg-white/5"
           active-class="!bg-primary/10 !text-primary font-semibold ring-1 ring-primary/20 dark:ring-primary/40 shadow-sm"
         >
-          Instalación de Nodos
+          Dispositivos
         </router-link>
       </nav>
 
