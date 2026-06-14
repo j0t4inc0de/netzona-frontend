@@ -153,11 +153,14 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
 
       // Agregar en secuencial para prevenir SQLite lock
       for (const siteId of toAdd) {
+        const cerro = cerros.value.find(c => c.id === siteId)
+        const siteEmpresa = cerro?.client || finalEmpresaId
+
         const accRes = await api('/cuentas/accesos/', {
           method: 'POST',
           body: JSON.stringify({
             usuario: realUserId,
-            empresa: finalEmpresaId,
+            empresa: siteEmpresa,
             sitio: siteId,
             activo: true
           })
@@ -328,7 +331,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
             const cerro = {
               id: sitio.id,
               name: sitio.nombre,
-              client: sitio.empresa_id,
+              client: sitio.empresa,
               lat: sitio.latitud ? parseFloat(sitio.latitud) : -36.6083,
               lng: sitio.longitud ? parseFloat(sitio.longitud) : -72.1022,
               zoom: 15,
