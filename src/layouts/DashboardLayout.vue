@@ -128,9 +128,7 @@ const handleChangePassword = async () => {
   }
 }
 
-const triggerResetConfirmation = () => {
-  showConfirmReset.value = true
-}
+const showPasswordForm = ref(false)
 
 const resetLayouts = async () => {
   if (isResetting.value) return
@@ -499,108 +497,116 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
 
     <!-- Modal de Configuración -->
     <div v-if="showSettings" class="fixed inset-0 bg-mako-950/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div class="bg-white/95 dark:bg-mako-900/95 border border-mako-200 dark:border-white/10 rounded-[2rem] shadow-2xl w-full max-w-md p-6 relative">
-        <button @click="showSettings = false" class="absolute top-4 right-4 p-2 rounded-full hover:bg-mako-100 dark:hover:bg-white/10">
+      <div class="bg-white dark:bg-mako-900 border border-mako-200 dark:border-white/5 rounded-3xl shadow-2xl w-full max-w-md p-6 relative">
+        <button @click="showSettings = false" class="absolute top-5 right-5 p-2 rounded-full text-mako-400 hover:text-mako-900 hover:bg-mako-100 dark:hover:bg-white/10 transition-colors">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
         
-        <h2 class="text-xl font-bold mb-6 flex items-center gap-2">
-          <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-          Configuraciones
-        </h2>
+        <h2 class="text-xl font-semibold mb-6 text-mako-900 dark:text-white">Ajustes</h2>
 
-        <div class="space-y-6">
-          <!-- Tema -->
-          <div class="flex items-center justify-between p-4 bg-mako-50 dark:bg-mako-800/40 rounded-2xl border border-mako-200 dark:border-white/5">
-            <div>
-              <h3 class="font-bold text-sm">Apariencia</h3>
-              <p class="text-xs text-mako-500 mt-0.5">Alternar modo claro u oscuro</p>
-            </div>
-            <button
-              @click="toggleDark"
-              class="relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-300 outline-none"
-              :class="isDark ? 'bg-primary' : 'bg-mako-300'"
-            >
-              <span class="inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-300" :class="isDark ? 'translate-x-6' : 'translate-x-1'"></span>
+        <div class="space-y-4 divide-y divide-mako-100 dark:divide-white/5">
+          <!-- Seguridad (Collapsible) -->
+          <div class="pt-2">
+            <button @click="showPasswordForm = !showPasswordForm" class="w-full flex items-center justify-between outline-none group">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-mako-100 dark:bg-white/5 flex items-center justify-center text-mako-600 dark:text-mako-300">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                </div>
+                <div class="text-left">
+                  <h3 class="font-medium text-sm text-mako-800 dark:text-mako-100 group-hover:text-primary transition-colors">Seguridad</h3>
+                  <p class="text-[11px] text-mako-500">Actualiza tu contraseña de acceso</p>
+                </div>
+              </div>
+              <svg class="w-4 h-4 text-mako-400 transition-transform duration-300" :class="{ 'rotate-180': showPasswordForm }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
             </button>
-          </div>
- 
-          <!-- Cambiar Contraseña -->
-          <div class="p-4 bg-mako-50 dark:bg-mako-800/40 rounded-2xl border border-mako-200 dark:border-white/5">
-            <h3 class="font-bold text-sm mb-3">Cambiar Contraseña</h3>
-            <form @submit.prevent="handleChangePassword" class="space-y-3">
-              <div>
+            
+            <div v-show="showPasswordForm" class="mt-4 animate-fade-in">
+              <form @submit.prevent="handleChangePassword" class="space-y-2">
                 <input
                   v-model="passwordActual"
                   type="password"
                   placeholder="Contraseña actual"
-                  class="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-mako-900 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-mako-900 dark:text-white"
+                  class="w-full px-4 py-2 text-xs rounded-xl bg-mako-50 dark:bg-mako-950/50 border border-transparent focus:border-primary focus:bg-white dark:focus:bg-mako-900 outline-none transition-all text-mako-900 dark:text-white placeholder-mako-400"
                   required
                 />
-              </div>
-              <div class="grid grid-cols-2 gap-2">
                 <input
                   v-model="passwordNueva"
                   type="password"
                   placeholder="Nueva contraseña"
-                  class="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-mako-900 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-mako-900 dark:text-white"
+                  class="w-full px-4 py-2 text-xs rounded-xl bg-mako-50 dark:bg-mako-950/50 border border-transparent focus:border-primary focus:bg-white dark:focus:bg-mako-900 outline-none transition-all text-mako-900 dark:text-white placeholder-mako-400"
                   required
                 />
                 <input
                   v-model="passwordNuevaConfirmacion"
                   type="password"
-                  placeholder="Confirmar nueva"
-                  class="w-full px-3 py-2 text-xs rounded-xl bg-white dark:bg-mako-900 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-mako-900 dark:text-white"
+                  placeholder="Confirmar nueva contraseña"
+                  class="w-full px-4 py-2 text-xs rounded-xl bg-mako-50 dark:bg-mako-950/50 border border-transparent focus:border-primary focus:bg-white dark:focus:bg-mako-900 outline-none transition-all text-mako-900 dark:text-white placeholder-mako-400"
                   required
                 />
+
+                <div v-if="changePasswordError || changePasswordSuccess" class="pt-1">
+                  <p v-if="changePasswordError" class="text-red-500 text-[11px] font-medium text-center">
+                    {{ changePasswordError }}
+                  </p>
+                  <p v-if="changePasswordSuccess" class="text-green-500 text-[11px] font-medium text-center">
+                    {{ changePasswordSuccess }}
+                  </p>
+                </div>
+
+                <div class="flex justify-end pt-2">
+                  <button
+                    type="submit"
+                    :disabled="isChangingPassword"
+                    class="px-4 py-2 bg-primary hover:bg-primary/90 text-white font-semibold text-[11px] rounded-xl shadow-md shadow-primary/20 transition-all disabled:opacity-50"
+                  >
+                    {{ isChangingPassword ? 'Guardando...' : 'Cambiar contraseña' }}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- Tema -->
+          <div class="flex items-center justify-between pt-4">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <svg v-if="!isDark" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
               </div>
-
-              <p v-if="changePasswordError" class="text-red-500 text-[10px] font-semibold text-center bg-red-500/10 border border-red-500/20 py-1 rounded-lg">
-                {{ changePasswordError }}
-              </p>
-              <p v-if="changePasswordSuccess" class="text-green-600 dark:text-green-400 text-[10px] font-semibold text-center bg-green-500/10 border border-green-500/20 py-1 rounded-lg">
-                {{ changePasswordSuccess }}
-              </p>
-
-              <button
-                type="submit"
-                :disabled="isChangingPassword"
-                class="w-full py-2 bg-primary hover:bg-primary/95 text-white font-bold text-xs rounded-xl transition-all shadow-md disabled:opacity-50"
-              >
-                {{ isChangingPassword ? 'Actualizando...' : 'Actualizar contraseña' }}
-              </button>
-            </form>
+              <div>
+                <h3 class="font-medium text-sm text-mako-800 dark:text-mako-100">Apariencia</h3>
+                <p class="text-[11px] text-mako-500">Tema actual: {{ isDark ? 'Oscuro' : 'Claro' }}</p>
+              </div>
+            </div>
+            <button
+              @click="toggleDark"
+              class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 outline-none"
+              :class="isDark ? 'bg-primary' : 'bg-mako-300 dark:bg-mako-700'"
+            >
+              <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300" :class="isDark ? 'translate-x-6' : 'translate-x-1'"></span>
+            </button>
           </div>
 
           <!-- Restablecer Layout -->
-          <div class="p-4 bg-red-500/5 rounded-2xl border border-red-500/20 transition-all duration-300">
-            <div v-if="!showConfirmReset">
-              <div>
-                <h3 class="font-bold text-sm text-red-500">Restaurar Diseño (GridStack)</h3>
-                <p class="text-xs text-mako-500 dark:text-mako-400 mt-1 mb-3">Si alguna vez desordenaste tus tarjetas, presiona este botón para devolverlas a su posición original de fábrica.</p>
+          <div class="pt-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center text-red-500 shrink-0">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                </div>
+                <div>
+                  <h3 class="font-medium text-sm text-mako-800 dark:text-mako-100">Restaurar Diseño</h3>
+                  <p class="text-[11px] text-mako-500 max-w-[180px]">Devuelve las tarjetas a su estado inicial.</p>
+                </div>
               </div>
-              <button @click="triggerResetConfirmation" class="w-full py-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 font-bold text-xs rounded-xl border border-red-500/30 transition-colors">
-                Restaurar todas las tarjetas
+              
+              <button @click="resetLayouts" :disabled="isResetting" class="px-4 py-2 bg-mako-100 hover:bg-red-500 dark:bg-white/5 dark:hover:bg-red-500 hover:text-white text-mako-700 dark:text-mako-300 font-medium text-[11px] rounded-xl transition-colors flex items-center gap-1.5 disabled:opacity-50">
+                <svg v-if="isResetting" class="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Restaurar
               </button>
-            </div>
-            
-            <div v-else class="text-center space-y-3 animate-pulse">
-              <div>
-                <h3 class="font-bold text-sm text-red-500">¿Estás seguro?</h3>
-                <p class="text-xs text-mako-500 dark:text-mako-400 mt-1">Se perderán las posiciones personalizadas de todo el sistema. Esta acción no se puede deshacer.</p>
-              </div>
-              <div class="flex gap-2 justify-center mt-3">
-                <button @click="showConfirmReset = false" class="px-4 py-2 text-xs font-bold bg-mako-200 dark:bg-mako-700 text-mako-700 dark:text-mako-200 rounded-xl hover:bg-mako-300 dark:hover:bg-mako-600 transition-colors">
-                  Cancelar
-                </button>
-                <button @click="resetLayouts" :disabled="isResetting" class="px-4 py-2 text-xs font-bold bg-red-500 hover:bg-red-600 text-white rounded-xl shadow-lg shadow-red-500/30 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-                  <svg v-if="isResetting" class="animate-spin h-3.5 w-3.5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  {{ isResetting ? 'Restaurando...' : 'Sí, restaurar' }}
-                </button>
-              </div>
             </div>
           </div>
         </div>
