@@ -17,25 +17,13 @@ const router = createRouter({
       children: [
         {
           path: '',
-          redirect: () => {
-            const auth = useAuthStore()
-            if (auth.userRole === 'tecnico') return '/tecnico'
-            // Si es trabajador y sólo tiene acceso a cerro, o tiene primer acceso a cerro
-            if (auth.userRole === 'trabajador' && !auth.accessibleItems.includes('predio-1') && auth.accessibleItems.includes('cerro-1')) {
-              return '/dashboard/radiocomunicaciones'
-            }
-            return '/dashboard/agricola'
-          }
+          name: 'dashboard-home',
+          component: () => import('../views/DashboardHome.vue'),
         },
         {
-          path: 'agricola',
-          name: 'agricola',
-          component: () => import('../views/AgricolaView.vue'),
-        },
-        {
-          path: 'radiocomunicaciones',
-          name: 'radiocomunicaciones',
-          component: () => import('../views/RadiocomunicacionesView.vue'),
+          path: 'cerro/:id',
+          name: 'cerro-view',
+          component: () => import('../views/CerroView.vue'),
         }
       ]
     },

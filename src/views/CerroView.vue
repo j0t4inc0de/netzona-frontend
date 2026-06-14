@@ -8,29 +8,34 @@ import 'leaflet/dist/leaflet.css'
 import { GridStack } from 'gridstack'
 import 'gridstack/dist/gridstack.min.css'
 
+import { useRoute } from 'vue-router'
+
 const auth = useAuthStore()
 const store = useTelemetricsStore()
 const isDark = useDark()
+const route = useRoute()
 
-// Filtrar predios por permisos
-const allowedPredios = computed(() => {
-  if (auth.userRole === 'admin' || auth.userRole === 'tecnico') {
-    return store.predios
-  }
-  return store.predios.filter((p) => auth.accessibleItems.includes(p.id))
+const selectedCerroId = computed(() => route.params.id)
+
+const selectedCerro = computed(() => {
+  return store.cerros.find(c => c.id === selectedCerroId.value)
 })
 
-// Predio Seleccionado
-const selectedPredioId = ref('')
+const allowedZonas = computed(() => {
+  return selectedCerro.value?.zonas || []
+})
 
-watch(allowedPredios, (newVal) => {
-  if (newVal.length > 0 && !selectedPredioId.value) {
-    selectedPredioId.value = newVal[0].id
+// Zona Seleccionada
+const selectedZonaId = ref('')
+
+watch([selectedCerroId, allowedZonas], () => {
+  if (allowedZonas.value.length > 0 && (!selectedZonaId.value || !allowedZonas.value.find(z => z.id === selectedZonaId.value))) {
+    selectedZonaId.value = allowedZonas.value[0].id
   }
 }, { immediate: true })
 
-const selectedPredio = computed(() => {
-  return store.predios.find((p) => p.id === selectedPredioId.value) || null
+const selectedZona = computed(() => {
+  return allowedZonas.value.find((z) => z.id === selectedZonaId.value) || null
 })
 
 // Coordenadas de mapa
@@ -39,9 +44,9 @@ const mapCenter = ref([-36.6083, -72.1022])
 const map = ref(null)
 
 const updateMapLocation = () => {
-  if (selectedPredio.value) {
-    mapCenter.value = [selectedPredio.value.lat, selectedPredio.value.lng]
-    mapZoom.value = selectedPredio.value.zoom
+  if (selectedZona.value) {
+    mapCenter.value = [selectedZona.value.lat, selectedZona.value.lng]
+    mapZoom.value = selectedZona.value.zoom
   }
 }
 
@@ -95,9 +100,9 @@ const initGrid = async () => {
       isGridLoading.value = true
 
       // Load Layout from Backend
-      if (selectedPredio.value && selectedPredio.value.dashboard_template_id) {
+      if (selectedZona.value && selectedZona.value.dashboard_template_id) {
         try {
-          const res = await api(`/cuentas/preferencias/?sitio=${selectedPredio.value.id}&dashboard_template=${selectedPredio.value.dashboard_template_id}`)
+          const res = await api(`/cuentas/preferencias/?sitio=${selectedZona.value.id}&dashboard_template=${selectedZona.value.dashboard_template_id}`)
           if (res.ok) {
             const data = await res.json()
             const finalLayout = []
@@ -112,7 +117,7 @@ const initGrid = async () => {
               finalLayout.push(...mappedLayout)
             }
             // Load static components from localStorage
-            const localStr = localStorage.getItem(`grid_static_${selectedPredio.value.id}`)
+            const localStr = localStorage.getItem(`grid_static_${selectedZona.value.id}`)
             if (localStr) {
               finalLayout.push(...JSON.parse(localStr))
             }
@@ -142,7 +147,7 @@ const initGrid = async () => {
       grid.on('dragstop resizestop', async () => {
         if (isGridLoading.value) return
         if (localStorage.getItem('is_resetting_layout') === 'true') return
-        if (!selectedPredio.value || !selectedPredio.value.dashboard_template_id) return
+        if (!selectedZona.value || !selectedZona.value.dashboard_template_id) return
         
         const layout = grid.save()
         
@@ -170,15 +175,15 @@ const initGrid = async () => {
           }
         })
         
-        localStorage.setItem(`grid_static_${selectedPredio.value.id}`, JSON.stringify(staticLayout))
+        localStorage.setItem(`grid_static_${selectedZona.value.id}`, JSON.stringify(staticLayout))
 
         if (backendLayout.length > 0) {
           try {
             const res = await api('/cuentas/preferencias/', {
               method: 'PUT',
               body: JSON.stringify({
-                sitio_id: selectedPredio.value.id,
-                dashboard_template_id: selectedPredio.value.dashboard_template_id,
+                sitio_id: selectedZona.value.id,
+                dashboard_template_id: selectedZona.value.dashboard_template_id,
                 layout_dashboard: backendLayout
               })
             })
@@ -208,14 +213,14 @@ onMounted(() => {
 })
 
 watch(
-  [selectedPredioId, selectedRange],
-  async ([predioId, range], [oldPredioId, oldRange]) => {
+  [selectedCerroId, selectedZonaId, selectedRange],
+  async ([cerroId, zonaId, range], [oldCerroId, oldZonaId, oldRange]) => {
     updateMapLocation()
     const rangeChanged = oldRange !== undefined && range !== oldRange
-    const predioChanged = oldPredioId !== undefined && oldPredioId !== '' && predioId !== oldPredioId
+    const zonaChanged = oldZonaId !== undefined && oldZonaId !== '' && zonaId !== oldZonaId
     
-    if (predioId && (rangeChanged || predioChanged)) {
-      await store.fetchSiteHistory(predioId, false, range)
+    if (cerroId && zonaId && (rangeChanged || zonaChanged)) {
+      await store.fetchZonaHistory(cerroId, zonaId, range)
     }
     if (!store.isLoading) {
       initGrid()
@@ -242,15 +247,15 @@ onUnmounted(() => {
 
 // Configuración del gráfico ApexCharts
 const chartSeries = computed(() => {
-  if (!selectedPredio.value) return []
+  if (!selectedZona.value) return []
   return [
     {
       name: 'Humedad Suelo (%)',
-      data: selectedPredio.value.history.soilMoisture,
+      data: selectedZona.value.history.soilMoisture,
     },
     {
       name: 'Temperatura Ambient. (°C)',
-      data: selectedPredio.value.history.temperature,
+      data: selectedZona.value.history.temperature,
     },
   ]
 })
@@ -323,7 +328,7 @@ const chartOptions = computed(() => {
   <AppLoader v-if="store.isLoading" />
 
   <div
-    v-else-if="allowedPredios.length === 0"
+    v-else-if="!selectedCerro || allowedZonas.length === 0"
     class="flex flex-col items-center justify-center min-h-[60vh] text-center p-8"
   >
     <div
@@ -351,54 +356,54 @@ const chartOptions = computed(() => {
       <!-- Cuadrícula Drag and Drop (Gridstack) -->
       <div class="grid-stack mt-4">
         <!-- Temperatura -->
-        <div class="grid-stack-item" :gs-id="selectedPredio?.metrics.temp_widget_id || 'widget-temp'" gs-w="3" gs-h="1" gs-x="0" gs-y="0">
+        <div class="grid-stack-item" :gs-id="selectedZona?.metrics.temp_widget_id || 'widget-temp'" gs-w="3" gs-h="1" gs-x="0" gs-y="0">
           <div class="grid-stack-item-content glass-card-agro">
             <p class="label-agro">Temp. Aire</p>
             <h3 class="value-agro">
-              {{ selectedPredio?.metrics.temperature }}<span class="unit-agro">°C</span>
+              {{ selectedZona?.metrics.temperature }}<span class="unit-agro">°C</span>
             </h3>
           </div>
         </div>
 
         <!-- Humedad del Aire -->
-        <div class="grid-stack-item" :gs-id="selectedPredio?.metrics.hum_widget_id || 'widget-hum'" gs-w="3" gs-h="1" gs-x="3" gs-y="0">
+        <div class="grid-stack-item" :gs-id="selectedZona?.metrics.hum_widget_id || 'widget-hum'" gs-w="3" gs-h="1" gs-x="3" gs-y="0">
           <div class="grid-stack-item-content glass-card-agro">
             <p class="label-agro">Humedad Aire</p>
             <h3 class="value-agro">
-              {{ selectedPredio?.metrics.humidity }}<span class="unit-agro">%</span>
+              {{ selectedZona?.metrics.humidity }}<span class="unit-agro">%</span>
             </h3>
           </div>
         </div>
 
         <!-- Humedad del Suelo -->
-        <div class="grid-stack-item" :gs-id="selectedPredio?.metrics.soil_widget_id || 'widget-soil'" gs-w="3" gs-h="1" gs-x="6" gs-y="0">
+        <div class="grid-stack-item" :gs-id="selectedZona?.metrics.soil_widget_id || 'widget-soil'" gs-w="3" gs-h="1" gs-x="6" gs-y="0">
           <div class="grid-stack-item-content glass-card-agro">
             <p class="label-agro">Hum. Suelo</p>
             <h3 class="value-agro text-primary">
-              {{ selectedPredio?.metrics.soilMoisture }}<span class="unit-agro">%</span>
+              {{ selectedZona?.metrics.soilMoisture }}<span class="unit-agro">%</span>
             </h3>
           </div>
         </div>
 
         <!-- Voltaje Panel Solar -->
-        <div class="grid-stack-item" :gs-id="selectedPredio?.metrics.solar_widget_id || 'widget-solar'" gs-w="3" gs-h="1" gs-x="9" gs-y="0">
+        <div class="grid-stack-item" :gs-id="selectedZona?.metrics.solar_widget_id || 'widget-solar'" gs-w="3" gs-h="1" gs-x="9" gs-y="0">
           <div class="grid-stack-item-content glass-card-agro">
             <p class="label-agro">Panel Solar</p>
             <h3 class="value-agro">
-              {{ selectedPredio?.metrics.solarPanelVoltage }}<span class="unit-agro">V</span>
+              {{ selectedZona?.metrics.solarPanelVoltage }}<span class="unit-agro">V</span>
             </h3>
           </div>
         </div>
 
         <!-- Batería del Sensor -->
-        <div class="grid-stack-item" :gs-id="selectedPredio?.metrics.bat_widget_id || 'widget-bat'" gs-w="8" gs-h="1" gs-x="0" gs-y="1">
+        <div class="grid-stack-item" :gs-id="selectedZona?.metrics.bat_widget_id || 'widget-bat'" gs-w="8" gs-h="1" gs-x="0" gs-y="1">
           <div class="grid-stack-item-content glass-card-agro">
             <p class="label-agro">Batería Nodo</p>
             <h3
               class="value-agro"
-              :class="selectedPredio?.metrics.battery < 20 ? 'text-red-500' : ''"
+              :class="selectedZona?.metrics.battery < 20 ? 'text-red-500' : ''"
             >
-              {{ selectedPredio?.metrics.battery }}<span class="unit-agro">%</span>
+              {{ selectedZona?.metrics.battery }}<span class="unit-agro">%</span>
             </h3>
           </div>
         </div>
@@ -409,7 +414,7 @@ const chartOptions = computed(() => {
             class="grid-stack-item-content !p-0 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] overflow-hidden shadow-md relative"
           >
             <l-map
-              v-if="selectedPredio"
+              v-if="selectedZona"
               ref="map"
               :zoom="mapZoom"
               :center="mapCenter"
@@ -424,9 +429,9 @@ const chartOptions = computed(() => {
 
               <!-- Marcadores de Sensores en el Predio -->
               <l-marker
-                v-for="s in selectedPredio.sensors"
+                v-for="s in selectedZona.sensors"
                 :key="s.id"
-                :lat-lng="[selectedPredio.lat + s.latOffset, selectedPredio.lng + s.lngOffset]"
+                :lat-lng="[selectedZona.lat + s.latOffset, selectedZona.lng + s.lngOffset]"
               >
                 <l-popup>
                   <div class="p-1 font-sans text-mako-900">
@@ -476,7 +481,7 @@ const chartOptions = computed(() => {
             </div>
             <div class="flex-1 min-h-[250px] relative">
               <apexchart
-                v-if="selectedPredio && selectedPredio.history.temperature.length > 0"
+                v-if="selectedZona && selectedZona.history.temperature.length > 0"
                 type="area"
                 width="100%"
                 height="100%"
@@ -495,7 +500,7 @@ const chartOptions = computed(() => {
       </div>
     </div>
 
-    <!-- SIDEBAR DE PREDIOS (ZONAS) (1 columna en escritorio) -->
+    <!-- SIDEBAR DE ZONAS (1 columna en escritorio) -->
     <div class="xl:col-span-1 space-y-4">
       <div
         class="p-6 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md h-full"
@@ -509,28 +514,28 @@ const chartOptions = computed(() => {
               d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
             />
           </svg>
-          Seleccionar Zona
+          Zonas
         </h2>
 
         <div class="space-y-3">
           <button
-            v-for="p in allowedPredios"
-            :key="p.id"
-            @click="selectedPredioId = p.id"
+            v-for="z in allowedZonas"
+            :key="z.id"
+            @click="selectedZonaId = z.id"
             class="w-full text-left p-4 rounded-2xl border transition-all duration-200 flex flex-col justify-between"
             :class="
-              selectedPredioId === p.id
+              selectedZonaId === z.id
                 ? 'bg-primary/10 border-primary shadow-inner text-primary font-semibold'
                 : 'bg-mako-100/50 hover:bg-mako-100 dark:bg-mako-800/20 dark:hover:bg-mako-800/40 border-transparent'
             "
           >
             <div class="flex justify-between items-center w-full">
-              <span class="text-sm font-semibold truncate">{{ p.name }}</span>
+              <span class="text-sm font-semibold truncate">{{ z.name }}</span>
               <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
             </div>
             <div class="flex justify-between w-full mt-2 text-[10px] text-mako-400">
-              <span>{{ p.sensors.length }} Sensores</span>
-              <span>🔋 {{ p.metrics.battery }}%</span>
+              <span>{{ z.sensors.length }} Sensores</span>
+              <span>🔋 {{ z.metrics.battery }}%</span>
             </div>
           </button>
         </div>
