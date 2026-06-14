@@ -229,9 +229,31 @@ const getPermissionNames = (permissionIds) => {
         <div class="px-5 py-2.5 bg-mako-100 dark:bg-mako-800 rounded-xl text-xs font-semibold text-mako-600 dark:text-mako-300 w-full sm:w-auto text-center border border-mako-200 dark:border-mako-700">
           Rol: <span class="text-primary font-bold">{{ authStore.currentUser?.role === 'tecnico' ? 'Admin Netzona' : 'Administrador' }}</span>
         </div>
-        <button @click="isAddModalOpen = true" class="w-full sm:w-auto px-5 py-2.5 bg-primary text-white font-bold rounded-xl hover:shadow-[0_0_20px_rgba(0,209,94,0.4)] transition-all flex items-center justify-center gap-2">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-          Nuevo Usuario
+        <button
+          @click="isAddModalOpen = true"
+          class="rounded-xl relative w-full sm:w-48 h-12 cursor-pointer flex items-center border border-primary bg-primary group overflow-hidden transition-all hover:shadow-[0_0_20px_rgba(0,209,94,0.4)]"
+        >
+          <span
+            class="text-white font-bold w-full text-center sm:text-left sm:ml-6 transform group-hover:translate-x-40 transition-all duration-300"
+          >
+            Nuevo Usuario
+          </span>
+          <span
+            class="absolute right-0 h-full w-12 rounded-xl bg-primary flex items-center justify-center transform group-hover:translate-x-0 group-hover:w-full transition-all duration-300"
+          >
+            <svg
+              class="w-6 h-6 text-white"
+              fill="none"
+              stroke="currentColor"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <line x1="12" x2="12" y1="5" y2="19"></line>
+              <line x1="5" x2="19" y1="12" y2="12"></line>
+            </svg>
+          </span>
         </button>
       </div>
     </div>
