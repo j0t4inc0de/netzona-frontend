@@ -140,14 +140,21 @@ const resetLayouts = async () => {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 3000)
     
-    await api('/cuentas/preferencias/dashboard/', { 
+    await api('/cuentas/preferencias/', { 
       method: 'DELETE',
       signal: controller.signal
     })
     clearTimeout(timeoutId)
-  } catch {
-    console.warn("Backend no disponible, procediendo con reseteo visual.")
+  } catch (error) {
+    console.warn("Backend no disponible o error al reiniciar preferencias:", error)
   } finally {
+    // Limpiar layouts estáticos guardados localmente
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('grid_static_')) {
+        localStorage.removeItem(key)
+      }
+    })
+
     toast.success('Diseño restaurado por defecto exitosamente')
     showConfirmReset.value = false
     showSettings.value = false
