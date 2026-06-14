@@ -52,7 +52,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
           activo: true
         })
       })
-      await fetchDataFromBackend()
+      await fetchWorkersFromBackend()
     } catch (error) {
       console.error('Error on registerNode', error)
     }
@@ -89,10 +89,10 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
       if (res.ok) {
         const newWorker = await res.json()
         
-        // Asignar accesos uno a uno (sólo si tiene accesos seleccionados)
+        // Asignar accesos en paralelo (sólo si tiene accesos seleccionados)
         if (selectedPermissions && selectedPermissions.length > 0) {
-          for (const siteId of selectedPermissions) {
-            await api('/cuentas/accesos/', {
+          const promises = selectedPermissions.map(siteId => {
+            return api('/cuentas/accesos/', {
               method: 'POST',
               body: JSON.stringify({
                 usuario: newWorker.id,
@@ -101,7 +101,8 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                 activo: true
               })
             })
-          }
+          })
+          await Promise.all(promises)
         }
       } else {
         const errData = await res.json().catch(() => ({}))
@@ -112,7 +113,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
       throw error
     }
 
-    await fetchDataFromBackend()
+    await fetchWorkersFromBackend()
   }
 
   const removeWorker = async (id) => {
@@ -153,9 +154,9 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
       const toAdd = newPermissions.filter(siteId => !existingAccesos.some(acc => acc.sitio === siteId && acc.activo))
       const toDelete = existingAccesos.filter(acc => !newPermissions.includes(acc.sitio) && acc.activo)
 
-      // Agregar
-      for (const siteId of toAdd) {
-        await api('/cuentas/accesos/', {
+      // Agregar y Eliminar en paralelo
+      const addPromises = toAdd.map(siteId => {
+        return api('/cuentas/accesos/', {
           method: 'POST',
           body: JSON.stringify({
             usuario: realUserId,
@@ -164,20 +165,21 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
             activo: true
           })
         })
-      }
+      })
 
-      // Eliminar
-      for (const acc of toDelete) {
-        await api(`/cuentas/accesos/${acc.id}/`, {
+      const delPromises = toDelete.map(acc => {
+        return api(`/cuentas/accesos/${acc.id}/`, {
           method: 'DELETE'
         })
-      }
+      })
+
+      await Promise.all([...addPromises, ...delPromises])
     } catch (error) {
       console.error('Backend API fail on updateWorkerPermissions', error)
       throw error
     }
 
-    await fetchDataFromBackend()
+    await fetchWorkersFromBackend()
   }
 
   // --- ACCIONES DE DISPOSITIVO ---
@@ -261,6 +263,54 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
       }
     } catch (e) {
       console.warn("Polling de estado actual fallido", e)
+    }
+  }
+
+  // --- RECARGAR SOLO TRABAJADORES ---
+  const fetchWorkersFromBackend = async () => {
+    try {
+      const resWorkers = await api('/cuentas/usuarios/')
+      const resAccesos = await api('/cuentas/accesos/?activo=true')
+      if (resWorkers.ok) {
+        const dataWorkers = await resWorkers.json()
+        const workersList = dataWorkers.results || dataWorkers
+        
+        let accesosList = []
+        if (resAccesos && resAccesos.ok) {
+          const dataAccesos = await resAccesos.json()
+          accesosList = dataAccesos.results || dataAccesos
+        }
+
+        workers.value = workersList.map(w => {
+          let role = 'trabajador'
+          if (w.is_superuser || (w.group_names && w.group_names.includes('admin_netzona'))) {
+            role = 'tecnico'
+          } else if (w.group_names && w.group_names.includes('cliente_empresa')) {
+            role = 'admin'
+          }
+
+          const userAccesos = accesosList
+            .filter(acc => acc.usuario === w.id)
+            .map(acc => acc.sitio)
+            .filter(Boolean)
+
+          return {
+            id: w.id,
+            name: `${w.nombres || ''} ${w.apellidos || ''}`.trim() || w.email || w.username,
+            username: w.email || w.username,
+            nombres: w.nombres || '',
+            apellidos: w.apellidos || '',
+            rut: w.rut || '',
+            role: role,
+            empresa: w.empresa,
+            group_names: w.group_names || [],
+            groups: w.groups || [],
+            permissions: userAccesos
+          }
+        })
+      }
+    } catch (e) {
+      console.error('Error al sincronizar trabajadores:', e)
     }
   }
 
@@ -427,51 +477,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
     }
 
     // 3. Obtener Trabajadores (Usuarios) y sus Accesos
-    let workersList = []
-    try {
-      const resWorkers = await api('/cuentas/usuarios/')
-      const resAccesos = await api('/cuentas/accesos/?activo=true')
-      if (resWorkers.ok) {
-        const dataWorkers = await resWorkers.json()
-        workersList = dataWorkers.results || dataWorkers
-        
-        let accesosList = []
-        if (resAccesos && resAccesos.ok) {
-          const dataAccesos = await resAccesos.json()
-          accesosList = dataAccesos.results || dataAccesos
-        }
-
-        workers.value = workersList.map(w => {
-          let role = 'trabajador'
-          if (w.is_superuser || (w.group_names && w.group_names.includes('admin_netzona'))) {
-            role = 'tecnico'
-          } else if (w.group_names && w.group_names.includes('cliente_empresa')) {
-            role = 'admin'
-          }
-
-          const userAccesos = accesosList
-            .filter(acc => acc.usuario === w.id)
-            .map(acc => acc.sitio)
-            .filter(Boolean)
-
-          return {
-            id: w.id,
-            name: `${w.nombres || ''} ${w.apellidos || ''}`.trim() || w.email || w.username,
-            username: w.email || w.username,
-            nombres: w.nombres || '',
-            apellidos: w.apellidos || '',
-            rut: w.rut || '',
-            role: role,
-            empresa: w.empresa,
-            group_names: w.group_names || [],
-            groups: w.groups || [],
-            permissions: userAccesos
-          }
-        })
-      }
-    } catch (e) {
-      console.error('Error al sincronizar trabajadores:', e)
-    }
+    await fetchWorkersFromBackend()
 
     // 4. Obtener Grupos
     try {
@@ -494,7 +500,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
       })
     }
     // Loaded users' groups
-    workersList.forEach(w => {
+    workers.value.forEach(w => {
       if (w.group_names && w.groups) {
         w.group_names.forEach((name, idx) => {
           const id = w.groups[idx]
