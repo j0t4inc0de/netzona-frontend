@@ -246,9 +246,9 @@ const getPermissionNames = (permissionIds) => {
       </div>
 
       <!-- Users Table -->
-      <div v-else class="overflow-x-auto custom-scrollbar">
-        <table class="w-full text-left whitespace-nowrap">
-          <thead class="bg-mako-50 dark:bg-mako-800/50 border-b border-mako-100 dark:border-mako-700/50">
+      <div v-else class="overflow-x-auto custom-scrollbar sm:overflow-visible">
+        <table class="w-full text-left whitespace-nowrap block sm:table">
+          <thead class="hidden sm:table-header-group bg-mako-50 dark:bg-mako-800/50 border-b border-mako-100 dark:border-mako-700/50">
             <tr class="text-xs uppercase tracking-widest text-mako-500 dark:text-mako-400 font-bold">
               <th class="px-6 py-5">Usuario</th>
               <th class="px-6 py-5">Contacto</th>
@@ -257,9 +257,10 @@ const getPermissionNames = (permissionIds) => {
               <th class="px-6 py-5 text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-mako-100 dark:divide-mako-800/60">
-            <tr v-for="w in filteredWorkers" :key="w.id" class="hover:bg-mako-50/50 dark:hover:bg-white/5 transition-colors group">
-              <td class="px-6 py-4">
+          <tbody class="flex flex-col sm:table-row-group gap-4 sm:gap-0 p-4 sm:p-0 divide-y-0 sm:divide-y sm:divide-mako-100 dark:sm:divide-mako-800/60">
+            <tr v-for="w in filteredWorkers" :key="w.id" class="block sm:table-row hover:bg-mako-50/50 dark:hover:bg-white/5 transition-colors group bg-white dark:bg-mako-800/40 sm:bg-transparent rounded-2xl sm:rounded-none border border-mako-100 dark:border-mako-700/50 sm:border-0 overflow-hidden shadow-sm sm:shadow-none">
+              <!-- Usuario -->
+              <td class="block sm:table-cell px-4 py-4 sm:px-6 sm:py-4 border-b border-mako-50 dark:border-mako-700/30 sm:border-0 bg-mako-50/50 dark:bg-mako-800/30 sm:bg-transparent">
                 <div class="flex items-center gap-4">
                   <div class="w-11 h-11 rounded-full bg-mako-100 dark:bg-mako-800 flex items-center justify-center text-sm font-bold text-mako-600 dark:text-mako-300 border-2 border-white dark:border-mako-700 shadow-sm shrink-0">
                     {{ w.name.charAt(0).toUpperCase() }}
@@ -270,13 +271,17 @@ const getPermissionNames = (permissionIds) => {
                   </div>
                 </div>
               </td>
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-2 text-sm text-mako-600 dark:text-mako-350 bg-mako-50 dark:bg-mako-800/30 px-3 py-1.5 rounded-lg border border-mako-100 dark:border-mako-700/50 w-max">
-                  <svg class="w-4 h-4 text-mako-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-                  {{ w.username }}
+              <!-- Contacto -->
+              <td class="flex sm:table-cell justify-between items-center px-4 py-3 sm:px-6 sm:py-4 border-b border-mako-50 dark:border-mako-700/30 sm:border-0">
+                <span class="text-[10px] font-bold text-mako-400 uppercase sm:hidden">Contacto</span>
+                <div class="flex items-center gap-2 text-sm text-mako-600 dark:text-mako-350 bg-mako-50 dark:bg-mako-800/30 px-3 py-1.5 rounded-lg border border-mako-100 dark:border-mako-700/50 w-max max-w-[200px] sm:max-w-none truncate">
+                  <svg class="w-4 h-4 text-mako-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                  <span class="truncate">{{ w.username }}</span>
                 </div>
               </td>
-              <td class="px-6 py-4">
+              <!-- Rol -->
+              <td class="flex sm:table-cell justify-between items-center px-4 py-3 sm:px-6 sm:py-4 border-b border-mako-50 dark:border-mako-700/30 sm:border-0">
+                <span class="text-[10px] font-bold text-mako-400 uppercase sm:hidden">Rol</span>
                 <span :class="{
                   'text-blue-600 bg-blue-500/10 dark:text-blue-400': w.role === 'tecnico',
                   'text-amber-600 bg-amber-500/10 dark:text-amber-400': w.role === 'admin',
@@ -285,20 +290,24 @@ const getPermissionNames = (permissionIds) => {
                   {{ w.role === 'tecnico' ? 'Admin Netzona' : w.role === 'admin' ? 'Cliente Empresa' : 'Trabajador' }}
                 </span>
               </td>
-              <td class="px-6 py-4 max-w-xs">
-                <p class="text-xs text-mako-600 dark:text-mako-400 truncate bg-mako-50 dark:bg-mako-800/20 px-3 py-1.5 rounded-lg border border-mako-100 dark:border-mako-700/30" :title="w.role === 'trabajador' ? getPermissionNames(w.permissions) : 'Global (Acceso total)'">
+              <!-- Accesos Permitidos -->
+              <td class="flex sm:table-cell justify-between items-center px-4 py-3 sm:px-6 sm:py-4 border-b border-mako-50 dark:border-mako-700/30 sm:border-0">
+                <span class="text-[10px] font-bold text-mako-400 uppercase sm:hidden shrink-0 mr-4">Accesos</span>
+                <p class="text-xs text-mako-600 dark:text-mako-400 truncate sm:whitespace-normal bg-mako-50 dark:bg-mako-800/20 px-3 py-1.5 rounded-lg border border-mako-100 dark:border-mako-700/30 max-w-[150px] sm:max-w-xs" :title="w.role === 'trabajador' ? getPermissionNames(w.permissions) : 'Global (Acceso total)'">
                   {{ w.role === 'trabajador' ? getPermissionNames(w.permissions) : 'Global (Acceso total)' }}
                 </p>
               </td>
-              <td class="px-6 py-4 text-right">
+              <!-- Acciones -->
+              <td class="flex sm:table-cell justify-between sm:justify-end items-center px-4 py-3 sm:px-6 sm:py-4 bg-mako-50/30 dark:bg-mako-800/20 sm:bg-transparent">
+                <span class="text-[10px] font-bold text-mako-400 uppercase sm:hidden">Acciones</span>
                 <div class="flex gap-1 justify-end">
-                  <button @click="startEditWorker(w)" class="p-2 text-mako-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-xl transition-colors" title="Editar perfil">
+                  <button @click="startEditWorker(w)" class="p-2 text-mako-400 hover:text-blue-500 hover:bg-blue-500/10 bg-white dark:bg-mako-800 sm:bg-transparent shadow-sm sm:shadow-none border border-mako-100 dark:border-mako-700 sm:border-0 rounded-xl transition-colors" title="Editar perfil">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                   </button>
-                  <button v-if="w.role === 'trabajador'" @click="startEditPermissions(w)" class="p-2 text-mako-400 hover:text-primary hover:bg-primary/10 rounded-xl transition-colors" title="Editar accesos">
+                  <button v-if="w.role === 'trabajador'" @click="startEditPermissions(w)" class="p-2 text-mako-400 hover:text-primary hover:bg-primary/10 bg-white dark:bg-mako-800 sm:bg-transparent shadow-sm sm:shadow-none border border-mako-100 dark:border-mako-700 sm:border-0 rounded-xl transition-colors" title="Editar accesos">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
                   </button>
-                  <button @click="handleRemoveWorker(w.id)" class="p-2 text-mako-400 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-colors" title="Eliminar usuario">
+                  <button @click="handleRemoveWorker(w.id)" class="p-2 text-mako-400 hover:text-red-500 hover:bg-red-500/10 bg-white dark:bg-mako-800 sm:bg-transparent shadow-sm sm:shadow-none border border-mako-100 dark:border-mako-700 sm:border-0 rounded-xl transition-colors" title="Eliminar usuario">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                   </button>
                 </div>
