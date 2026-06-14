@@ -343,6 +343,7 @@ const chartOptions = computed(() => {
         />
       </svg>
     </div>
+    <!-- test -->
     <h2 class="text-xl font-bold">Sin Zonas autorizadas</h2>
     <p class="text-sm text-mako-500 dark:text-mako-400 mt-2 max-w-md">
       Su usuario no cuenta con permisos para visualizar nada en este momento. Por
