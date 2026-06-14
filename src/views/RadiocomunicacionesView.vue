@@ -114,8 +114,17 @@ const initGrid = async () => {
             if (localStr) {
               finalLayout.push(...JSON.parse(localStr))
             }
+            // Aplicar layout guardado widget a widget para evitar que el resolver de colisiones de Gridstack
+            // mezcle posiciones del DOM con las posiciones guardadas
             if (finalLayout.length > 0) {
-              grid.load(finalLayout, false)
+              grid.batchUpdate()
+              for (const item of finalLayout) {
+                const el = document.querySelector(`[gs-id="${item.id}"]`)
+                if (el) {
+                  grid.update(el, { x: item.x, y: item.y, w: item.w, h: item.h })
+                }
+              }
+              grid.commit()
             }
           }
         } catch (e) {
