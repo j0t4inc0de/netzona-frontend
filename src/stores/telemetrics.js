@@ -267,7 +267,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
   const fetchWorkersFromBackend = async () => {
     try {
       const resWorkers = await api('/cuentas/usuarios/')
-      const resAccesos = await api('/cuentas/accesos/?activo=true')
+      const resAccesos = await api('/cuentas/accesos/?activo=True')
       if (resWorkers.ok) {
         const dataWorkers = await resWorkers.json()
         const workersList = dataWorkers.results || dataWorkers
@@ -324,9 +324,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
           const dataSitios = await resSitios.json()
           const sitios = dataSitios.results || dataSitios
 
-          const newCerros = []
-
-          for (const sitio of sitios) {
+          const newCerros = await Promise.all(sitios.map(async (sitio) => {
             const cerro = {
               id: sitio.id,
               name: sitio.nombre,
@@ -350,7 +348,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                 const dataZonas = await resZonas.json()
                 const zonas = dataZonas.results || dataZonas
 
-                for (const zona of zonas) {
+                const zonasPromises = zonas.map(async (zona) => {
                   const mappedZona = {
                     id: zona.id,
                     name: zona.nombre,
@@ -388,7 +386,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
 
                   const dispositivosZona = allDispositivos.filter(d => d.zona === zona.id || d.zona_codigo === zona.codigo)
                   
-                  for (const d of dispositivosZona) {
+                  await Promise.all(dispositivosZona.map(async (d) => {
                     mappedZona.sensors.push({
                       id: d.id,
                       name: d.nombre,
@@ -425,52 +423,27 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                         })
                       }
 
-                      const d24 = new Date()
-                      d24.setHours(d24.getHours() - 24)
-                      const desde24h = d24.toISOString()
-
-                      const codigosPresentes = ['TEMPERATURA', 'HUMEDAD', 'HUMEDAD_SUELO', 'VOLTAJE_PANEL', 'VOLTAJE', 'POTENCIA']
-                      for (const cod of codigosPresentes) {
-                        try {
-                          const resHist = await api(`/dispositivos/${d.serial}/sensores/${cod}/historial/?desde=${desde24h}`)
-                          if (resHist.ok) {
-                            const dataHist = await resHist.json()
-                            const chartData = dataHist.map(h => ({
-                              x: new Date(h.timestamp || h.fecha).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-                              y: h.valor
-                            }))
-                            
-                            if (chartData.length > 0) {
-                              if (cod === 'TEMPERATURA') mappedZona.history.temperature = chartData
-                              if (cod === 'HUMEDAD') mappedZona.history.humidity = chartData
-                              if (cod === 'HUMEDAD_SUELO') mappedZona.history.soilMoisture = chartData
-                              if (cod === 'VOLTAJE_PANEL') mappedZona.history.solarPanelVoltage = chartData
-                              if (cod === 'VOLTAJE') mappedZona.history.voltage = chartData
-                              if (cod === 'POTENCIA') mappedZona.history.power = chartData
-                            }
-                          }
-                        } catch {
-                          // ignore error
-                        }
-                      }
+                      // Historial se cargará dinámicamente cuando el usuario navegue a la vista de la zona
                     } catch {
                       // ignore error
                     }
-                  }
+                  }))
 
                   const realWeather = await fetchWeatherForecast(mappedZona.lat, mappedZona.lng)
                   if (realWeather) {
                     mappedZona.weatherForecast = realWeather
                   }
                   
-                  cerro.zonas.push(mappedZona)
-                }
+                  return mappedZona
+                })
+                
+                cerro.zonas = await Promise.all(zonasPromises)
               }
             } catch (e) {
               console.warn('Error fetching zonas/dispositivos para cerro', sitio.id, e)
             }
-            newCerros.push(cerro)
-          }
+            return cerro
+          }))
 
           if (newCerros.length > 0) cerros.value = newCerros
         }

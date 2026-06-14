@@ -230,7 +230,7 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
           :title="isDesktopSidebarCollapsed ? cerro.name : ''"
         >
           <svg class="w-5 h-5 shrink-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 3 4 8 5-5 5 15H2L8 3z" />
           </svg>
           <span class="whitespace-nowrap overflow-hidden transition-all duration-300"
                 :class="isDesktopSidebarCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[200px] opacity-100 ml-3'">
@@ -354,7 +354,7 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
           active-class="!bg-primary/10 !text-primary font-semibold ring-1 ring-primary/20 dark:ring-primary/40 shadow-sm"
         >
           <svg class="w-5 h-5 shrink-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 3 4 8 5-5 5 15H2L8 3z" />
           </svg>
           {{ cerro.name }}
         </router-link>

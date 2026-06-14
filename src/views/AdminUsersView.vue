@@ -213,8 +213,6 @@ const getPermissionNames = (permissionIds) => {
   if (!permissionIds || permissionIds.length === 0) return 'Ninguno (Sin accesos)'
   return permissionIds
     .map((id) => {
-      const predio = store.predios.find((p) => p.id === id)
-      if (predio) return predio.name
       const cerro = store.cerros.find((c) => c.id === id)
       if (cerro) return cerro.name
       return id
@@ -414,18 +412,8 @@ const getPermissionNames = (permissionIds) => {
           <div v-if="!selectedGroupId || store.groups.find(g => g.id === selectedGroupId)?.name === 'trabajador'">
             <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-2">Permisos de Visualización (Sitios)</label>
             <div class="space-y-3 max-h-48 overflow-y-auto custom-scrollbar p-3 bg-mako-100/50 dark:bg-mako-800/20 border border-mako-200 dark:border-white/5 rounded-xl">
-              <div v-if="store.predios.length > 0">
-                <p class="text-[10px] uppercase font-bold text-mako-400 mb-2">Zonas:</p>
-                <div class="space-y-2">
-                  <label v-for="p in store.predios" :key="p.id" class="flex items-center gap-3 text-sm cursor-pointer group hover:bg-mako-200/50 dark:hover:bg-mako-700/50 p-2 rounded-lg transition-colors">
-                    <input type="checkbox" v-model="selectedPermissions" :value="p.id" class="w-4 h-4 text-primary bg-mako-100 border-mako-300 rounded focus:ring-primary focus:ring-2 dark:bg-mako-800 dark:border-mako-600 accent-primary" />
-                    <span class="text-mako-700 dark:text-mako-300 group-hover:text-mako-900 dark:group-hover:text-white transition-colors">{{ p.name }}</span>
-                  </label>
-                </div>
-              </div>
-
-              <div v-if="store.cerros.length > 0" :class="{'mt-4': store.predios.length > 0}">
-                <p class="text-[10px] uppercase font-bold text-mako-400 mb-2">Cerros Telecom</p>
+              <div v-if="store.cerros.length > 0">
+                <p class="text-[10px] uppercase font-bold text-mako-400 mb-2">Cerros (Sitios):</p>
                 <div class="space-y-2">
                   <label v-for="c in store.cerros" :key="c.id" class="flex items-center gap-3 text-sm cursor-pointer group hover:bg-mako-200/50 dark:hover:bg-mako-700/50 p-2 rounded-lg transition-colors">
                     <input type="checkbox" v-model="selectedPermissions" :value="c.id" class="w-4 h-4 text-primary bg-mako-100 border-mako-300 rounded focus:ring-primary focus:ring-2 dark:bg-mako-800 dark:border-mako-600 accent-primary" />
@@ -529,18 +517,8 @@ const getPermissionNames = (permissionIds) => {
         </p>
 
         <div class="space-y-4 max-h-64 overflow-y-auto custom-scrollbar pr-2">
-          <div v-if="store.predios.length > 0" class="bg-mako-50 dark:bg-mako-800/30 p-4 rounded-xl border border-mako-100 dark:border-mako-700/50">
-            <p class="text-xs uppercase font-bold text-mako-400 mb-3">ZONAS:</p>
-            <div class="space-y-2">
-              <label v-for="p in store.predios" :key="p.id" class="flex items-center gap-3 text-sm cursor-pointer group hover:bg-mako-200/50 dark:hover:bg-mako-700/50 p-2 rounded-lg transition-colors">
-                <input type="checkbox" v-model="editingPermissions" :value="p.id" class="w-4 h-4 text-primary bg-mako-100 border-mako-300 rounded focus:ring-primary focus:ring-2 dark:bg-mako-800 dark:border-mako-600 accent-primary" />
-                <span class="text-mako-700 dark:text-mako-300 group-hover:text-mako-900 dark:group-hover:text-white">{{ p.name }}</span>
-              </label>
-            </div>
-          </div>
-
           <div v-if="store.cerros.length > 0" class="bg-mako-50 dark:bg-mako-800/30 p-4 rounded-xl border border-mako-100 dark:border-mako-700/50">
-            <p class="text-xs uppercase font-bold text-mako-400 mb-3">Cerros Telecom</p>
+            <p class="text-xs uppercase font-bold text-mako-400 mb-3">Cerros (Sitios)</p>
             <div class="space-y-2">
               <label v-for="c in store.cerros" :key="c.id" class="flex items-center gap-3 text-sm cursor-pointer group hover:bg-mako-200/50 dark:hover:bg-mako-700/50 p-2 rounded-lg transition-colors">
                 <input type="checkbox" v-model="editingPermissions" :value="c.id" class="w-4 h-4 text-primary bg-mako-100 border-mako-300 rounded focus:ring-primary focus:ring-2 dark:bg-mako-800 dark:border-mako-600 accent-primary" />

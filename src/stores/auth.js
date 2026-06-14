@@ -36,7 +36,7 @@ export const useAuthStore = defineStore('auth', () => {
         let permissions = []
         if (role === 'trabajador') {
           try {
-            const resAcc = await api(`/cuentas/accesos/?usuario=${userData.id}&activo=true`)
+            const resAcc = await api(`/cuentas/accesos/?usuario=${userData.id}&activo=True`)
             if (resAcc.ok) {
               const dataAcc = await resAcc.json()
               const accList = dataAcc.results || dataAcc
