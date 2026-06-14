@@ -70,6 +70,7 @@ let grid = null
 const initGrid = async () => {
   await nextTick()
   if (grid) {
+    grid.off('change')
     grid.destroy(false)
     grid = null
   }
@@ -223,7 +224,10 @@ watch(
 )
 
 onUnmounted(() => {
-  if (grid) grid.destroy(false)
+  if (grid) {
+    grid.off('change')
+    grid.destroy(false)
+  }
 })
 
 // Configuración del gráfico ApexCharts
