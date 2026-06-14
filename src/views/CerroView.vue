@@ -102,7 +102,7 @@ const initGrid = async () => {
       // Load Layout from Backend
       if (selectedZona.value && selectedZona.value.dashboard_template_id) {
         try {
-          const res = await api(`/cuentas/preferencias/?sitio=${selectedZona.value.id}&dashboard_template=${selectedZona.value.dashboard_template_id}`)
+          const res = await api(`/cuentas/preferencias/?sitio=${selectedCerro.value.id}&dashboard_template=${selectedZona.value.dashboard_template_id}`)
           if (res.ok) {
             const data = await res.json()
             const finalLayout = []
@@ -131,7 +131,7 @@ const initGrid = async () => {
                   grid.update(el, { x: item.x, y: item.y, w: item.w, h: item.h })
                 }
               }
-              grid.commit()
+              grid.batchUpdate(false)
             }
           }
         } catch (e) {
@@ -182,7 +182,7 @@ const initGrid = async () => {
             const res = await api('/cuentas/preferencias/', {
               method: 'PUT',
               body: JSON.stringify({
-                sitio_id: selectedZona.value.id,
+                sitio_id: selectedCerro.value.id,
                 dashboard_template_id: selectedZona.value.dashboard_template_id,
                 layout_dashboard: backendLayout
               })
@@ -408,7 +408,7 @@ const chartOptions = computed(() => {
           </div>
         </div>
 
-        <!-- Mapa de Predio -->
+        <!-- Mapa del Cerro (Sitio) -->
         <div class="grid-stack-item" gs-id="widget-map" gs-w="4" gs-h="2" gs-x="8" gs-y="1">
           <div
             class="grid-stack-item-content !p-0 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] overflow-hidden shadow-md relative"
@@ -427,7 +427,7 @@ const chartOptions = computed(() => {
                 name="CartoDB Voyager"
               ></l-tile-layer>
 
-              <!-- Marcadores de Sensores en el Predio -->
+              <!-- Marcadores de Sensores en el Cerro -->
               <l-marker
                 v-for="s in selectedZona.sensors"
                 :key="s.id"

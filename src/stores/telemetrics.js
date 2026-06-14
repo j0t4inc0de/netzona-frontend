@@ -574,7 +574,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
       // Como optimization, usamos los seriales que ya están guardados en zona.sensors y zona.repeaters
       const listDisp = [...zona.sensors, ...zona.repeaters]
 
-      for (const d of listDisp) {
+      await Promise.all(listDisp.map(async (d) => {
         try {
           const resDash = await api(`/dispositivos/${d.serial}/dashboard/`)
           if (resDash.ok) {
@@ -582,7 +582,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
             const widgets = dash.dashboard ? dash.dashboard.widgets : dash.widgets || []
             const codigosPresentes = widgets.map(w => w.codigo_sensor).filter(Boolean)
             
-            for (const cod of codigosPresentes) {
+            await Promise.all(codigosPresentes.map(async (cod) => {
               try {
                 const resHist = await api(`/dispositivos/${d.serial}/sensores/${cod}/historial/?desde=${desde}&hasta=${hasta}`)
                 if (resHist.ok) {
@@ -607,12 +607,12 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
               } catch {
                 // ignore error
               }
-            }
+            }))
           }
         } catch {
           // ignore error
         }
-      }
+      }))
     } catch (e) {
       console.error('Error al actualizar historial', e)
     }
