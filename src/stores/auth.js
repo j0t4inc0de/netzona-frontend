@@ -50,10 +50,13 @@ export const useAuthStore = defineStore('auth', () => {
         currentUser.value = {
           id: userData.id,
           username: userData.email,
-          name: `${userData.first_name || userData.nombres || ''} ${userData.last_name || userData.apellidos || ''}`.trim() || userData.email,
+          name: `${userData.nombres || ''} ${userData.apellidos || ''}`.trim() || userData.email,
           role: role,
           empresa: userData.empresa,
           permissions: permissions,
+          group_names: userData.group_names || [],
+          groups: userData.groups || [],
+          permission_codenames: userData.permission_codenames || [],
         }
       } else {
         logout()

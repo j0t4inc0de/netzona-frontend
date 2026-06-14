@@ -16,6 +16,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
 
   // --- TRABAJADORES (Gestionado por Cliente Admin) ---
   const workers = ref([])
+  const groups = ref([])
 
   // --- CASO 1: PREDIOS AGRÍCOLAS ---
   const predios = ref([])
@@ -58,61 +59,57 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
   }
 
   // --- ACCIONES CLIENTE ADMIN ---
-  const addWorker = async (name, username, selectedPermissions) => {
+  const addWorker = async (name, username, selectedPermissions, groupId = null, rut = '', empresaId = null) => {
     const authStore = useAuthStore()
-    const empresaId = authStore.currentUser?.empresa || 1
+    const finalEmpresaId = empresaId || authStore.currentUser?.empresa || 1
 
     const nameParts = name.trim().split(/\s+/)
     const nombres = nameParts[0] || ''
     const apellidos = nameParts.slice(1).join(' ') || ''
-    const email = username.includes('@') ? username : `${username}@netzona.cl`
-    const rut = `12345678-9` // RUT dummy requerido por el backend
+    const email = username.includes('@') ? username.trim().toLowerCase() : `${username.trim().toLowerCase()}@netzona.cl`
 
-    let createdId = `worker-${Date.now()}`
+    const body = {
+      nombres,
+      apellidos,
+      email,
+      rut: rut.trim(),
+      empresa: finalEmpresaId
+    }
+
+    if (groupId) {
+      body.groups = [groupId]
+    }
+
     try {
       const res = await api('/cuentas/usuarios/', {
         method: 'POST',
-        body: JSON.stringify({
-          nombres,
-          apellidos,
-          email,
-          rut,
-          empresa: empresaId,
-          password: 'Password123!'
-        })
+        body: JSON.stringify(body)
       })
 
       if (res.ok) {
         const newWorker = await res.json()
-        createdId = newWorker.id
         
-        // Asignar accesos uno a uno
-        for (const siteId of selectedPermissions) {
-          await api('/cuentas/accesos/', {
-            method: 'POST',
-            body: JSON.stringify({
-              usuario: newWorker.id,
-              empresa: empresaId,
-              sitio: siteId,
-              activo: true
+        // Asignar accesos uno a uno (sólo si tiene accesos seleccionados)
+        if (selectedPermissions && selectedPermissions.length > 0) {
+          for (const siteId of selectedPermissions) {
+            await api('/cuentas/accesos/', {
+              method: 'POST',
+              body: JSON.stringify({
+                usuario: newWorker.id,
+                empresa: finalEmpresaId,
+                sitio: siteId,
+                activo: true
+              })
             })
-          })
+          }
         }
+      } else {
+        const errData = await res.json().catch(() => ({}))
+        throw errData
       }
     } catch (error) {
-      console.warn('Backend API missing or failed, using fallback logic for addWorker', error)
-    }
-
-    // Agregar al estado local inmediatamente
-    const exists = workers.value.some(w => w.id === createdId || w.username === email)
-    if (!exists) {
-      workers.value.push({
-        id: createdId,
-        name: name.trim(),
-        username: email,
-        role: 'trabajador',
-        permissions: [...selectedPermissions]
-      })
+      console.error('Error on addWorker', error)
+      throw error
     }
 
     await fetchDataFromBackend()
@@ -121,9 +118,14 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
   const removeWorker = async (id) => {
     try {
       const realId = id.toString().replace('worker-', '')
-      await api(`/cuentas/usuarios/${realId}/`, { method: 'DELETE' })
+      const res = await api(`/cuentas/usuarios/${realId}/`, { method: 'DELETE' })
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw errData
+      }
     } catch (error) {
-      console.warn('Backend API fail on removeWorker', error)
+      console.error('Backend API fail on removeWorker', error)
+      throw error
     }
 
     // Remover del estado local inmediatamente
@@ -134,8 +136,9 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
 
   const updateWorkerPermissions = async (id, newPermissions) => {
     const authStore = useAuthStore()
-    const empresaId = authStore.currentUser?.empresa || 1
     const realUserId = id.toString().replace('worker-', '')
+    const worker = workers.value.find(w => w.id === id)
+    const finalEmpresaId = worker?.empresa || authStore.currentUser?.empresa || 1
 
     try {
       // 1. Obtener accesos existentes del usuario
@@ -156,7 +159,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
           method: 'POST',
           body: JSON.stringify({
             usuario: realUserId,
-            empresa: empresaId,
+            empresa: finalEmpresaId,
             sitio: siteId,
             activo: true
           })
@@ -170,7 +173,8 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
         })
       }
     } catch (error) {
-      console.warn('Backend API fail on updateWorkerPermissions', error)
+      console.error('Backend API fail on updateWorkerPermissions', error)
+      throw error
     }
 
     await fetchDataFromBackend()
@@ -262,6 +266,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
 
   // --- INTEGRACIÓN REAL CON BACKEND ---
   const fetchDataFromBackend = async () => {
+    const authStore = useAuthStore()
     isLoading.value = true
     
     // 1. Obtener Sitios
@@ -422,12 +427,13 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
     }
 
     // 3. Obtener Trabajadores (Usuarios) y sus Accesos
+    let workersList = []
     try {
       const resWorkers = await api('/cuentas/usuarios/')
       const resAccesos = await api('/cuentas/accesos/?activo=true')
       if (resWorkers.ok) {
         const dataWorkers = await resWorkers.json()
-        const workersList = dataWorkers.results || dataWorkers
+        workersList = dataWorkers.results || dataWorkers
         
         let accesosList = []
         if (resAccesos && resAccesos.ok) {
@@ -452,7 +458,13 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
             id: w.id,
             name: `${w.nombres || ''} ${w.apellidos || ''}`.trim() || w.email || w.username,
             username: w.email || w.username,
+            nombres: w.nombres || '',
+            apellidos: w.apellidos || '',
+            rut: w.rut || '',
             role: role,
+            empresa: w.empresa,
+            group_names: w.group_names || [],
+            groups: w.groups || [],
             permissions: userAccesos
           }
         })
@@ -461,7 +473,45 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
       console.error('Error al sincronizar trabajadores:', e)
     }
 
-    // 4. Obtener Nodos Globales (Todos los Dispositivos)
+    // 4. Obtener Grupos
+    try {
+      const resGroups = await api('/cuentas/grupos/')
+      if (resGroups.ok) {
+        const dataGroups = await resGroups.json()
+        groups.value = dataGroups.results || dataGroups
+      }
+    } catch (e) {
+      console.warn('Error fetching groups, checking dynamic fallback:', e)
+    }
+
+    // Build fallback groups array from existing users & current user if API failed or returned empty
+    const groupMap = new Map()
+    // Current user's groups
+    if (authStore.currentUser && authStore.currentUser.group_names && authStore.currentUser.groups) {
+      authStore.currentUser.group_names.forEach((name, idx) => {
+        const id = authStore.currentUser.groups[idx]
+        if (id !== undefined) groupMap.set(name, id)
+      })
+    }
+    // Loaded users' groups
+    workersList.forEach(w => {
+      if (w.group_names && w.groups) {
+        w.group_names.forEach((name, idx) => {
+          const id = w.groups[idx]
+          if (id !== undefined) groupMap.set(name, id)
+        })
+      }
+    })
+
+    if (groups.value.length === 0 && groupMap.size > 0) {
+      const fallbackList = []
+      groupMap.forEach((id, name) => {
+        fallbackList.push({ id, name })
+      })
+      groups.value = fallbackList
+    }
+
+    // 5. Obtener Nodos Globales (Todos los Dispositivos)
     try {
       const resGlobal = await api('/dispositivos/equipos/')
       if (resGlobal.ok) {
@@ -571,6 +621,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
     clients,
     globalNodes,
     workers,
+    groups,
     predios,
     cerros,
     addClient,
