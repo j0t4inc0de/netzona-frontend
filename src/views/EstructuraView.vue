@@ -557,8 +557,8 @@ const openActiveModal = () => {
           <h2 class="text-lg font-bold text-mako-900 dark:text-white">Empresas Clientes</h2>
         </div>
         <div class="overflow-x-auto custom-scrollbar">
-          <table class="w-full text-left whitespace-nowrap">
-            <thead class="bg-mako-50 dark:bg-mako-800/50 border-b border-mako-100 dark:border-mako-700/50">
+          <table class="w-full text-left whitespace-nowrap block sm:table">
+            <thead class="hidden sm:table-header-group bg-mako-50 dark:bg-mako-800/50 border-b border-mako-100 dark:border-mako-700/50">
               <tr class="text-[11px] uppercase tracking-widest text-mako-500 dark:text-mako-400 font-bold">
                 <th class="px-6 py-4">Código</th>
                 <th class="px-6 py-4">Nombre Legal</th>
@@ -566,18 +566,24 @@ const openActiveModal = () => {
                 <th class="px-6 py-4 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-mako-100 dark:divide-mako-800/60">
-              <tr v-for="emp in empresas" :key="emp.id" class="hover:bg-mako-50/50 dark:hover:bg-white/5 transition-colors">
-                <td class="px-6 py-4 font-mono font-bold text-primary">{{ emp.codigo }}</td>
-                <td class="px-6 py-4">
+            <tbody class="flex flex-col sm:table-row-group divide-y divide-mako-100 dark:divide-mako-800/60 p-4 sm:p-0">
+              <tr v-for="emp in empresas" :key="emp.id" class="block sm:table-row hover:bg-mako-50/50 dark:hover:bg-white/5 transition-colors group bg-white dark:bg-mako-800/40 sm:bg-transparent rounded-2xl sm:rounded-none border border-mako-100 dark:border-mako-700/50 sm:border-0 overflow-hidden mb-4 sm:mb-0">
+                <td class="block sm:table-cell px-4 py-4 sm:px-6">
+                  <div class="text-[10px] font-bold text-mako-400 uppercase sm:hidden mb-1">Código</div>
+                  <div class="font-mono font-bold text-primary">{{ emp.codigo }}</div>
+                </td>
+                <td class="flex flex-col sm:table-cell justify-center sm:justify-start px-4 py-3 sm:px-6 sm:py-4 border-t border-mako-50 dark:border-mako-700/30 sm:border-0 gap-1 sm:gap-0">
+                  <span class="text-[10px] font-bold text-mako-400 uppercase sm:hidden">Nombre Legal</span>
                   <input v-if="editingClientId === emp.id" v-model="editingClientName" class="px-3 py-1.5 bg-white dark:bg-mako-800 border dark:border-mako-700 rounded-lg text-sm w-full outline-none focus:border-primary" />
                   <span v-else class="text-sm font-semibold">{{ emp.nombre }}</span>
                 </td>
-                <td class="px-6 py-4">
+                <td class="flex flex-col sm:table-cell justify-center sm:justify-start px-4 py-3 sm:px-6 sm:py-4 border-t border-mako-50 dark:border-mako-700/30 sm:border-0 gap-1 sm:gap-0">
+                  <span class="text-[10px] font-bold text-mako-400 uppercase sm:hidden">RUT</span>
                   <input v-if="editingClientId === emp.id" v-model="editingClientRut" class="px-3 py-1.5 bg-white dark:bg-mako-800 border dark:border-mako-700 rounded-lg text-sm w-full outline-none focus:border-primary" />
                   <span v-else class="text-sm text-mako-500">{{ emp.rut }}</span>
                 </td>
-                <td class="px-6 py-4 text-right">
+                <td class="flex sm:table-cell justify-between sm:justify-end items-center px-4 py-3 sm:px-6 sm:py-4 border-t border-mako-50 dark:border-mako-700/30 sm:border-0">
+                  <span class="text-[10px] font-bold text-mako-400 uppercase sm:hidden">Acciones</span>
                   <div class="flex gap-2 justify-end">
                     <template v-if="editingClientId === emp.id">
                       <button @click="handleUpdateClient" class="p-2 text-green-500 hover:bg-green-500/10 rounded-lg transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></button>
