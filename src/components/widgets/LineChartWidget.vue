@@ -65,8 +65,16 @@ const getDesdeHasta = (range) => {
 
 // Carga de historial desde el endpoint provisto por el backend
 const fetchHistory = async () => {
-  const endpoint = props.widget.historial_endpoint
+  let endpoint = props.widget.historial_endpoint
   if (!endpoint) return
+  
+  // Si el endpoint provisto por el backend ya incluye "/api", lo removemos
+  // para evitar duplicidad, ya que nuestro helper 'api' ya lo concatena.
+  if (endpoint.startsWith('/api/')) {
+    endpoint = endpoint.substring(4) // Remueve "/api" y deja el "/" inicial (e.g., "/dispositivos/...")
+  } else if (endpoint.startsWith('api/')) {
+    endpoint = '/' + endpoint.substring(4)
+  }
   
   isLoading.value = true
   hasError.value = false
