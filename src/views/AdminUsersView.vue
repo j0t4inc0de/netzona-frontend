@@ -94,6 +94,10 @@ const selectedGroupId = ref(null)
 const selectedEmpresaId = ref(null)
 const selectedPermissions = ref([])
 const formErrors = ref({})
+
+watch(selectedEmpresaId, () => {
+  selectedPermissions.value = []
+})
 const isAddModalOpen = ref(false)
 const isSubmitting = ref(false)
 
@@ -219,6 +223,21 @@ const getPermissionNames = (permissionIds) => {
     })
     .join(', ')
 }
+
+const sitesForNewUser = computed(() => {
+  const isNetzonaAdmin = authStore.currentUser?.group_names?.includes('admin_netzona')
+  const empId = isNetzonaAdmin ? selectedEmpresaId.value : authStore.currentUser?.empresa
+  if (!empId) return []
+  return store.cerros.filter(c => c.client == empId)
+})
+
+const sitesForEditUser = computed(() => {
+  if (!editingWorkerId.value) return []
+  const worker = store.workers.find(w => w.id === editingWorkerId.value)
+  const empId = worker?.empresa || authStore.currentUser?.empresa
+  if (!empId) return []
+  return store.cerros.filter(c => c.client == empId)
+})
 </script>
 
 <template>
@@ -412,14 +431,17 @@ const getPermissionNames = (permissionIds) => {
           <div v-if="!selectedGroupId || store.groups.find(g => g.id === selectedGroupId)?.name === 'trabajador'">
             <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-2">Permisos de Visualización (Sitios)</label>
             <div class="space-y-3 max-h-48 overflow-y-auto custom-scrollbar p-3 bg-mako-100/50 dark:bg-mako-800/20 border border-mako-200 dark:border-white/5 rounded-xl">
-              <div v-if="store.cerros.length > 0">
+              <div v-if="sitesForNewUser.length > 0">
                 <p class="text-[10px] uppercase font-bold text-mako-400 mb-2">Cerros (Sitios):</p>
                 <div class="space-y-2">
-                  <label v-for="c in store.cerros" :key="c.id" class="flex items-center gap-3 text-sm cursor-pointer group hover:bg-mako-200/50 dark:hover:bg-mako-700/50 p-2 rounded-lg transition-colors">
+                  <label v-for="c in sitesForNewUser" :key="c.id" class="flex items-center gap-3 text-sm cursor-pointer group hover:bg-mako-200/50 dark:hover:bg-mako-700/50 p-2 rounded-lg transition-colors">
                     <input type="checkbox" v-model="selectedPermissions" :value="c.id" class="w-4 h-4 text-primary bg-mako-100 border-mako-300 rounded focus:ring-primary focus:ring-2 dark:bg-mako-800 dark:border-mako-600 accent-primary" />
                     <span class="text-mako-700 dark:text-mako-300 group-hover:text-mako-900 dark:group-hover:text-white transition-colors">{{ c.name }}</span>
                   </label>
                 </div>
+              </div>
+              <div v-else class="text-xs text-mako-500 py-2">
+                No hay sitios disponibles para la empresa seleccionada.
               </div>
             </div>
           </div>
@@ -517,14 +539,17 @@ const getPermissionNames = (permissionIds) => {
         </p>
 
         <div class="space-y-4 max-h-64 overflow-y-auto custom-scrollbar pr-2">
-          <div v-if="store.cerros.length > 0" class="bg-mako-50 dark:bg-mako-800/30 p-4 rounded-xl border border-mako-100 dark:border-mako-700/50">
+          <div v-if="sitesForEditUser.length > 0" class="bg-mako-50 dark:bg-mako-800/30 p-4 rounded-xl border border-mako-100 dark:border-mako-700/50">
             <p class="text-xs uppercase font-bold text-mako-400 mb-3">Cerros (Sitios)</p>
             <div class="space-y-2">
-              <label v-for="c in store.cerros" :key="c.id" class="flex items-center gap-3 text-sm cursor-pointer group hover:bg-mako-200/50 dark:hover:bg-mako-700/50 p-2 rounded-lg transition-colors">
+              <label v-for="c in sitesForEditUser" :key="c.id" class="flex items-center gap-3 text-sm cursor-pointer group hover:bg-mako-200/50 dark:hover:bg-mako-700/50 p-2 rounded-lg transition-colors">
                 <input type="checkbox" v-model="editingPermissions" :value="c.id" class="w-4 h-4 text-primary bg-mako-100 border-mako-300 rounded focus:ring-primary focus:ring-2 dark:bg-mako-800 dark:border-mako-600 accent-primary" />
                 <span class="text-mako-700 dark:text-mako-300 group-hover:text-mako-900 dark:group-hover:text-white">{{ c.name }}</span>
               </label>
             </div>
+          </div>
+          <div v-else class="text-sm text-mako-500 py-2">
+            No hay sitios disponibles para la empresa de este trabajador.
           </div>
         </div>
 
