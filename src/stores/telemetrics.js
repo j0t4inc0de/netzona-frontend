@@ -375,13 +375,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                       doorOpen: false,
                       relayState: false,
                     },
-                    history: {
-                      temperature: [],
-                      humidity: [],
-                      soilMoisture: [],
-                      voltage: [],
-                      power: [],
-                    },
+                    widgets: [],
                     weatherForecast: [
                       { day: 'Lun', temp: '15°C', status: 'Despejado', icon: 'Sun' }
                     ]
@@ -415,6 +409,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                         }
                         const widgets = dash.dashboard ? dash.dashboard.widgets : dash.widgets || []
                         widgets.forEach(w => {
+                          w.device_serial = d.serial
                           const val = w.valor || 0
                           if (w.codigo_sensor === 'TEMPERATURA' || w.titulo.toLowerCase().includes('temp')) { mappedZona.metrics.temperature = val; mappedZona.metrics.temp_widget_id = w.id }
                           if (w.codigo_sensor === 'HUMEDAD' || w.titulo.toLowerCase().includes('hum')) { mappedZona.metrics.humidity = val; mappedZona.metrics.hum_widget_id = w.id }
@@ -424,6 +419,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                           if (w.codigo_sensor === 'HUMEDAD_SUELO' || w.titulo.toLowerCase().includes('suelo')) { mappedZona.metrics.soilMoisture = val; mappedZona.metrics.soil_widget_id = w.id }
                           if (w.codigo_sensor === 'VOLTAJE_PANEL' || w.titulo.toLowerCase().includes('panel')) { mappedZona.metrics.solarPanelVoltage = val; mappedZona.metrics.solar_widget_id = w.id }
                         })
+                        mappedZona.widgets.push(...widgets)
                       }
 
                       // Historial se cargará dinámicamente cuando el usuario navegue a la vista de la zona

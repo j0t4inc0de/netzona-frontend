@@ -9,6 +9,15 @@ import { GridStack } from 'gridstack'
 import 'gridstack/dist/gridstack.min.css'
 
 import { useRoute } from 'vue-router'
+import { api } from '../services/api'
+
+// Importar Widgets Dinámicos
+import MetricCard from '../components/widgets/MetricCard.vue'
+import BatteryCard from '../components/widgets/BatteryCard.vue'
+import SignalCard from '../components/widgets/SignalCard.vue'
+import StatusCard from '../components/widgets/StatusCard.vue'
+import GaugeWidget from '../components/widgets/GaugeWidget.vue'
+import LineChartWidget from '../components/widgets/LineChartWidget.vue'
 
 const auth = useAuthStore()
 const store = useTelemetricsStore()
@@ -38,6 +47,12 @@ const selectedZona = computed(() => {
   return allowedZonas.value.find((z) => z.id === selectedZonaId.value) || null
 })
 
+// Ordenar widgets según especificación (Doc 04): widgets.sort((a, b) => a.orden - b.orden)
+const sortedWidgets = computed(() => {
+  if (!selectedZona.value || !selectedZona.value.widgets) return []
+  return [...selectedZona.value.widgets].sort((a, b) => (a.orden || 0) - (b.orden || 0))
+})
+
 // Coordenadas de mapa
 const mapZoom = ref(15)
 const mapCenter = ref([-36.6083, -72.1022])
@@ -50,28 +65,9 @@ const updateMapLocation = () => {
   }
 }
 
-import { api } from '../services/api'
-
-const selectedRange = ref('24h')
-const rangeType = ref('24h')
-const customDesde = ref('')
-const customHasta = ref('')
 const isGridLoading = ref(false)
-
-const applyCustomRange = () => {
-  if (customDesde.value && customHasta.value) {
-    selectedRange.value = `custom:${customDesde.value}|${customHasta.value}`
-  }
-}
-
-import { watch as vueWatch } from 'vue'
-vueWatch(rangeType, (newVal) => {
-  if (newVal !== 'custom') {
-    selectedRange.value = newVal
-  }
-})
-
 let grid = null
+
 const initGrid = async () => {
   await nextTick()
   if (grid) {
@@ -99,7 +95,7 @@ const initGrid = async () => {
 
       isGridLoading.value = true
 
-      // Load Layout from Backend
+      // Cargar Layout desde el Backend
       if (selectedZona.value && selectedZona.value.dashboard_template_id) {
         try {
           const res = await api(`/cuentas/preferencias/?sitio=${selectedCerro.value.id}&dashboard_template=${selectedZona.value.dashboard_template_id}`)
@@ -116,13 +112,13 @@ const initGrid = async () => {
               }))
               finalLayout.push(...mappedLayout)
             }
-            // Load static components from localStorage
+            // Cargar componentes estáticos de localStorage
             const localStr = localStorage.getItem(`grid_static_${selectedZona.value.id}`)
             if (localStr) {
               finalLayout.push(...JSON.parse(localStr))
             }
-            // Aplicar layout guardado widget a widget para evitar que el resolver de colisiones de Gridstack
-            // mezcle posiciones del DOM con las posiciones guardadas
+            
+            // Aplicar layout guardado
             if (finalLayout.length > 0) {
               grid.batchUpdate()
               for (const item of finalLayout) {
@@ -143,7 +139,7 @@ const initGrid = async () => {
         isGridLoading.value = false
       }, 500)
 
-      // Handle Save (solo al terminar de arrastrar o redimensionar de forma manual)
+      // Guardar Layout al arrastrar/redimensionar
       grid.on('dragstop resizestop', async () => {
         if (isGridLoading.value) return
         if (localStorage.getItem('is_resetting_layout') === 'true') return
@@ -197,7 +193,7 @@ const initGrid = async () => {
         }
       })
 
-      // Ajustar dimensiones del mapa Leaflet cuando el grid termina de posicionar
+      // Ajustar dimensiones del mapa Leaflet
       setTimeout(() => {
         if (map.value && map.value.leafletObject) {
           map.value.leafletObject.invalidateSize()
@@ -213,15 +209,9 @@ onMounted(() => {
 })
 
 watch(
-  [selectedCerroId, selectedZonaId, selectedRange],
-  async ([cerroId, zonaId, range], [oldCerroId, oldZonaId, oldRange]) => {
+  [selectedCerroId, selectedZonaId],
+  () => {
     updateMapLocation()
-    const rangeChanged = oldRange !== undefined && range !== oldRange
-    const zonaChanged = oldZonaId !== undefined && oldZonaId !== '' && zonaId !== oldZonaId
-    
-    if (cerroId && zonaId && (rangeChanged || zonaChanged)) {
-      await store.fetchZonaHistory(cerroId, zonaId, range)
-    }
     if (!store.isLoading) {
       initGrid()
     }
@@ -242,84 +232,6 @@ onUnmounted(() => {
   if (grid) {
     grid.off('dragstop resizestop')
     grid.destroy(false)
-  }
-})
-
-// Configuración del gráfico ApexCharts
-const chartSeries = computed(() => {
-  if (!selectedZona.value) return []
-  return [
-    {
-      name: 'Humedad Suelo (%)',
-      data: selectedZona.value.history.soilMoisture,
-    },
-    {
-      name: 'Temperatura Ambient. (°C)',
-      data: selectedZona.value.history.temperature,
-    },
-  ]
-})
-
-const chartOptions = computed(() => {
-  return {
-    chart: {
-      type: 'area',
-      height: 280,
-      toolbar: { show: false },
-      zoom: { enabled: false },
-      animations: {
-        enabled: true,
-        easing: 'linear',
-        dynamicAnimation: { speed: 1000 },
-      },
-      background: 'transparent',
-      foreColor: '#9ca3af',
-    },
-    theme: {
-      mode: isDark.value ? 'dark' : 'light',
-    },
-    stroke: {
-      curve: 'smooth',
-      width: 2.5,
-    },
-    fill: {
-      type: 'gradient',
-      gradient: {
-        shadeIntensity: 1,
-        opacityFrom: 0.3,
-        opacityTo: 0.02,
-        stops: [0, 90, 100],
-      },
-    },
-    colors: [isDark.value ? '#6D92F8' : '#0C4CE4', '#f59e0b'],
-    dataLabels: { enabled: false },
-    grid: {
-      borderColor: 'rgba(156, 163, 175, 0.15)',
-      strokeDashArray: 4,
-    },
-    xaxis: {
-      type: 'category',
-      labels: {
-        rotate: 0,
-        style: { fontSize: '10px' },
-      },
-      axisBorder: { show: false },
-      axisTicks: { show: false },
-    },
-    yaxis: {
-      labels: {
-        style: { fontSize: '10px' },
-      },
-    },
-    tooltip: {
-      shared: true,
-      intersect: false,
-    },
-    legend: {
-      position: 'top',
-      horizontalAlign: 'right',
-      fontSize: '11px',
-    },
   }
 })
 </script>
@@ -343,7 +255,6 @@ const chartOptions = computed(() => {
         />
       </svg>
     </div>
-    <!-- test -->
     <h2 class="text-xl font-bold">Sin Zonas autorizadas</h2>
     <p class="text-sm text-mako-500 dark:text-mako-400 mt-2 max-w-md">
       Su usuario no cuenta con permisos para visualizar nada en este momento. Por
@@ -354,63 +265,48 @@ const chartOptions = computed(() => {
   <div v-else class="grid grid-cols-1 xl:grid-cols-4 gap-8">
     <!-- PANEL PRINCIPAL (3 columnas en escritorio) -->
     <div class="xl:col-span-3 space-y-6">
+      <!-- Caso: Sin plantilla de Dashboard (Doc 04) -->
+      <div v-if="!selectedZona?.dashboard_template_id" class="flex flex-col items-center justify-center p-12 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md text-center min-h-[40vh] select-none">
+        <svg class="w-12 h-12 text-amber-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <h3 class="text-lg font-bold text-mako-700 dark:text-mako-200">Dashboard no disponible</h3>
+        <p class="text-sm text-mako-400 mt-1">No hay dashboard configurado para esta empresa y tipo de dispositivo.</p>
+      </div>
+
+      <!-- Caso: Dashboard existe pero no tiene widgets (Doc 04) -->
+      <div v-else-if="sortedWidgets.length === 0" class="flex flex-col items-center justify-center p-12 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md text-center min-h-[40vh] select-none">
+        <svg class="w-12 h-12 text-mako-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+        <h3 class="text-lg font-bold text-mako-700 dark:text-mako-200">Sin widgets configurados</h3>
+        <p class="text-sm text-mako-400 mt-1">Este dashboard aún no tiene widgets configurados.</p>
+      </div>
+
       <!-- Cuadrícula Drag and Drop (Gridstack) -->
-      <div class="grid-stack mt-4">
-        <!-- Temperatura -->
-        <div class="grid-stack-item" :gs-id="selectedZona?.metrics.temp_widget_id || 'widget-temp'" gs-w="3" gs-h="1" gs-x="0" gs-y="0">
-          <div class="grid-stack-item-content glass-card-agro">
-            <p class="label-agro">Temp. Aire</p>
-            <h3 class="value-agro">
-              {{ selectedZona?.metrics.temperature }}<span class="unit-agro">°C</span>
-            </h3>
+      <div v-else class="grid-stack mt-4">
+        <!-- Renderizar widgets dinámicos -->
+        <div 
+          v-for="w in sortedWidgets" 
+          :key="w.id" 
+          class="grid-stack-item" 
+          :gs-id="w.id" 
+          :gs-w="w.ancho || 3" 
+          :gs-h="w.alto || 1"
+        >
+          <div class="grid-stack-item-content !p-0 bg-transparent rounded-3xl overflow-hidden">
+            <MetricCard v-if="w.tipo_widget === 'metric_card'" :widget="w" />
+            <BatteryCard v-else-if="w.tipo_widget === 'battery_card'" :widget="w" />
+            <SignalCard v-else-if="w.tipo_widget === 'signal_card'" :widget="w" />
+            <StatusCard v-else-if="w.tipo_widget === 'status_card'" :widget="w" />
+            <GaugeWidget v-else-if="w.tipo_widget === 'gauge'" :widget="w" />
+            <LineChartWidget v-else-if="w.tipo_widget === 'line_chart'" :widget="w" :serial="w.device_serial" />
+            <MetricCard v-else :widget="w" />
           </div>
         </div>
 
-        <!-- Humedad del Aire -->
-        <div class="grid-stack-item" :gs-id="selectedZona?.metrics.hum_widget_id || 'widget-hum'" gs-w="3" gs-h="1" gs-x="3" gs-y="0">
-          <div class="grid-stack-item-content glass-card-agro">
-            <p class="label-agro">Humedad Aire</p>
-            <h3 class="value-agro">
-              {{ selectedZona?.metrics.humidity }}<span class="unit-agro">%</span>
-            </h3>
-          </div>
-        </div>
-
-        <!-- Humedad del Suelo -->
-        <div class="grid-stack-item" :gs-id="selectedZona?.metrics.soil_widget_id || 'widget-soil'" gs-w="3" gs-h="1" gs-x="6" gs-y="0">
-          <div class="grid-stack-item-content glass-card-agro">
-            <p class="label-agro">Hum. Suelo</p>
-            <h3 class="value-agro text-primary">
-              {{ selectedZona?.metrics.soilMoisture }}<span class="unit-agro">%</span>
-            </h3>
-          </div>
-        </div>
-
-        <!-- Voltaje Panel Solar -->
-        <div class="grid-stack-item" :gs-id="selectedZona?.metrics.solar_widget_id || 'widget-solar'" gs-w="3" gs-h="1" gs-x="9" gs-y="0">
-          <div class="grid-stack-item-content glass-card-agro">
-            <p class="label-agro">Panel Solar</p>
-            <h3 class="value-agro">
-              {{ selectedZona?.metrics.solarPanelVoltage }}<span class="unit-agro">V</span>
-            </h3>
-          </div>
-        </div>
-
-        <!-- Batería del Sensor -->
-        <div class="grid-stack-item" :gs-id="selectedZona?.metrics.bat_widget_id || 'widget-bat'" gs-w="8" gs-h="1" gs-x="0" gs-y="1">
-          <div class="grid-stack-item-content glass-card-agro">
-            <p class="label-agro">Batería Nodo</p>
-            <h3
-              class="value-agro"
-              :class="selectedZona?.metrics.battery < 20 ? 'text-red-500' : ''"
-            >
-              {{ selectedZona?.metrics.battery }}<span class="unit-agro">%</span>
-            </h3>
-          </div>
-        </div>
-
-        <!-- Mapa del Cerro (Sitio) -->
-        <div class="grid-stack-item" gs-id="widget-map" gs-w="4" gs-h="2" gs-x="8" gs-y="1">
+        <!-- Mapa del Cerro (Sitio) - Elemento estático del frontend -->
+        <div class="grid-stack-item" gs-id="widget-map" gs-w="4" gs-h="2">
           <div
             class="grid-stack-item-content !p-0 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] overflow-hidden shadow-md relative"
           >
@@ -451,50 +347,6 @@ const chartOptions = computed(() => {
             >
               <span class="w-2 h-2 rounded-full bg-primary"></span>
               Objetivos Sensores Activos (GPS)
-            </div>
-          </div>
-        </div>
-
-        <!-- Historial Gráfico -->
-        <div class="grid-stack-item" gs-id="widget-history" gs-w="8" gs-h="3" gs-x="0" gs-y="2">
-          <div
-            class="grid-stack-item-content p-6 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md flex flex-col justify-between"
-          >
-            <div class="flex justify-between items-center mb-3">
-              <p class="text-xs uppercase font-bold text-mako-400">Lecturas de Humedad & Temp</p>
-              <div class="flex items-center gap-2">
-                <div v-if="rangeType === 'custom'" class="flex items-center gap-1 animate-fade-in">
-                  <input type="date" v-model="customDesde" class="text-[9px] bg-mako-100 dark:bg-mako-800 border border-mako-300 dark:border-mako-700 px-1.5 py-0.5 rounded-md outline-none text-mako-900 dark:text-white" />
-                  <span class="text-[9px] text-mako-400">a</span>
-                  <input type="date" v-model="customHasta" class="text-[9px] bg-mako-100 dark:bg-mako-800 border border-mako-300 dark:border-mako-700 px-1.5 py-0.5 rounded-md outline-none text-mako-900 dark:text-white" />
-                  <button @click="applyCustomRange" class="text-[9px] bg-primary hover:bg-primary/95 text-white px-2 py-0.5 rounded-md font-bold transition-colors">Aplicar</button>
-                </div>
-                <select
-                  v-model="rangeType"
-                  class="text-[10px] bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full font-bold outline-none cursor-pointer dark:bg-mako-900"
-                >
-                  <option value="24h">24 Horas</option>
-                  <option value="7d">7 Días</option>
-                  <option value="30d">30 Días</option>
-                  <option value="custom">Personalizado</option>
-                </select>
-              </div>
-            </div>
-            <div class="flex-1 min-h-[250px] relative">
-              <apexchart
-                v-if="selectedZona && selectedZona.history.temperature.length > 0"
-                type="area"
-                width="100%"
-                height="100%"
-                :options="chartOptions"
-                :series="chartSeries"
-              />
-              <div
-                v-else
-                class="h-full flex items-center justify-center text-xs text-mako-400 italic"
-              >
-                Recopilando datos de simulación...
-              </div>
             </div>
           </div>
         </div>
@@ -546,16 +398,5 @@ const chartOptions = computed(() => {
 </template>
 
 <style scoped>
-.glass-card-agro {
-  @apply flex flex-col items-center justify-center p-5 bg-white/80 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 shadow-[0_8px_25px_rgb(0,0,0,0.03)] dark:shadow-[0_8px_25px_rgb(0,0,0,0.15)] rounded-3xl transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/20;
-}
-.label-agro {
-  @apply text-[10px] uppercase font-bold tracking-widest text-mako-400;
-}
-.value-agro {
-  @apply text-3xl font-semibold tracking-tighter mt-1;
-}
-.unit-agro {
-  @apply text-xs ml-0.5 font-medium opacity-85 text-primary;
-}
+/* Estilos adicionales si fueran necesarios */
 </style>
