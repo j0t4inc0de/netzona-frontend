@@ -471,21 +471,12 @@ onMounted(async () => {
 
 const getPrimaryActionLabel = computed(() => {
   if (activeTab.value === 'nodos') return 'Nuevo Dispositivo'
-  if (activeTab.value === 'estructura') {
-    if (activeEstructuraSubTab.value === 'clientes') return 'Nueva Empresa'
-    if (activeEstructuraSubTab.value === 'sitios') return 'Nuevo Sitio'
-    if (activeEstructuraSubTab.value === 'zonas') return 'Nueva Zona'
-  }
+  
   return null
 })
 
 const openActiveModal = () => {
   if (activeTab.value === 'nodos') isAddNodeModalOpen.value = true
-  else if (activeTab.value === 'estructura') {
-    if (activeEstructuraSubTab.value === 'clientes') isAddClientModalOpen.value = true
-    if (activeEstructuraSubTab.value === 'sitios') isAddSitioModalOpen.value = true
-    if (activeEstructuraSubTab.value === 'zonas') isAddZonaModalOpen.value = true
-  }
 }
 
 </script>
@@ -534,13 +525,7 @@ const openActiveModal = () => {
       >
         Equipos Aprovisionados
       </button>
-      <button
-        @click="activeTab = 'estructura'"
-        class="py-3 px-2 text-sm font-bold border-b-2 transition-all outline-none shrink-0"
-        :class="activeTab === 'estructura' ? 'border-primary text-primary' : 'border-transparent text-mako-400 hover:text-mako-600 dark:hover:text-white'"
-      >
-        Estructura del Sistema
-      </button>
+      
       <button
         @click="activeTab = 'mqtt'"
         class="py-3 px-2 text-sm font-bold border-b-2 transition-all outline-none shrink-0"
@@ -606,156 +591,6 @@ const openActiveModal = () => {
     </div>
 
     <!-- PESTAÑA: ESTRUCTURA -->
-    <div v-if="activeTab === 'estructura'" class="space-y-6 animate-fade-in">
-      
-      <!-- Sub-tabs para Estructura -->
-      <div class="flex bg-white/60 dark:bg-mako-900/40 backdrop-blur-md p-1 rounded-xl w-max border border-mako-200 dark:border-white/5">
-        <button @click="activeEstructuraSubTab = 'clientes'" class="px-5 py-2 rounded-lg text-xs font-bold transition-all" :class="activeEstructuraSubTab === 'clientes' ? 'bg-white dark:bg-mako-800 text-mako-900 dark:text-white shadow-sm' : 'text-mako-500 hover:text-mako-700 dark:hover:text-mako-300'">Empresas</button>
-        <button @click="activeEstructuraSubTab = 'sitios'" class="px-5 py-2 rounded-lg text-xs font-bold transition-all" :class="activeEstructuraSubTab === 'sitios' ? 'bg-white dark:bg-mako-800 text-mako-900 dark:text-white shadow-sm' : 'text-mako-500 hover:text-mako-700 dark:hover:text-mako-300'">Sitios / Cerros</button>
-        <button @click="activeEstructuraSubTab = 'zonas'" class="px-5 py-2 rounded-lg text-xs font-bold transition-all" :class="activeEstructuraSubTab === 'zonas' ? 'bg-white dark:bg-mako-800 text-mako-900 dark:text-white shadow-sm' : 'text-mako-500 hover:text-mako-700 dark:hover:text-mako-300'">Zonas</button>
-      </div>
-
-      <!-- Sub-pestaña Empresas -->
-      <div v-if="activeEstructuraSubTab === 'clientes'" class="bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-sm overflow-hidden">
-        <div class="p-6 border-b border-mako-100 dark:border-white/5 flex items-center justify-between">
-          <h2 class="text-lg font-bold text-mako-900 dark:text-white">Empresas Clientes</h2>
-        </div>
-        <div class="overflow-x-auto custom-scrollbar">
-          <table class="w-full text-left whitespace-nowrap">
-            <thead class="bg-mako-50 dark:bg-mako-800/50 border-b border-mako-100 dark:border-mako-700/50">
-              <tr class="text-[11px] uppercase tracking-widest text-mako-500 dark:text-mako-400 font-bold">
-                <th class="px-6 py-4">Código</th>
-                <th class="px-6 py-4">Nombre Legal</th>
-                <th class="px-6 py-4">RUT</th>
-                <th class="px-6 py-4 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-mako-100 dark:divide-mako-800/60">
-              <tr v-for="emp in empresas" :key="emp.id" class="hover:bg-mako-50/50 dark:hover:bg-white/5 transition-colors">
-                <td class="px-6 py-4 font-mono font-bold text-primary">{{ emp.codigo }}</td>
-                <td class="px-6 py-4">
-                  <input v-if="editingClientId === emp.id" v-model="editingClientName" class="px-3 py-1.5 bg-white dark:bg-mako-800 border dark:border-mako-700 rounded-lg text-sm w-full outline-none focus:border-primary" />
-                  <span v-else class="text-sm font-semibold">{{ emp.nombre }}</span>
-                </td>
-                <td class="px-6 py-4">
-                  <input v-if="editingClientId === emp.id" v-model="editingClientRut" class="px-3 py-1.5 bg-white dark:bg-mako-800 border dark:border-mako-700 rounded-lg text-sm w-full outline-none focus:border-primary" />
-                  <span v-else class="text-sm text-mako-500">{{ emp.rut }}</span>
-                </td>
-                <td class="px-6 py-4 text-right">
-                  <div class="flex gap-2 justify-end">
-                    <template v-if="editingClientId === emp.id">
-                      <button @click="handleUpdateClient" class="p-2 text-green-500 hover:bg-green-500/10 rounded-lg transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></button>
-                      <button @click="editingClientId = null" class="p-2 text-mako-400 hover:bg-mako-100 dark:hover:bg-mako-800 rounded-lg transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-                    </template>
-                    <template v-else>
-                      <button @click="startEditClient(emp)" class="p-2 text-mako-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-xl transition-colors" title="Editar"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
-                      <button @click="handleDeleteClient(emp.id)" class="p-2 text-mako-400 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-colors" title="Eliminar"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-                    </template>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Sub-pestaña Sitios -->
-      <div v-if="activeEstructuraSubTab === 'sitios'" class="bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-sm overflow-hidden">
-        <div class="p-6 border-b border-mako-100 dark:border-white/5 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <h2 class="text-lg font-bold text-mako-900 dark:text-white">Sitios por Empresa</h2>
-          <select v-model="selectedEmpresaForSitios" class="px-4 py-2 rounded-xl bg-mako-100 dark:bg-mako-800 border border-mako-200 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold">
-            <option value="" disabled>Seleccione Empresa...</option>
-            <option v-for="emp in empresas" :key="emp.id" :value="emp.id">{{ emp.nombre }}</option>
-          </select>
-        </div>
-        <div v-if="!selectedEmpresaForSitios" class="p-12 text-center text-sm text-mako-400">Seleccione una empresa para ver sus sitios.</div>
-        <div v-else-if="sitios.length === 0" class="p-12 text-center text-sm text-mako-400">No hay sitios registrados para esta empresa.</div>
-        <div v-else class="overflow-x-auto custom-scrollbar">
-          <table class="w-full text-left whitespace-nowrap">
-            <thead class="bg-mako-50 dark:bg-mako-800/50 border-b border-mako-100 dark:border-mako-700/50">
-              <tr class="text-[11px] uppercase tracking-widest text-mako-500 dark:text-mako-400 font-bold">
-                <th class="px-6 py-4">Código</th>
-                <th class="px-6 py-4">Nombre del Sitio</th>
-                <th class="px-6 py-4 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-mako-100 dark:divide-mako-800/60">
-              <tr v-for="sit in sitios" :key="sit.id" class="hover:bg-mako-50/50 dark:hover:bg-white/5 transition-colors">
-                <td class="px-6 py-4 font-mono font-bold text-mako-500">{{ sit.codigo || 'N/A' }}</td>
-                <td class="px-6 py-4">
-                  <input v-if="editingSitioId === sit.id" v-model="editingSitioName" class="px-3 py-1.5 bg-white dark:bg-mako-800 border dark:border-mako-700 rounded-lg text-sm w-full outline-none focus:border-primary" />
-                  <span v-else class="text-sm font-semibold">{{ sit.nombre }}</span>
-                </td>
-                <td class="px-6 py-4 text-right">
-                  <div class="flex gap-2 justify-end">
-                    <template v-if="editingSitioId === sit.id">
-                      <button @click="handleUpdateSitio(sit.empresa)" class="p-2 text-green-500 hover:bg-green-500/10 rounded-lg transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></button>
-                      <button @click="editingSitioId = null" class="p-2 text-mako-400 hover:bg-mako-100 dark:hover:bg-mako-800 rounded-lg transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-                    </template>
-                    <template v-else>
-                      <button @click="startEditSitio(sit)" class="p-2 text-mako-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-xl transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
-                      <button @click="handleDeleteSitio(sit.id)" class="p-2 text-mako-400 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-                    </template>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Sub-pestaña Zonas -->
-      <div v-if="activeEstructuraSubTab === 'zonas'" class="bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-sm overflow-hidden">
-        <div class="p-6 border-b border-mako-100 dark:border-white/5 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-          <h2 class="text-lg font-bold text-mako-900 dark:text-white">Zonas por Sitio</h2>
-          <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-            <select v-model="selectedEmpresaForZonas" class="px-4 py-2 rounded-xl bg-mako-100 dark:bg-mako-800 border border-mako-200 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold">
-              <option value="" disabled>1. Empresa...</option>
-              <option v-for="emp in empresas" :key="emp.id" :value="emp.id">{{ emp.nombre }}</option>
-            </select>
-            <select v-model="selectedSitioForZonas" :disabled="!selectedEmpresaForZonas" class="px-4 py-2 rounded-xl bg-mako-100 dark:bg-mako-800 border border-mako-200 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold disabled:opacity-50">
-              <option value="" disabled>2. Sitio...</option>
-              <option v-for="sit in sitios" :key="sit.id" :value="sit.id">{{ sit.nombre }}</option>
-            </select>
-          </div>
-        </div>
-        <div v-if="!selectedSitioForZonas" class="p-12 text-center text-sm text-mako-400">Seleccione Empresa y Sitio para cargar sus zonas.</div>
-        <div v-else-if="zonas.length === 0" class="p-12 text-center text-sm text-mako-400">No hay zonas registradas.</div>
-        <div v-else class="overflow-x-auto custom-scrollbar">
-          <table class="w-full text-left whitespace-nowrap">
-            <thead class="bg-mako-50 dark:bg-mako-800/50 border-b border-mako-100 dark:border-mako-700/50">
-              <tr class="text-[11px] uppercase tracking-widest text-mako-500 dark:text-mako-400 font-bold">
-                <th class="px-6 py-4">Código</th>
-                <th class="px-6 py-4">Nombre de la Zona</th>
-                <th class="px-6 py-4 text-right">Acciones</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-mako-100 dark:divide-mako-800/60">
-              <tr v-for="zon in zonas" :key="zon.id" class="hover:bg-mako-50/50 dark:hover:bg-white/5 transition-colors">
-                <td class="px-6 py-4 font-mono font-bold text-mako-500">{{ zon.codigo || 'N/A' }}</td>
-                <td class="px-6 py-4">
-                  <input v-if="editingZonaId === zon.id" v-model="editingZonaName" class="px-3 py-1.5 bg-white dark:bg-mako-800 border dark:border-mako-700 rounded-lg text-sm w-full outline-none focus:border-primary" />
-                  <span v-else class="text-sm font-semibold">{{ zon.nombre }}</span>
-                </td>
-                <td class="px-6 py-4 text-right">
-                  <div class="flex gap-2 justify-end">
-                    <template v-if="editingZonaId === zon.id">
-                      <button @click="handleUpdateZona(zon.sitio)" class="p-2 text-green-500 hover:bg-green-500/10 rounded-lg transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></button>
-                      <button @click="editingZonaId = null" class="p-2 text-mako-400 hover:bg-mako-100 dark:hover:bg-mako-800 rounded-lg transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-                    </template>
-                    <template v-else>
-                      <button @click="startEditZona(zon)" class="p-2 text-mako-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-xl transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
-                      <button @click="handleDeleteZona(zon.id)" class="p-2 text-mako-400 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
-                    </template>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
     <!-- PESTAÑA: DIAGNÓSTICO MQTT -->
     <div v-if="activeTab === 'mqtt'" class="bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-sm overflow-hidden animate-fade-in">
       <div class="p-6 border-b border-mako-100 dark:border-white/5 flex justify-between items-center">
@@ -869,113 +704,5 @@ const openActiveModal = () => {
       </div>
     </div>
 
-    <!-- Modal Nueva Empresa -->
-    <div v-if="isAddClientModalOpen" class="fixed inset-0 bg-mako-950/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div class="bg-white/95 dark:bg-mako-900/95 border border-mako-200 dark:border-white/10 rounded-[2rem] shadow-2xl w-full max-w-lg p-6 lg:p-8 relative max-h-[90vh] overflow-y-auto custom-scrollbar animate-fade-in">
-        <button @click="isAddClientModalOpen = false" class="absolute top-6 right-6 p-2 rounded-full hover:bg-mako-100 dark:hover:bg-white/10 text-mako-400 transition-colors">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
-        <h3 class="text-xl font-bold mb-6 flex items-center gap-3 text-mako-900 dark:text-white">
-          <div class="p-2 bg-primary/10 rounded-xl">
-            <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-          </div>
-          Dar de Alta Empresa
-        </h3>
-        <form @submit.prevent="handleAddClient" class="space-y-5">
-          <div>
-            <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre Legal</label>
-            <input v-model="newClientName" type="text" placeholder="Ej. Viñedos San Pedro S.A." class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold" />
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">RUT / ID</label>
-              <input v-model="newClientRut" type="text" placeholder="Ej. 76.543.210-K" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold" />
-            </div>
-            <div>
-              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Código Único</label>
-              <input v-model="newClientCode" type="text" placeholder="Ej. VIN-SP" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-mono font-bold" />
-            </div>
-          </div>
-          <div class="pt-4 border-t border-mako-200 dark:border-mako-700/50 flex gap-3 justify-end">
-            <button type="button" @click="isAddClientModalOpen = false" class="px-5 py-3 border border-mako-300 dark:border-mako-700 text-sm font-semibold rounded-xl hover:bg-mako-100 dark:hover:bg-white/5 transition-all">Cancelar</button>
-            <button type="submit" class="px-6 py-3 rounded-xl bg-primary text-white font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.4)] transition-all">Crear Empresa</button>
-          </div>
-        </form>
       </div>
-    </div>
-
-    <!-- Modal Nuevo Sitio -->
-    <div v-if="isAddSitioModalOpen" class="fixed inset-0 bg-mako-950/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div class="bg-white/95 dark:bg-mako-900/95 border border-mako-200 dark:border-white/10 rounded-[2rem] shadow-2xl w-full max-w-lg p-6 lg:p-8 relative max-h-[90vh] overflow-y-auto custom-scrollbar animate-fade-in">
-        <button @click="isAddSitioModalOpen = false" class="absolute top-6 right-6 p-2 rounded-full hover:bg-mako-100 dark:hover:bg-white/10 text-mako-400 transition-colors">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
-        <h3 class="text-xl font-bold mb-6 flex items-center gap-3 text-mako-900 dark:text-white">
-          <div class="p-2 bg-primary/10 rounded-xl">
-            <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /></svg>
-          </div>
-          Crear Nuevo Sitio
-        </h3>
-        <form @submit.prevent="handleAddSitio" class="space-y-5">
-          <div>
-            <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Empresa Cliente</label>
-            <select v-model="newSitioEmpresa" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold">
-              <option value="" disabled>Seleccione...</option>
-              <option v-for="empresa in empresas" :key="empresa.id" :value="empresa.id">{{ empresa.nombre }}</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre del Sitio</label>
-            <input v-model="newSitioName" type="text" placeholder="Ej. Fundo El Carmen" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold" />
-          </div>
-          <div class="pt-4 border-t border-mako-200 dark:border-mako-700/50 flex gap-3 justify-end">
-            <button type="button" @click="isAddSitioModalOpen = false" class="px-5 py-3 border border-mako-300 dark:border-mako-700 text-sm font-semibold rounded-xl hover:bg-mako-100 dark:hover:bg-white/5 transition-all">Cancelar</button>
-            <button type="submit" class="px-6 py-3 rounded-xl bg-primary text-white font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.4)] transition-all">Registrar Sitio</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Modal Nueva Zona -->
-    <div v-if="isAddZonaModalOpen" class="fixed inset-0 bg-mako-950/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div class="bg-white/95 dark:bg-mako-900/95 border border-mako-200 dark:border-white/10 rounded-[2rem] shadow-2xl w-full max-w-lg p-6 lg:p-8 relative max-h-[90vh] overflow-y-auto custom-scrollbar animate-fade-in">
-        <button @click="isAddZonaModalOpen = false" class="absolute top-6 right-6 p-2 rounded-full hover:bg-mako-100 dark:hover:bg-white/10 text-mako-400 transition-colors">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-        </button>
-        <h3 class="text-xl font-bold mb-6 flex items-center gap-3 text-mako-900 dark:text-white">
-          <div class="p-2 bg-primary/10 rounded-xl">
-            <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" /></svg>
-          </div>
-          Crear Nueva Zona
-        </h3>
-        <form @submit.prevent="handleAddZona" class="space-y-5">
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Empresa</label>
-              <select v-model="newZonaEmpresa" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold">
-                <option value="" disabled>Seleccione...</option>
-                <option v-for="empresa in empresas" :key="empresa.id" :value="empresa.id">{{ empresa.nombre }}</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Sitio</label>
-              <select v-model="newZonaSitio" :disabled="!newZonaEmpresa" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold disabled:opacity-50">
-                <option value="" disabled>Seleccione...</option>
-                <option v-for="sitio in zonasSitios" :key="sitio.id" :value="sitio.id">{{ sitio.nombre }}</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre de la Zona</label>
-            <input v-model="newZonaName" type="text" placeholder="Ej. Sector Caseta 1" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold" />
-          </div>
-          <div class="pt-4 border-t border-mako-200 dark:border-mako-700/50 flex gap-3 justify-end">
-            <button type="button" @click="isAddZonaModalOpen = false" class="px-5 py-3 border border-mako-300 dark:border-mako-700 text-sm font-semibold rounded-xl hover:bg-mako-100 dark:hover:bg-white/5 transition-all">Cancelar</button>
-            <button type="submit" class="px-6 py-3 rounded-xl bg-primary text-white font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.4)] transition-all">Registrar Zona</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-  </div>
 </template>

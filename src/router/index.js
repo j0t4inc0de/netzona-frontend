@@ -40,6 +40,18 @@ const router = createRouter({
       ]
     },
     {
+      path: '/estructura',
+      component: () => import('../layouts/DashboardLayout.vue'),
+      meta: { requiresAuth: true, allowedRoles: ['tecnico'] },
+      children: [
+        {
+          path: '',
+          name: 'estructura',
+          component: () => import('../views/EstructuraView.vue')
+        }
+      ]
+    },
+    {
       path: '/tecnico',
       component: () => import('../layouts/DashboardLayout.vue'),
       meta: { requiresAuth: true, allowedRoles: ['tecnico'] },
