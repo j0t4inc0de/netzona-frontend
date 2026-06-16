@@ -53,11 +53,7 @@ watch(() => route.path, (newPath) => {
   }
 })
 
-watch(isDesktopSidebarCollapsed, (collapsed) => {
-  if (collapsed) {
-    isCerrosDropdownOpen.value = false
-  }
-})
+
 
 onUnmounted(() => {
   if (pollingInterval) clearInterval(pollingInterval)
@@ -198,6 +194,12 @@ const isDesktopSidebarCollapsed = ref(false)
 const toggleDesktopSidebar = () => {
   isDesktopSidebarCollapsed.value = !isDesktopSidebarCollapsed.value
 }
+
+watch(isDesktopSidebarCollapsed, (collapsed) => {
+  if (collapsed) {
+    isCerrosDropdownOpen.value = false
+  }
+})
 
 
 // Los Cerros se listan iterando telemetrics.cerros
