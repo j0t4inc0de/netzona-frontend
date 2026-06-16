@@ -192,6 +192,7 @@ const chartOptions = computed(() => {
       },
     },
     tooltip: {
+      theme: isDark.value ? 'dark' : 'light',
       shared: true,
       intersect: false,
       y: {
