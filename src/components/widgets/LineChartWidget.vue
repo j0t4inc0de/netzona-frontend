@@ -24,7 +24,7 @@ const ranges = computed(() => {
   return props.widget.configuracion?.rangos_permitidos || ['1h', '24h', '7d', '20d', '30d']
 })
 
-const selectedRange = ref(props.widget.configuracion?.rango_default || '24h')
+const selectedRange = ref('30d')
 
 // Traducir rangos a etiquetas legibles
 const getRangeLabel = (range) => {
