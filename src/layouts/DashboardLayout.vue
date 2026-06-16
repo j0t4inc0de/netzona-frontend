@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useTelemetricsStore } from '../stores/telemetrics'
@@ -16,6 +16,7 @@ const toggleDarkBase = useToggle(isDark)
 import { api } from '../services/api'
 
 let pollingInterval = null
+const isCerrosDropdownOpen = ref(true)
 
 onMounted(async () => {
   telemetrics.fetchDataFromBackend()
@@ -25,6 +26,12 @@ onMounted(async () => {
     telemetrics.updateRealtimeMetrics()
   }, 5000)
 
+  // Esperar a que se carguen los cerros para cerrarlo si hay más de 3
+  setTimeout(() => {
+    if (telemetrics.cerros.length > 3 && !route.path.startsWith('/dashboard/cerro/')) {
+      isCerrosDropdownOpen.value = false
+    }
+  }, 1000)
   
   // Cargar preferencia del tema desde el backend
   try {
@@ -37,6 +44,12 @@ onMounted(async () => {
     }
   } catch {
     console.warn('Backend API missing or failed, using local dark mode preference')
+  }
+})
+
+watch(() => route.path, (newPath) => {
+  if (newPath.startsWith('/dashboard/cerro/')) {
+    isCerrosDropdownOpen.value = true
   }
 })
 
@@ -218,23 +231,65 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
       </div>
 
       <nav class="flex-1 p-4 space-y-2 overflow-y-auto overflow-x-hidden">
-        <router-link
-          v-for="cerro in telemetrics.cerros"
-          :key="cerro.id"
-          :to="'/dashboard/cerro/' + cerro.id"
-          class="flex items-center py-3 rounded-2xl transition-all duration-300 text-mako-600 dark:text-mako-300 hover:bg-mako-100 dark:hover:bg-white/5"
-          :class="isDesktopSidebarCollapsed ? 'px-[14px]' : 'px-4'"
-          active-class="!text-primary font-semibold"
-          :title="isDesktopSidebarCollapsed ? cerro.name : ''"
-        >
-          <svg class="w-5 h-5 shrink-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 3 4 8 5-5 5 15H2L8 3z" />
-          </svg>
-          <span class="whitespace-nowrap overflow-hidden transition-all duration-300"
-                :class="isDesktopSidebarCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[200px] opacity-100 ml-3'">
-            {{ cerro.name }}
-          </span>
-        </router-link>
+        <!-- Colapsable de Cerros (Sitios) -->
+        <div>
+          <button
+            @click="isCerrosDropdownOpen = !isCerrosDropdownOpen"
+            class="w-full flex items-center justify-between py-3 rounded-2xl transition-all duration-300 text-mako-600 dark:text-mako-300 hover:bg-mako-100 dark:hover:bg-white/5"
+            :class="isDesktopSidebarCollapsed ? 'px-[14px]' : 'px-4'"
+            :title="isDesktopSidebarCollapsed ? 'Cerros' : ''"
+          >
+            <div class="flex items-center">
+              <svg class="w-5 h-5 shrink-0 transition-transform duration-300" :class="isCerrosDropdownOpen ? 'text-primary' : 'text-mako-600 dark:text-mako-300'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 3 4 8 5-5 5 15H2L8 3z" />
+              </svg>
+              <span class="whitespace-nowrap overflow-hidden transition-all duration-300 font-semibold text-sm"
+                    :class="isDesktopSidebarCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[200px] opacity-100 ml-3'">
+                Cerros
+              </span>
+            </div>
+            
+            <svg 
+              v-if="!isDesktopSidebarCollapsed"
+              class="w-4 h-4 text-mako-400 transition-transform duration-300 shrink-0" 
+              :class="{ 'rotate-180': isCerrosDropdownOpen }" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+          
+          <!-- Lista de Cerros colapsable -->
+          <div 
+            v-show="isCerrosDropdownOpen || isDesktopSidebarCollapsed" 
+            class="mt-1 space-y-1 transition-all duration-300"
+            :class="isDesktopSidebarCollapsed ? 'pl-0' : 'pl-4'"
+          >
+            <router-link
+              v-for="cerro in telemetrics.cerros"
+              :key="cerro.id"
+              :to="'/dashboard/cerro/' + cerro.id"
+              class="flex items-center py-2.5 rounded-xl transition-all duration-300 text-mako-600 dark:text-mako-300 hover:bg-mako-100 dark:hover:bg-white/5"
+              :class="isDesktopSidebarCollapsed ? 'px-[14px] justify-center' : 'px-4'"
+              active-class="!text-primary font-bold"
+              :title="isDesktopSidebarCollapsed ? cerro.name : ''"
+            >
+              <!-- Punto para sub-item cuando está expandido -->
+              <span v-if="!isDesktopSidebarCollapsed" class="w-1.5 h-1.5 rounded-full bg-current mr-2.5 opacity-60"></span>
+              
+              <svg v-else class="w-4 h-4 shrink-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 3 4 8 5-5 5 15H2L8 3z" />
+              </svg>
+              
+              <span class="whitespace-nowrap overflow-hidden text-xs transition-all duration-300"
+                    :class="isDesktopSidebarCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[200px] opacity-100'">
+                {{ cerro.name }}
+              </span>
+            </router-link>
+          </div>
+        </div>
 
         <div v-if="showAdminLink || showTecnicoLink" class="pt-4 pb-2 relative flex items-center h-10 transition-all duration-300" :class="isDesktopSidebarCollapsed ? 'justify-center' : 'px-4'">
           <span class="text-xs font-bold uppercase tracking-wider text-mako-400 whitespace-nowrap overflow-hidden transition-all duration-300"
@@ -359,20 +414,45 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
         </button>
       </div>
 
-      <nav class="flex-1 p-4 space-y-2 overflow-y-auto" @click="isSidebarOpen = false">
-        <!-- Dynamic Cerros -->
-        <router-link
-          v-for="cerro in telemetrics.cerros"
-          :key="cerro.id"
-          :to="'/dashboard/cerro/' + cerro.id"
-          class="flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 text-mako-600 dark:text-mako-300 hover:bg-mako-100 dark:hover:bg-white/5"
-          active-class="!text-primary font-semibold"
-        >
-          <svg class="w-5 h-5 shrink-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 3 4 8 5-5 5 15H2L8 3z" />
-          </svg>
-          {{ cerro.name }}
-        </router-link>
+      <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+        <!-- Colapsable de Cerros (Sitios) -->
+        <div>
+          <button
+            @click="isCerrosDropdownOpen = !isCerrosDropdownOpen"
+            class="w-full flex items-center justify-between px-4 py-3 rounded-2xl transition-all duration-200 text-mako-600 dark:text-mako-300 hover:bg-mako-100 dark:hover:bg-white/5"
+          >
+            <div class="flex items-center gap-3">
+              <svg class="w-5 h-5 shrink-0 transition-transform duration-300" :class="isCerrosDropdownOpen ? 'text-primary' : 'text-mako-600 dark:text-mako-300'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 3 4 8 5-5 5 15H2L8 3z" />
+              </svg>
+              <span class="font-semibold text-sm">Cerros</span>
+            </div>
+            <svg
+              class="w-4 h-4 text-mako-400 transition-transform duration-300"
+              :class="{ 'rotate-180': isCerrosDropdownOpen }"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
+          
+          <!-- Lista de Cerros colapsable -->
+          <div v-show="isCerrosDropdownOpen" class="pl-4 mt-1 space-y-1">
+            <router-link
+              v-for="cerro in telemetrics.cerros"
+              :key="cerro.id"
+              :to="'/dashboard/cerro/' + cerro.id"
+              @click="isSidebarOpen = false"
+              class="flex items-center py-2.5 px-4 rounded-xl transition-all duration-200 text-mako-600 dark:text-mako-300 hover:bg-mako-100 dark:hover:bg-white/5 text-xs"
+              active-class="!text-primary font-bold"
+            >
+              <span class="w-1.5 h-1.5 rounded-full bg-current mr-2.5 opacity-60"></span>
+              {{ cerro.name }}
+            </router-link>
+          </div>
+        </div>
 
         <div v-if="showAdminLink || showTecnicoLink" class="pt-4 pb-2 px-4">
           <span class="text-xs font-bold uppercase tracking-wider text-mako-400">Gestión</span>
@@ -381,6 +461,7 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
         <router-link
           v-if="showAdminLink"
           to="/admin"
+          @click="isSidebarOpen = false"
           class="flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 text-mako-600 dark:text-mako-300 hover:bg-mako-100 dark:hover:bg-white/5"
           active-class="!text-primary font-semibold"
         >
@@ -390,6 +471,7 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
         <router-link
           v-if="showTecnicoLink"
           to="/estructura"
+          @click="isSidebarOpen = false"
           class="flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 text-mako-600 dark:text-mako-300 hover:bg-mako-100 dark:hover:bg-white/5"
           active-class="!text-primary font-semibold"
         >
@@ -399,6 +481,7 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
         <router-link
           v-if="showTecnicoLink"
           to="/tecnico"
+          @click="isSidebarOpen = false"
           class="flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 text-mako-600 dark:text-mako-300 hover:bg-mako-100 dark:hover:bg-white/5"
           active-class="!text-primary font-semibold"
         >
