@@ -225,7 +225,7 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
 
     <!-- SIDEBAR (Escritorio) -->
     <aside
-      class="bg-white/80 dark:bg-mako-900/60 border-r border-mako-200 dark:border-white/5 backdrop-blur-xl shrink-0 hidden md:flex flex-col sticky top-0 h-screen z-20 transition-all duration-300"
+      class="bg-white/80 dark:bg-mako-800/60 border-r border-mako-200 dark:border-white/5 backdrop-blur-xl shrink-0 hidden md:flex flex-col sticky top-0 h-screen z-20 transition-all duration-300"
       :class="isDesktopSidebarCollapsed ? 'w-20' : 'w-64'"
     >
       <div class="h-[73px] flex items-center border-b border-transparent overflow-hidden transition-all duration-300" :class="isDesktopSidebarCollapsed ? 'px-[24px]' : 'px-6'">
@@ -523,7 +523,7 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
     <div class="flex-1 flex flex-col min-w-0 relative z-10 overflow-x-hidden">
       <!-- HEADER -->
       <header
-        class="sticky top-0 z-30 px-6 py-4 border-b border-mako-200 dark:border-white/5 backdrop-blur-xl bg-white/80 dark:bg-mako-900/60 flex justify-between items-center transition-colors duration-300"
+        class="sticky top-0 z-30 px-6 py-4 border-b border-mako-200 dark:border-white/5 backdrop-blur-xl bg-white/80 dark:bg-mako-800/60 flex justify-between items-center transition-colors duration-300"
       >
         <div class="flex items-center gap-4">
           <button

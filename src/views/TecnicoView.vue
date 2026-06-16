@@ -484,7 +484,7 @@ const openActiveModal = () => {
 <template>
   <div class="space-y-6 max-w-7xl mx-auto">
     <!-- Navbar / Header Area -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] p-6 shadow-sm">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/85 dark:bg-mako-800/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] p-6 shadow-sm">
       <div class="flex items-center gap-4">
         <div class="p-3 bg-primary/10 rounded-2xl hidden sm:block">
           <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
@@ -536,7 +536,7 @@ const openActiveModal = () => {
     </div>
 
     <!-- PESTAÑA: EQUIPOS APROVISIONADOS -->
-    <div v-if="activeTab === 'nodos'" class="bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-sm overflow-hidden animate-fade-in">
+    <div v-if="activeTab === 'nodos'" class="bg-white/85 dark:bg-mako-800/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-sm overflow-hidden animate-fade-in">
       <div class="flex justify-between items-center p-6 border-b border-mako-100 dark:border-white/5">
         <h2 class="text-lg font-bold text-mako-900 dark:text-white">Inventario de Nodos</h2>
         <button @click="fetchEquipos" class="p-2 text-mako-500 hover:text-primary transition-colors bg-mako-100/50 dark:bg-mako-800 rounded-xl" title="Actualizar">
@@ -592,7 +592,7 @@ const openActiveModal = () => {
 
     <!-- PESTAÑA: ESTRUCTURA -->
     <!-- PESTAÑA: DIAGNÓSTICO MQTT -->
-    <div v-if="activeTab === 'mqtt'" class="bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-sm overflow-hidden animate-fade-in">
+    <div v-if="activeTab === 'mqtt'" class="bg-white/85 dark:bg-mako-800/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-sm overflow-hidden animate-fade-in">
       <div class="p-6 border-b border-mako-100 dark:border-white/5 flex justify-between items-center">
         <div>
           <h2 class="text-lg font-bold flex items-center gap-2 text-mako-900 dark:text-white">

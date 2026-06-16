@@ -489,7 +489,7 @@ const openActiveModal = () => {
 <template>
   <div class="space-y-6 max-w-7xl mx-auto">
     <!-- Navbar / Header Area -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] p-6 shadow-sm">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/85 dark:bg-mako-800/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] p-6 shadow-sm">
       <div class="flex items-center gap-4">
         <div class="p-3 bg-primary/10 rounded-2xl hidden sm:block">
           <svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path></svg>
@@ -552,7 +552,7 @@ const openActiveModal = () => {
     </div>
 
       <!-- Sub-pestaña Empresas -->
-      <div v-if="activeEstructuraSubTab === 'clientes'" class="bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-sm overflow-hidden">
+      <div v-if="activeEstructuraSubTab === 'clientes'" class="bg-white/85 dark:bg-mako-800/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-sm overflow-hidden">
         <div class="p-6 border-b border-mako-100 dark:border-white/5 flex items-center justify-between">
           <h2 class="text-lg font-bold text-mako-900 dark:text-white">Empresas Clientes</h2>
         </div>
@@ -602,7 +602,7 @@ const openActiveModal = () => {
       </div>
 
       <!-- Sub-pestaña Sitios -->
-      <div v-if="activeEstructuraSubTab === 'sitios'" class="bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-sm overflow-hidden">
+      <div v-if="activeEstructuraSubTab === 'sitios'" class="bg-white/85 dark:bg-mako-800/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-sm overflow-hidden">
         <div class="p-6 border-b border-mako-100 dark:border-white/5 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           <h2 class="text-lg font-bold text-mako-900 dark:text-white">Sitios por Empresa</h2>
           <select v-model="selectedEmpresaForSitios" class="px-4 py-2 rounded-xl bg-mako-100 dark:bg-mako-800 border border-mako-200 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold">
@@ -647,7 +647,7 @@ const openActiveModal = () => {
       </div>
 
       <!-- Sub-pestaña Zonas -->
-      <div v-if="activeEstructuraSubTab === 'zonas'" class="bg-white/85 dark:bg-mako-900/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-sm overflow-hidden">
+      <div v-if="activeEstructuraSubTab === 'zonas'" class="bg-white/85 dark:bg-mako-800/60 backdrop-blur-xl border border-white/40 dark:border-white/5 rounded-[2rem] shadow-sm overflow-hidden">
         <div class="p-6 border-b border-mako-100 dark:border-white/5 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
           <h2 class="text-lg font-bold text-mako-900 dark:text-white">Zonas por Sitio</h2>
           <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">

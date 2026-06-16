@@ -266,7 +266,7 @@ onUnmounted(() => {
     <!-- PANEL PRINCIPAL (3 columnas en escritorio) -->
     <div class="xl:col-span-3 space-y-6">
       <!-- Caso: Sin plantilla de Dashboard (Doc 04) -->
-      <div v-if="!selectedZona?.dashboard_template_id" class="flex flex-col items-center justify-center p-12 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md text-center min-h-[40vh] select-none">
+      <div v-if="!selectedZona?.dashboard_template_id" class="flex flex-col items-center justify-center p-12 bg-white/80 dark:bg-mako-800/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md text-center min-h-[40vh] select-none">
         <svg class="w-12 h-12 text-amber-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
@@ -275,7 +275,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Caso: Dashboard existe pero no tiene widgets (Doc 04) -->
-      <div v-else-if="sortedWidgets.length === 0" class="flex flex-col items-center justify-center p-12 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md text-center min-h-[40vh] select-none">
+      <div v-else-if="sortedWidgets.length === 0" class="flex flex-col items-center justify-center p-12 bg-white/80 dark:bg-mako-800/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md text-center min-h-[40vh] select-none">
         <svg class="w-12 h-12 text-mako-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
         </svg>
@@ -308,7 +308,7 @@ onUnmounted(() => {
         <!-- Mapa del Cerro (Sitio) - Elemento estático del frontend -->
         <div class="grid-stack-item" gs-id="widget-map" gs-w="4" gs-h="2">
           <div
-            class="grid-stack-item-content !p-0 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] overflow-hidden shadow-md relative"
+            class="grid-stack-item-content !p-0 bg-white/80 dark:bg-mako-800/60 border border-white/40 dark:border-white/5 rounded-[2rem] overflow-hidden shadow-md relative"
           >
             <l-map
               v-if="selectedZona"
@@ -356,7 +356,7 @@ onUnmounted(() => {
     <!-- SIDEBAR DE ZONAS (1 columna en escritorio) -->
     <div class="xl:col-span-1 space-y-4">
       <div
-        class="p-6 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md h-full"
+        class="p-6 bg-white/80 dark:bg-mako-800/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md h-full"
       >
         <h2 class="text-normal font-semibold mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">

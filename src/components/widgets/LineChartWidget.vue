@@ -207,7 +207,7 @@ const chartOptions = computed(() => {
 </script>
 
 <template>
-  <div class="h-full w-full p-6 bg-white/80 dark:bg-mako-900/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md flex flex-col justify-between select-none">
+  <div class="h-full w-full p-6 bg-white/80 dark:bg-mako-800/60 border border-white/40 dark:border-white/5 rounded-[2rem] shadow-md flex flex-col justify-between select-none">
     
     <!-- Cabecera del Gráfico -->
     <div class="flex justify-between items-center mb-3">
