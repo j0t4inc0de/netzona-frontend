@@ -53,6 +53,12 @@ watch(() => route.path, (newPath) => {
   }
 })
 
+watch(isDesktopSidebarCollapsed, (collapsed) => {
+  if (collapsed) {
+    isCerrosDropdownOpen.value = false
+  }
+})
+
 onUnmounted(() => {
   if (pollingInterval) clearInterval(pollingInterval)
 })
@@ -261,9 +267,8 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
             </svg>
           </button>
           
-          <!-- Lista de Cerros colapsable -->
           <div 
-            v-show="isCerrosDropdownOpen || isDesktopSidebarCollapsed" 
+            v-show="isCerrosDropdownOpen" 
             class="mt-1 space-y-1 transition-all duration-300"
             :class="isDesktopSidebarCollapsed ? 'pl-0' : 'pl-4'"
           >
