@@ -253,7 +253,7 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
               </svg>
               <span class="whitespace-nowrap overflow-hidden transition-all duration-300 font-semibold text-sm"
                     :class="isDesktopSidebarCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[200px] opacity-100 ml-3'">
-                Cerros
+                Sitios
               </span>
             </div>
             
@@ -432,7 +432,7 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
               <svg class="w-5 h-5 shrink-0 transition-transform duration-300" :class="isCerrosDropdownOpen ? 'text-primary' : 'text-mako-600 dark:text-mako-300'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m8 3 4 8 5-5 5 15H2L8 3z" />
               </svg>
-              <span class="font-semibold text-sm">Cerros</span>
+              <span class="font-semibold text-sm">Sitios</span>
             </div>
             <svg
               class="w-4 h-4 text-mako-400 transition-transform duration-300"
