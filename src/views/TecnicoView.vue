@@ -2,6 +2,7 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { api } from '../services/api'
 import { toast } from 'vue-sonner'
+import { useTelemetricsStore } from '../stores/telemetrics'
 
 // Estado Global
 const isLoading = ref(true)
@@ -772,6 +773,13 @@ const handleAddSimpleWidget = async () => {
       newWidgetVisualizacion.value = 'valor_actual'
       newWidgetTitulo.value = ''
       
+      try {
+        const telemetricsStore = useTelemetricsStore()
+        telemetricsStore.fetchDataFromBackend()
+      } catch (e) {
+        console.error('Failed to reload telemetrics store:', e)
+      }
+      
       if (activeTab.value === 'alta-rapida') {
         // Recargar widgets en wizard
         await fetchWizardDashboardWidgets()
@@ -793,6 +801,14 @@ const handleDeleteWidget = async (widgetId) => {
     const res = await api(`/dashboards/widgets/${widgetId}/`, { method: 'DELETE' })
     if (res.ok) {
       toast.success('Widget eliminado.')
+      
+      try {
+        const telemetricsStore = useTelemetricsStore()
+        telemetricsStore.fetchDataFromBackend()
+      } catch (e) {
+        console.error('Failed to reload telemetrics store:', e)
+      }
+
       const templateId = activeTab.value === 'alta-rapida' 
         ? wizardState.value.createdDashboardTemplate?.id 
         : selectedTipoDispositivoDashboard.value?.id
@@ -1583,11 +1599,11 @@ const copyToClipboard = (text) => {
         <div>
           <h2 class="text-xl font-bold text-mako-900 dark:text-white flex items-center gap-2">
             <span class="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-white text-xs font-bold">{{ wizardStep }}</span>
-            Asistente de Aprovisionamiento Rápido
+            Asistente de Creación Rápida
           </h2>
           <p class="text-xs text-mako-400 mt-1">Registra empresas, sitios, zonas y dispositivos paso a paso, reutilizando información existente.</p>
         </div>
-        <button @click="handleStartWizard" class="text-xs px-3.5 py-2 border border-red-500/30 text-red-500 bg-red-500/5 rounded-xl hover:bg-red-500 hover:text-white font-bold transition-all">Reiniciar Asistente</button>
+        <button @click="handleStartWizard" class="text-xs px-3.5 py-2 border border-red-500/30 text-red-500 bg-red-500/5 rounded-xl hover:bg-red-500 hover:text-white font-bold transition-all">Reiniciar Creación Rápida</button>
       </div>
 
       <!-- Barra de Progreso Visual -->
