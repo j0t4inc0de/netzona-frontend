@@ -35,14 +35,6 @@ const batteryColorClass = computed(() => {
   return 'text-green-500 dark:text-primary'
 })
 
-// Determina qué icono de batería mostrar
-const batteryIconPath = computed(() => {
-  const level = batteryLevel.value
-  if (level < 10) return 'M3 10h18M3 14h18M3 7h18a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z' // Empty
-  if (level < 33) return 'M6 10h4v4H6v-4Zm-3 0h18M3 14h18M3 7h18a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z' // 1/3
-  if (level < 66) return 'M6 10h8v4H6v-4Zm-3 0h18M3 14h18M3 7h18a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z' // 2/3
-  return 'M6 10h12v4H6v-4Zm-3 0h18M3 14h18M3 7h18a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z' // Full
-})
 
 const isStale = computed(() => {
   return props.widget.estado && props.widget.estado !== 'ok'

@@ -102,12 +102,9 @@ const fetchHistory = async () => {
         const val = p.v !== undefined ? p.v : p.valor
         const date = new Date(timeStr)
         
-        let label = ''
-        if (selectedRange.value === '1h' || selectedRange.value === '24h') {
-          label = date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
-        } else {
-          label = date.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' }) + ' ' + date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
-        }
+        const label = (selectedRange.value === '1h' || selectedRange.value === '24h')
+          ? date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+          : date.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' }) + ' ' + date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
         
         return {
           x: label,

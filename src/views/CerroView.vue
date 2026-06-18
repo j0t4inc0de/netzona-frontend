@@ -75,15 +75,20 @@ const updateMapLocation = () => {
 
 const isGridLoading = ref(false)
 let grid = null
+let initGridTimeout = null
 
 const initGrid = async () => {
   await nextTick()
+  if (initGridTimeout) {
+    clearTimeout(initGridTimeout)
+    initGridTimeout = null
+  }
   if (grid) {
     grid.off('dragstop resizestop')
     grid.destroy(false)
     grid = null
   }
-  setTimeout(async () => {
+  initGridTimeout = setTimeout(async () => {
     const isResetting = localStorage.getItem('is_resetting_layout') === 'true'
     
     if (isResetting) {
@@ -101,6 +106,20 @@ const initGrid = async () => {
 
     const el = document.querySelector('.grid-stack')
     if (el) {
+      // Copiar atributos data-gs-* a gs-* para que GridStack los lea,
+      // evitando que el patching reactivo de Vue los sobrescriba
+      const items = el.querySelectorAll('.grid-stack-item')
+      items.forEach(itemEl => {
+        const w = itemEl.getAttribute('data-gs-w')
+        const h = itemEl.getAttribute('data-gs-h')
+        const minW = itemEl.getAttribute('data-gs-min-w')
+        const minH = itemEl.getAttribute('data-gs-min-h')
+        if (w) itemEl.setAttribute('gs-w', w)
+        if (h) itemEl.setAttribute('gs-h', h)
+        if (minW) itemEl.setAttribute('gs-min-w', minW)
+        if (minH) itemEl.setAttribute('gs-min-h', minH)
+      })
+
       const isMobile = window.innerWidth <= 768
       grid = GridStack.init({
         cellHeight: '145px',
@@ -173,24 +192,46 @@ const initGrid = async () => {
         const backendLayout = layout.filter(item => item.id && !item.id.startsWith('widget-')).map(item => {
           const el = document.querySelector(`[gs-id="${item.id}"]`)
           const node = el ? el.gridstackNode : null
+
+          const rawW = item.w ?? node?.w ?? parseInt(el?.getAttribute('gs-w'))
+          const rawH = item.h ?? node?.h ?? parseInt(el?.getAttribute('gs-h'))
+          const rawX = item.x ?? node?.x ?? parseInt(el?.getAttribute('gs-x'))
+          const rawY = item.y ?? node?.y ?? parseInt(el?.getAttribute('gs-y'))
+
+          const w = isNaN(rawW) ? 1 : Math.max(1, parseInt(rawW))
+          const h = isNaN(rawH) ? 1 : Math.max(1, parseInt(rawH))
+          const x = isNaN(rawX) ? 0 : Math.max(0, parseInt(rawX))
+          const y = isNaN(rawY) ? 0 : Math.max(0, parseInt(rawY))
+
           return {
             widget_id: item.id,
-            x: item.x ?? node?.x ?? 0,
-            y: item.y ?? node?.y ?? 0,
-            w: item.w ?? node?.w ?? parseInt(el?.getAttribute('gs-w')) ?? 1,
-            h: item.h ?? node?.h ?? parseInt(el?.getAttribute('gs-h')) ?? 1
+            x,
+            y,
+            w,
+            h
           }
         })
         
         const staticLayout = layout.filter(item => item.id && item.id.startsWith('widget-')).map(item => {
           const el = document.querySelector(`[gs-id="${item.id}"]`)
           const node = el ? el.gridstackNode : null
+
+          const rawW = item.w ?? node?.w ?? parseInt(el?.getAttribute('gs-w'))
+          const rawH = item.h ?? node?.h ?? parseInt(el?.getAttribute('gs-h'))
+          const rawX = item.x ?? node?.x ?? parseInt(el?.getAttribute('gs-x'))
+          const rawY = item.y ?? node?.y ?? parseInt(el?.getAttribute('gs-y'))
+
+          const w = isNaN(rawW) ? 1 : Math.max(1, parseInt(rawW))
+          const h = isNaN(rawH) ? 1 : Math.max(1, parseInt(rawH))
+          const x = isNaN(rawX) ? 0 : Math.max(0, parseInt(rawX))
+          const y = isNaN(rawY) ? 0 : Math.max(0, parseInt(rawY))
+
           return {
             id: item.id,
-            x: item.x ?? node?.x ?? 0,
-            y: item.y ?? node?.y ?? 0,
-            w: item.w ?? node?.w ?? parseInt(el?.getAttribute('gs-w')) ?? 1,
-            h: item.h ?? node?.h ?? parseInt(el?.getAttribute('gs-h')) ?? 1
+            x,
+            y,
+            w,
+            h
           }
         })
         
@@ -252,12 +293,14 @@ watch(
 )
 
 onUnmounted(() => {
+  if (initGridTimeout) {
+    clearTimeout(initGridTimeout)
+  }
   if (grid) {
     grid.off('dragstop resizestop')
     grid.destroy(false)
   }
-})
-</script>
+})</script>
 
 <template>
   <AppLoader v-if="store.isLoading" />
@@ -314,10 +357,10 @@ onUnmounted(() => {
           :key="w.id" 
           class="grid-stack-item" 
           :gs-id="w.id" 
-          :gs-w="getWidgetSpec(w.tipo_widget).defaultW" 
-          :gs-h="getWidgetSpec(w.tipo_widget).defaultH"
-          :gs-min-w="getWidgetSpec(w.tipo_widget).minW"
-          :gs-min-h="getWidgetSpec(w.tipo_widget).minH"
+          :data-gs-w="getWidgetSpec(w.tipo_widget).defaultW" 
+          :data-gs-h="getWidgetSpec(w.tipo_widget).defaultH"
+          :data-gs-min-w="getWidgetSpec(w.tipo_widget).minW"
+          :data-gs-min-h="getWidgetSpec(w.tipo_widget).minH"
         >
           <div class="grid-stack-item-content !p-0 bg-transparent rounded-3xl overflow-hidden">
             <MetricCard v-if="w.tipo_widget === 'metric_card'" :widget="w" />
@@ -331,7 +374,7 @@ onUnmounted(() => {
         </div>
 
         <!-- Mapa del Cerro (Sitio) - Elemento estático del frontend -->
-        <div class="grid-stack-item" gs-id="widget-map" gs-w="4" gs-h="2">
+        <div class="grid-stack-item" gs-id="widget-map" data-gs-w="4" data-gs-h="2">
           <div
             class="grid-stack-item-content !p-0 bg-white/80 dark:bg-mako-800/60 border border-white/40 dark:border-white/5 rounded-[2rem] overflow-hidden shadow-md relative"
           >
