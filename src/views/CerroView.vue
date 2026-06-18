@@ -1,8 +1,6 @@
 <script setup>
 import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { useAuthStore } from '../stores/auth'
 import { useTelemetricsStore } from '../stores/telemetrics'
-import { useDark } from '@vueuse/core'
 import { LMap, LTileLayer, LMarker, LPopup } from '@vue-leaflet/vue-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { GridStack } from 'gridstack'
@@ -19,10 +17,20 @@ import StatusCard from '../components/widgets/StatusCard.vue'
 import GaugeWidget from '../components/widgets/GaugeWidget.vue'
 import LineChartWidget from '../components/widgets/LineChartWidget.vue'
 
-const auth = useAuthStore()
 const store = useTelemetricsStore()
-const isDark = useDark()
 const route = useRoute()
+
+const getWidgetSpec = (tipoWidget) => {
+  const specs = {
+    line_chart: { defaultW: 6, defaultH: 2, minW: 4, minH: 2 },
+    gauge: { defaultW: 3, defaultH: 2, minW: 2, minH: 1 },
+    metric_card: { defaultW: 3, defaultH: 1, minW: 2, minH: 1 },
+    battery_card: { defaultW: 3, defaultH: 1, minW: 2, minH: 1 },
+    signal_card: { defaultW: 3, defaultH: 1, minW: 2, minH: 1 },
+    status_card: { defaultW: 3, defaultH: 1, minW: 2, minH: 1 }
+  }
+  return specs[tipoWidget] || { defaultW: 3, defaultH: 1, minW: 2, minH: 1 }
+}
 
 const selectedCerroId = computed(() => route.params.id)
 
@@ -76,6 +84,21 @@ const initGrid = async () => {
     grid = null
   }
   setTimeout(async () => {
+    const isResetting = localStorage.getItem('is_resetting_layout') === 'true'
+    
+    if (isResetting) {
+      const items = document.querySelectorAll('.grid-stack-item')
+      items.forEach(el => {
+        el.removeAttribute('gs-x')
+        el.removeAttribute('gs-y')
+        el.removeAttribute('style')
+      })
+      const container = document.querySelector('.grid-stack')
+      if (container) {
+        container.removeAttribute('style')
+      }
+    }
+
     const el = document.querySelector('.grid-stack')
     if (el) {
       const isMobile = window.innerWidth <= 768
@@ -114,7 +137,7 @@ const initGrid = async () => {
             }
             // Cargar componentes estáticos de localStorage
             const localStr = localStorage.getItem(`grid_static_${selectedZona.value.id}`)
-            if (localStr) {
+            if (localStr && !isResetting) {
               finalLayout.push(...JSON.parse(localStr))
             }
             
@@ -291,8 +314,10 @@ onUnmounted(() => {
           :key="w.id" 
           class="grid-stack-item" 
           :gs-id="w.id" 
-          :gs-w="w.ancho || 3" 
-          :gs-h="w.alto || 1"
+          :gs-w="getWidgetSpec(w.tipo_widget).defaultW" 
+          :gs-h="getWidgetSpec(w.tipo_widget).defaultH"
+          :gs-min-w="getWidgetSpec(w.tipo_widget).minW"
+          :gs-min-h="getWidgetSpec(w.tipo_widget).minH"
         >
           <div class="grid-stack-item-content !p-0 bg-transparent rounded-3xl overflow-hidden">
             <MetricCard v-if="w.tipo_widget === 'metric_card'" :widget="w" />
