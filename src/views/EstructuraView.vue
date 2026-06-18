@@ -35,7 +35,6 @@ const fetchMqttPayloads = async () => {
 }
 
 // Modales
-const isAddNodeModalOpen = ref(false)
 const isAddClientModalOpen = ref(false)
 const isAddSitioModalOpen = ref(false)
 const isAddZonaModalOpen = ref(false)
@@ -387,77 +386,9 @@ const handleAddZona = async () => {
   }
 }
 
-// Formulario Nodo
-const formSelectedEmpresa = ref('')
-const formSelectedSitio = ref('')
-const formSelectedZona = ref('')
-const formSelectedTipoDispositivo = ref('')
-const serial = ref('')
-const deviceName = ref('')
-const formSitios = ref([])
-const formZonas = ref([])
 
-watch(formSelectedEmpresa, async (newVal) => {
-  formSelectedSitio.value = ''
-  formSelectedZona.value = ''
-  formSitios.value = []
-  if (!newVal) return
-  const res = await api(`/empresas/sitios/?empresa=${newVal}`)
-  if (res.ok) {
-    const data = await res.json()
-    formSitios.value = data.results || data
-  }
-})
 
-watch(formSelectedSitio, async (newVal) => {
-  formSelectedZona.value = ''
-  formZonas.value = []
-  if (!newVal) return
-  const res = await api(`/empresas/zonas/?sitio=${newVal}`)
-  if (res.ok) {
-    const data = await res.json()
-    formZonas.value = data.results || data
-  }
-})
 
-const handleRegisterNode = async () => {
-  if (!formSelectedEmpresa.value || !formSelectedSitio.value || !formSelectedZona.value || !formSelectedTipoDispositivo.value || !serial.value.trim() || !deviceName.value.trim()) {
-    toast.error('Por favor complete todos los campos obligatorios.')
-    return
-  }
-  const regex = /^[A-Za-z0-9_-]+$/
-  if (!regex.test(serial.value.trim())) {
-    toast.error('El Serial solo puede contener letras, números, guiones o guiones bajos.')
-    return
-  }
-  try {
-    const payload = {
-      empresa: formSelectedEmpresa.value,
-      sitio: formSelectedSitio.value,
-      zona: formSelectedZona.value,
-      tipo_dispositivo: formSelectedTipoDispositivo.value,
-      serial: serial.value.trim(),
-      nombre: deviceName.value.trim()
-    }
-    const res = await api('/dispositivos/equipos/', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    })
-    if (res.ok) {
-      toast.success(`Nodo ${serial.value} provisionado con éxito.`)
-      serial.value = ''
-      deviceName.value = ''
-      isAddNodeModalOpen.value = false
-      fetchEquipos()
-    } else {
-      const errorData = await res.json()
-      toast.error('Error al registrar: ' + JSON.stringify(errorData))
-    }
-  } catch (error) {
-    console.error(error)
-    toast.error('Error de conexión al registrar dispositivo.')
-  }
-}
 
 onMounted(async () => {
   await Promise.all([
