@@ -49,4 +49,15 @@
     z-index: 1 !important;
     background: transparent !important;
   }
+
+  /* Corrección global para elementos select y option en modo oscuro */
+  .dark select {
+    background-color: #363e4f !important; /* bg-mako-800 */
+    color: #ffffff !important;
+    border-color: #404a60 !important; /* border-mako-700 */
+  }
+  .dark option {
+    background-color: #2b2d31 !important; /* bg-mako-900 */
+    color: #ffffff !important;
+  }
 }
