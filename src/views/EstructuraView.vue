@@ -39,6 +39,55 @@ const isAddClientModalOpen = ref(false)
 const isAddSitioModalOpen = ref(false)
 const isAddZonaModalOpen = ref(false)
 
+const clientFormErrors = ref({})
+const sitioFormErrors = ref({})
+const zonaFormErrors = ref({})
+
+watch(isAddClientModalOpen, (newVal) => {
+  if (newVal) clientFormErrors.value = {}
+})
+watch(isAddSitioModalOpen, (newVal) => {
+  if (newVal) sitioFormErrors.value = {}
+})
+watch(isAddZonaModalOpen, (newVal) => {
+  if (newVal) zonaFormErrors.value = {}
+})
+
+const handleBackendError = async (res, defaultMsg) => {
+  try {
+    const data = await res.json().catch(() => ({}))
+    if (data.detail) {
+      toast.error(data.detail)
+      return data
+    }
+    if (data.non_field_errors) {
+      toast.error(data.non_field_errors.join('\n'))
+      return data
+    }
+    if (typeof data === 'object' && !Array.isArray(data)) {
+      const messages = []
+      for (const [key, value] of Object.entries(data)) {
+        if (Array.isArray(value)) {
+          messages.push(`${key}: ${value.join(', ')}`)
+        } else {
+          messages.push(`${key}: ${value}`)
+        }
+      }
+      if (messages.length > 0) {
+        toast.error(messages.join('\n'))
+      } else {
+        toast.error(defaultMsg)
+      }
+      return data
+    }
+    toast.error(defaultMsg)
+    return {}
+  } catch {
+    toast.error(defaultMsg)
+    return {}
+  }
+}
+
 // Edición y Eliminación de Estructura (Inline)
 const editingClientId = ref(null)
 const editingClientName = ref('')
@@ -76,6 +125,11 @@ const startEditClient = (empresa) => {
 }
 
 const handleUpdateClient = async () => {
+  const codeRegex = /^[a-z0-9_]+$/
+  if (!editingClientCode.value.trim() || !codeRegex.test(editingClientCode.value.trim())) {
+    toast.error('Código inválido: usa solo minúsculas, números y guion bajo. Ejemplo: empresa_demo.')
+    return
+  }
   try {
     const res = await api(`/empresas/clientes/${editingClientId.value}/`, {
       method: 'PUT',
@@ -91,7 +145,7 @@ const handleUpdateClient = async () => {
       editingClientId.value = null
       await fetchEmpresas()
     } else {
-      toast.error('Error al actualizar cliente.')
+      await handleBackendError(res, 'Error al actualizar cliente.')
     }
   } catch {
     toast.error('Error de conexión.')
@@ -122,6 +176,11 @@ const startEditSitio = (sitio) => {
 }
 
 const handleUpdateSitio = async (empresaId) => {
+  const codeRegex = /^[a-z0-9_]+$/
+  if (!editingSitioCode.value.trim() || !codeRegex.test(editingSitioCode.value.trim())) {
+    toast.error('Código inválido: usa solo minúsculas, números y guion bajo. Ejemplo: empresa_demo.')
+    return
+  }
   try {
     const res = await api(`/empresas/sitios/${editingSitioId.value}/`, {
       method: 'PUT',
@@ -138,7 +197,7 @@ const handleUpdateSitio = async (empresaId) => {
         await fetchSitios(selectedEmpresaForSitios.value)
       }
     } else {
-      toast.error('Error al actualizar sitio.')
+      await handleBackendError(res, 'Error al actualizar sitio.')
     }
   } catch {
     toast.error('Error de conexión.')
@@ -169,6 +228,11 @@ const startEditZona = (zona) => {
 }
 
 const handleUpdateZona = async (sitioId) => {
+  const codeRegex = /^[a-z0-9_]+$/
+  if (!editingZonaCode.value.trim() || !codeRegex.test(editingZonaCode.value.trim())) {
+    toast.error('Código inválido: usa solo minúsculas, números y guion bajo. Ejemplo: empresa_demo.')
+    return
+  }
   try {
     const res = await api(`/empresas/zonas/${editingZonaId.value}/`, {
       method: 'PUT',
@@ -185,7 +249,7 @@ const handleUpdateZona = async (sitioId) => {
         await fetchZonas(selectedSitioForZonas.value)
       }
     } else {
-      toast.error('Error al actualizar zona.')
+      await handleBackendError(res, 'Error al actualizar zona.')
     }
   } catch {
     toast.error('Error de conexión.')
@@ -309,8 +373,15 @@ const fetchEquipos = async () => {
 
 // Handlers de Submit (Creación)
 const handleAddClient = async () => {
+  clientFormErrors.value = {}
   if (!newClientName.value.trim() || !newClientCode.value.trim() || !newClientRut.value.trim()) {
     toast.error('Complete todos los campos para la empresa.')
+    return
+  }
+  const codeRegex = /^[a-z0-9_]+$/
+  if (!codeRegex.test(newClientCode.value.trim())) {
+    clientFormErrors.value.codigo = ['Usa solo minúsculas, números y guion bajo. Ejemplo: empresa_demo.']
+    toast.error('Formato de código inválido.')
     return
   }
   try {
@@ -331,7 +402,7 @@ const handleAddClient = async () => {
       isAddClientModalOpen.value = false
       await fetchEmpresas()
     } else {
-      toast.error('Error al registrar cliente.')
+      clientFormErrors.value = await handleBackendError(res, 'Error al registrar cliente.')
     }
   } catch {
     toast.error('Error de conexión.')
@@ -339,8 +410,15 @@ const handleAddClient = async () => {
 }
 
 const handleAddSitio = async () => {
+  sitioFormErrors.value = {}
   if (!newSitioEmpresa.value || !newSitioName.value.trim() || !newSitioCode.value.trim()) {
     toast.error('Complete la empresa, el nombre y el código del sitio.')
+    return
+  }
+  const codeRegex = /^[a-z0-9_]+$/
+  if (!codeRegex.test(newSitioCode.value.trim())) {
+    sitioFormErrors.value.codigo = ['Usa solo minúsculas, números y guion bajo. Ejemplo: empresa_demo.']
+    toast.error('Formato de código inválido.')
     return
   }
   try {
@@ -361,7 +439,7 @@ const handleAddSitio = async () => {
         fetchSitios(selectedEmpresaForSitios.value)
       }
     } else {
-      toast.error('Error al registrar sitio.')
+      sitioFormErrors.value = await handleBackendError(res, 'Error al registrar sitio.')
     }
   } catch {
     toast.error('Error de conexión al registrar sitio.')
@@ -369,8 +447,15 @@ const handleAddSitio = async () => {
 }
 
 const handleAddZona = async () => {
+  zonaFormErrors.value = {}
   if (!newZonaEmpresa.value || !newZonaSitio.value || !newZonaName.value.trim() || !newZonaCode.value.trim()) {
     toast.error('Seleccione empresa, sitio y asigne un nombre y código a la zona.')
+    return
+  }
+  const codeRegex = /^[a-z0-9_]+$/
+  if (!codeRegex.test(newZonaCode.value.trim())) {
+    zonaFormErrors.value.codigo = ['Usa solo minúsculas, números y guion bajo. Ejemplo: empresa_demo.']
+    toast.error('Formato de código inválido.')
     return
   }
   try {
@@ -391,7 +476,7 @@ const handleAddZona = async () => {
         fetchZonas(selectedSitioForZonas.value)
       }
     } else {
-      toast.error('Error al registrar zona.')
+      zonaFormErrors.value = await handleBackendError(res, 'Error al registrar zona.')
     }
   } catch {
     toast.error('Error de conexión al registrar zona.')
@@ -663,17 +748,20 @@ const openActiveModal = () => {
         </h3>
         <form @submit.prevent="handleAddClient" class="space-y-5">
           <div>
-            <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre Legal</label>
-            <input v-model="newClientName" type="text" placeholder="Ej. Viñedos San Pedro S.A." class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold" />
+            <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre de la Empresa</label>
+            <input v-model="newClientName" type="text" placeholder="Ej. Netzona Spa" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold transition-all" :class="{'border-red-500': clientFormErrors.nombre}" />
+            <p v-if="clientFormErrors.nombre" class="text-red-500 text-[10px] mt-1">{{ clientFormErrors.nombre[0] }}</p>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">RUT / ID</label>
-              <input v-model="newClientRut" type="text" placeholder="Ej. 76.543.210-K" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold" />
+              <input v-model="newClientRut" type="text" placeholder="Ej. 76.543.210-K" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold transition-all" :class="{'border-red-500': clientFormErrors.rut}" />
+              <p v-if="clientFormErrors.rut" class="text-red-500 text-[10px] mt-1">{{ clientFormErrors.rut[0] }}</p>
             </div>
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Código Único</label>
-              <input v-model="newClientCode" type="text" placeholder="Ej. VIN-SP" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-mono font-bold" />
+              <input v-model="newClientCode" type="text" placeholder="Ej. VIN-SP" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-mono font-bold transition-all" :class="{'border-red-500': clientFormErrors.codigo}" />
+              <p v-if="clientFormErrors.codigo" class="text-red-500 text-[10px] mt-1">{{ clientFormErrors.codigo[0] }}</p>
             </div>
           </div>
           <div class="pt-4 border-t border-mako-200 dark:border-mako-700/50 flex gap-3 justify-end">
@@ -699,19 +787,22 @@ const openActiveModal = () => {
         <form @submit.prevent="handleAddSitio" class="space-y-5">
           <div>
             <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Empresa Cliente</label>
-            <select v-model="newSitioEmpresa" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold">
+            <select v-model="newSitioEmpresa" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold transition-all" :class="{'border-red-500': sitioFormErrors.empresa}">
               <option value="" disabled>Seleccione...</option>
               <option v-for="empresa in empresas" :key="empresa.id" :value="empresa.id">{{ empresa.nombre }}</option>
             </select>
+            <p v-if="sitioFormErrors.empresa" class="text-red-500 text-[10px] mt-1">{{ sitioFormErrors.empresa[0] }}</p>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre del Sitio</label>
-              <input v-model="newSitioName" type="text" placeholder="Ej. Fundo El Carmen" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold" />
+              <input v-model="newSitioName" type="text" placeholder="Ej. Fundo El Carmen" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold transition-all" :class="{'border-red-500': sitioFormErrors.nombre}" />
+              <p v-if="sitioFormErrors.nombre" class="text-red-500 text-[10px] mt-1">{{ sitioFormErrors.nombre[0] }}</p>
             </div>
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Código Único</label>
-              <input v-model="newSitioCode" type="text" placeholder="Ej. ST-01" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-mono font-bold text-primary" />
+              <input v-model="newSitioCode" type="text" placeholder="Ej. ST-01" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-mono font-bold text-primary transition-all" :class="{'border-red-500': sitioFormErrors.codigo}" />
+              <p v-if="sitioFormErrors.codigo" class="text-red-500 text-[10px] mt-1">{{ sitioFormErrors.codigo[0] }}</p>
             </div>
           </div>
           <div class="pt-4 border-t border-mako-200 dark:border-mako-700/50 flex gap-3 justify-end">
@@ -745,20 +836,23 @@ const openActiveModal = () => {
             </div>
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Sitio</label>
-              <select v-model="newZonaSitio" :disabled="!newZonaEmpresa" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold disabled:opacity-50">
+              <select v-model="newZonaSitio" :disabled="!newZonaEmpresa" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold disabled:opacity-50 transition-all" :class="{'border-red-500': zonaFormErrors.sitio}">
                 <option value="" disabled>Seleccione...</option>
-                <option v-for="sitio in zonasSitios" :key="sitio.id" :value="sitio.id">{{ sitio.nombre }}</option>
+                <option v-for="sit in zonasSitios" :key="sit.id" :value="sit.id">{{ sit.nombre }}</option>
               </select>
+              <p v-if="zonaFormErrors.sitio" class="text-red-500 text-[10px] mt-1">{{ zonaFormErrors.sitio[0] }}</p>
             </div>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre de la Zona</label>
-              <input v-model="newZonaName" type="text" placeholder="Ej. Sector Caseta 1" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold" />
+              <input v-model="newZonaName" type="text" placeholder="Ej. Sector Caseta 1" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold transition-all" :class="{'border-red-500': zonaFormErrors.nombre}" />
+              <p v-if="zonaFormErrors.nombre" class="text-red-500 text-[10px] mt-1">{{ zonaFormErrors.nombre[0] }}</p>
             </div>
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Código de la Zona</label>
-              <input v-model="newZonaCode" type="text" placeholder="Ej. ZN-01" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-mono font-bold text-primary" />
+              <input v-model="newZonaCode" type="text" placeholder="Ej. ZN-01" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-mono font-bold text-primary transition-all" :class="{'border-red-500': zonaFormErrors.codigo}" />
+              <p v-if="zonaFormErrors.codigo" class="text-red-500 text-[10px] mt-1">{{ zonaFormErrors.codigo[0] }}</p>
             </div>
           </div>
           <div class="pt-4 border-t border-mako-200 dark:border-mako-700/50 flex gap-3 justify-end">

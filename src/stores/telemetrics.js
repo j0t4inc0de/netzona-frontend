@@ -22,36 +22,37 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
   const cerros = ref([])
 
   // --- ACCIONES TÉCNICO NETZONA ---
-  const addClient = async (name) => {
+  const addClient = async (name, code, rut = '') => {
     try {
-      await api('/empresas/clientes/', {
+      const res = await api('/empresas/clientes/', {
         method: 'POST',
-        body: JSON.stringify({ nombre: name, activo: true })
+        body: JSON.stringify({ nombre: name, codigo: code, rut: rut, activo: true })
       })
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw errData
+      }
+      const data = await res.json()
+      return data
     } catch (error) {
-      console.warn('Backend API missing or failed, using local state fallback for addClient', error)
+      console.error('Error on addClient', error)
+      throw error
     }
-
-    const id = `client-${clients.value.length + 1}`
-    clients.value.push({ id, name })
-    return id
   }
 
-  const registerNode = async (serial, model, type, clientId) => {
+  const registerNode = async (payload) => {
     try {
-      // Intento de conexión real al backend
-      await api('/dispositivos/equipos/', {
+      const res = await api('/dispositivos/equipos/', {
         method: 'POST',
-        body: JSON.stringify({
-          serial: serial,
-          nombre: model,
-          empresa: clientId,
-          activo: true
-        })
+        body: JSON.stringify(payload)
       })
-      await fetchWorkersFromBackend()
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}))
+        throw errData
+      }
     } catch (error) {
       console.error('Error on registerNode', error)
+      throw error
     }
   }
 
@@ -208,6 +209,19 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
   }
 
   // --- ACTUALIZACIÓN DE MÉTRICAS (LONG POLLING API REAL) ---
+  const transformEstadoActual = (data) => {
+    if (!data) return {}
+    if (data.sensores && Array.isArray(data.sensores)) {
+      const transformed = {}
+      for (const s of data.sensores) {
+        transformed[s.codigo_sensor] = { valor: s.valor }
+      }
+      return transformed
+    }
+    return data
+  }
+
+  // --- ACTUALIZACIÓN DE MÉTRICAS (LONG POLLING API REAL) ---
   const updateRealtimeMetrics = async () => {
     try {
       for (const cerro of cerros.value) {
@@ -216,7 +230,8 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
             try {
               const res = await api(`/dispositivos/${s.serial}/estado-actual/`)
               if (res.ok) {
-                const data = await res.json()
+                const rawData = await res.json()
+                const data = transformEstadoActual(rawData)
                 const time = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
                 if (data['TEMPERATURA']) {
                   zona.metrics.temperature = data['TEMPERATURA'].valor
@@ -240,7 +255,8 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
             try {
               const res = await api(`/dispositivos/${r.serial}/estado-actual/`)
               if (res.ok) {
-                const data = await res.json()
+                const rawData = await res.json()
+                const data = transformEstadoActual(rawData)
                 const time = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
                 
                 if (data['VOLTAJE']) {
@@ -580,16 +596,18 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
             
             await Promise.all(codigosPresentes.map(async (cod) => {
               try {
-                const resHist = await api(`/dispositivos/${d.serial}/sensores/${cod}/historial/?desde=${desde}&hasta=${hasta}`)
-                if (resHist.ok) {
-                  const dataHist = await resHist.json()
-                  const chartData = dataHist.map(h => {
-                    const date = new Date(h.timestamp || h.fecha)
-                    const label = range === '24h' 
-                      ? date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                      : date.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' }) + ' ' + date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
-                    return { x: label, y: h.valor }
-                  })
+                 const resHist = await api(`/dispositivos/${d.serial}/sensores/${cod}/historial/?desde=${desde}&hasta=${hasta}`)
+                 if (resHist.ok) {
+                   const dataHist = await resHist.json()
+                   const points = dataHist.puntos || (Array.isArray(dataHist) ? dataHist : [])
+                   const chartData = points.map(h => {
+                     const date = new Date(h.t || h.timestamp || h.fecha)
+                     const val = h.v !== undefined ? h.v : h.valor
+                     const label = range === '24h' 
+                       ? date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                       : date.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' }) + ' ' + date.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+                     return { x: label, y: val }
+                   })
                   
                   if (chartData.length > 0) {
                     if (cod === 'TEMPERATURA') zona.history.temperature = chartData

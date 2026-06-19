@@ -29,6 +29,11 @@ const saveWorkerDetails = async () => {
   const nameParts = editingUser.value.name.trim().split(/\s+/)
   const nombres = nameParts[0] || ''
   const apellidos = nameParts.slice(1).join(' ') || ''
+  const nameRegex = /\d/
+  if (nameRegex.test(nombres) || nameRegex.test(apellidos)) {
+    toast.error('Los nombres y apellidos no pueden contener números.')
+    return
+  }
   const email = editingUser.value.username.includes('@') ? editingUser.value.username.trim().toLowerCase() : `${editingUser.value.username.trim().toLowerCase()}@netzona.cl`
   const rut = editingUser.value.rut.trim()
 
@@ -132,6 +137,15 @@ const handleAddWorker = async () => {
   formErrors.value = {}
   if (!workerName.value.trim() || !workerUsername.value.trim() || !workerRut.value.trim()) {
     toast.error('Por favor complete todos los datos obligatorios.')
+    return
+  }
+  const nameParts = workerName.value.trim().split(/\s+/)
+  const nombres = nameParts[0] || ''
+  const apellidos = nameParts.slice(1).join(' ') || ''
+  const nameRegex = /\d/
+  if (nameRegex.test(nombres) || nameRegex.test(apellidos)) {
+    formErrors.value = { nombres: ['Los nombres y apellidos no pueden contener números.'] }
+    toast.error('Los nombres y apellidos no pueden contener números.')
     return
   }
 

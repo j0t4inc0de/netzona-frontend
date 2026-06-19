@@ -43,6 +43,70 @@ const wizardState = ref({
 })
 
 // Variables para Formularios Rápidos (Modales/Listas)
+const clientFormErrors = ref({})
+const sitioFormErrors = ref({})
+const zonaFormErrors = ref({})
+const tipoDispositivoFormErrors = ref({})
+const tipoSensorFormErrors = ref({})
+const equipoFormErrors = ref({})
+
+watch(isAddClientModalOpen, (newVal) => {
+  if (newVal) clientFormErrors.value = {}
+})
+watch(isAddSitioModalOpen, (newVal) => {
+  if (newVal) sitioFormErrors.value = {}
+})
+watch(isAddZonaModalOpen, (newVal) => {
+  if (newVal) zonaFormErrors.value = {}
+})
+watch(isAddTipoDispositivoModalOpen, (newVal) => {
+  if (newVal) tipoDispositivoFormErrors.value = {}
+})
+watch(isAddTipoSensorModalOpen, (newVal) => {
+  if (newVal) tipoSensorFormErrors.value = {}
+})
+watch(isAddEquipoModalOpen, (newVal) => {
+  if (newVal) equipoFormErrors.value = {}
+})
+watch(wizardStep, () => {
+  equipoFormErrors.value = {}
+})
+
+const handleBackendError = async (res, defaultMsg) => {
+  try {
+    const data = await res.json().catch(() => ({}))
+    if (data.detail) {
+      toast.error(data.detail)
+      return data
+    }
+    if (data.non_field_errors) {
+      toast.error(data.non_field_errors.join('\n'))
+      return data
+    }
+    if (typeof data === 'object' && !Array.isArray(data)) {
+      const messages = []
+      for (const [key, value] of Object.entries(data)) {
+        if (Array.isArray(value)) {
+          messages.push(`${key}: ${value.join(', ')}`)
+        } else {
+          messages.push(`${key}: ${value}`)
+        }
+      }
+      if (messages.length > 0) {
+        toast.error(messages.join('\n'))
+      } else {
+        toast.error(defaultMsg)
+      }
+      return data
+    }
+    toast.error(defaultMsg)
+    return {}
+  } catch {
+    toast.error(defaultMsg)
+    return {}
+  }
+}
+
 // 1. Empresa
 const isAddClientModalOpen = ref(false)
 const newClientName = ref('')
@@ -350,8 +414,15 @@ const selectTipoDispositivo = async (tipoDisp) => {
 
 // 1. Crear Empresa
 const handleAddClient = async () => {
+  clientFormErrors.value = {}
   if (!newClientName.value.trim() || !newClientCode.value.trim() || !newClientRut.value.trim()) {
     toast.error('Complete todos los campos para la empresa.')
+    return
+  }
+  const codeRegex = /^[a-z0-9_]+$/
+  if (!codeRegex.test(newClientCode.value.trim())) {
+    clientFormErrors.value = { codigo: ['El código debe usar snake_case (solo minúsculas, números y guión bajo).'] }
+    toast.error('El código debe usar snake_case (solo minúsculas, números y guión bajo).')
     return
   }
   try {
@@ -377,8 +448,7 @@ const handleAddClient = async () => {
       isAddClientModalOpen.value = false
       await fetchEmpresas()
     } else {
-      const err = await res.json()
-      toast.error('Error al registrar empresa: ' + JSON.stringify(err))
+      clientFormErrors.value = await handleBackendError(res, 'Error al registrar empresa.')
     }
   } catch {
     toast.error('Error de conexión.')
@@ -387,9 +457,16 @@ const handleAddClient = async () => {
 
 // 2. Crear Sitio
 const handleAddSitio = async () => {
+  sitioFormErrors.value = {}
   const empresaId = activeTab.value === 'alta-rapida' ? wizardState.value.empresaId : newSitioEmpresa.value
   if (!empresaId || !newSitioName.value.trim() || !newSitioCode.value.trim()) {
     toast.error('Complete la empresa, el nombre y el código del sitio.')
+    return
+  }
+  const codeRegex = /^[a-z0-9_]+$/
+  if (!codeRegex.test(newSitioCode.value.trim())) {
+    sitioFormErrors.value = { codigo: ['El código debe usar snake_case (solo minúsculas, números y guión bajo).'] }
+    toast.error('El código debe usar snake_case (solo minúsculas, números y guión bajo).')
     return
   }
   try {
@@ -411,7 +488,7 @@ const handleAddSitio = async () => {
       newSitioCode.value = ''
       isAddSitioModalOpen.value = false
     } else {
-      toast.error('Error al registrar sitio.')
+      sitioFormErrors.value = await handleBackendError(res, 'Error al registrar sitio.')
     }
   } catch {
     toast.error('Error de conexión al registrar sitio.')
@@ -420,9 +497,16 @@ const handleAddSitio = async () => {
 
 // 3. Crear Zona
 const handleAddZona = async () => {
+  zonaFormErrors.value = {}
   const sitioId = activeTab.value === 'alta-rapida' ? wizardState.value.sitioId : newZonaSitio.value
   if (!sitioId || !newZonaName.value.trim() || !newZonaCode.value.trim()) {
     toast.error('Seleccione sitio y asigne un nombre y código a la zona.')
+    return
+  }
+  const codeRegex = /^[a-z0-9_]+$/
+  if (!codeRegex.test(newZonaCode.value.trim())) {
+    zonaFormErrors.value = { codigo: ['El código debe usar snake_case (solo minúsculas, números y guión bajo).'] }
+    toast.error('El código debe usar snake_case (solo minúsculas, números y guión bajo).')
     return
   }
   try {
@@ -444,7 +528,7 @@ const handleAddZona = async () => {
       newZonaCode.value = ''
       isAddZonaModalOpen.value = false
     } else {
-      toast.error('Error al registrar zona.')
+      zonaFormErrors.value = await handleBackendError(res, 'Error al registrar zona.')
     }
   } catch {
     toast.error('Error de conexión al registrar zona.')
@@ -453,8 +537,15 @@ const handleAddZona = async () => {
 
 // 4. Crear Tipo de Dispositivo
 const handleAddTipoDispositivo = async () => {
+  tipoDispositivoFormErrors.value = {}
   if (!newTipoDispositivoCodigo.value.trim() || !newTipoDispositivoNombre.value.trim()) {
     toast.error('Complete código y nombre del tipo de dispositivo.')
+    return
+  }
+  const codeRegex = /^[a-z0-9_]+$/
+  if (!codeRegex.test(newTipoDispositivoCodigo.value.trim())) {
+    tipoDispositivoFormErrors.value = { codigo: ['El código debe usar snake_case (solo minúsculas, números y guión bajo).'] }
+    toast.error('El código debe usar snake_case (solo minúsculas, números y guión bajo).')
     return
   }
   try {
@@ -463,7 +554,6 @@ const handleAddTipoDispositivo = async () => {
       body: JSON.stringify({
         codigo: newTipoDispositivoCodigo.value.trim(),
         nombre: newTipoDispositivoNombre.value.trim(),
-        modelo: newTipoDispositivoModelo.value.trim(),
         descripcion: newTipoDispositivoDescripcion.value.trim(),
         activo: true
       })
@@ -481,8 +571,7 @@ const handleAddTipoDispositivo = async () => {
       isAddTipoDispositivoModalOpen.value = false
       await fetchTiposDispositivo()
     } else {
-      const err = await res.json()
-      toast.error('Error al crear tipo de dispositivo: ' + JSON.stringify(err))
+      tipoDispositivoFormErrors.value = await handleBackendError(res, 'Error al crear tipo de dispositivo.')
     }
   } catch {
     toast.error('Error de conexión.')
@@ -491,8 +580,15 @@ const handleAddTipoDispositivo = async () => {
 
 // 5. Crear / Editar Tipo de Sensor
 const handleSaveTipoSensor = async () => {
+  tipoSensorFormErrors.value = {}
   if (!newSensorCodigo.value.trim() || !newSensorNombreVisible.value.trim()) {
     toast.error('Código y Nombre Visible son obligatorios.')
+    return
+  }
+  const codeRegex = /^[a-z0-9_]+$/
+  if (!codeRegex.test(newSensorCodigo.value.trim())) {
+    tipoSensorFormErrors.value = { codigo: ['El código debe usar snake_case (solo minúsculas, números y guión bajo).'] }
+    toast.error('El código debe usar snake_case (solo minúsculas, números y guión bajo).')
     return
   }
   try {
@@ -539,8 +635,7 @@ const handleSaveTipoSensor = async () => {
       isAddTipoSensorModalOpen.value = false
       await fetchTiposSensor()
     } else {
-      const err = await res.json()
-      toast.error('Error al guardar sensor: ' + JSON.stringify(err))
+      tipoSensorFormErrors.value = await handleBackendError(res, 'Error al guardar sensor.')
     }
   } catch {
     toast.error('Error de conexión.')
@@ -579,6 +674,7 @@ const handleDeleteTipoSensor = async (id) => {
 
 // 6. Registrar e Instalar Dispositivo Físico (Equipo)
 const handleRegisterNode = async () => {
+  equipoFormErrors.value = {}
   const empresaId = activeTab.value === 'alta-rapida' ? wizardState.value.empresaId : newEquipoEmpresa.value
   const sitioId = activeTab.value === 'alta-rapida' ? wizardState.value.sitioId : newEquipoSitio.value
   const zonaId = activeTab.value === 'alta-rapida' ? wizardState.value.zonaId : newEquipoZona.value
@@ -593,6 +689,7 @@ const handleRegisterNode = async () => {
   }
   const regex = /^[A-Za-z0-9_-]+$/
   if (!regex.test(serial.trim())) {
+    equipoFormErrors.value = { serial: ['El serial debe usar solo letras, números, guion bajo y guion medio.'] }
     toast.error('El Serial solo puede contener letras, números, guiones o guiones bajos.')
     return
   }
@@ -640,8 +737,7 @@ const handleRegisterNode = async () => {
         await fetchEquipos()
       }
     } else {
-      const errorData = await res.json()
-      toast.error('Error al registrar: ' + JSON.stringify(errorData))
+      equipoFormErrors.value = await handleBackendError(res, 'Error al registrar dispositivo.')
     }
   } catch (error) {
     console.error(error)
@@ -1742,15 +1838,18 @@ const copyToClipboard = (text) => {
         <form @submit.prevent="handleRegisterNode" class="max-w-md space-y-4">
           <div>
             <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Número de Serie (ID Único)</label>
-            <input v-model="wizardState.serial" type="text" placeholder="Ej. DEV-000123" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-mono font-semibold" required />
+            <input v-model="wizardState.serial" type="text" placeholder="Ej. DEV-000123" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-mono font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.serial}" required />
+            <p v-if="equipoFormErrors.serial" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.serial[0] }}</p>
           </div>
           <div>
             <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre del Nodo</label>
-            <input v-model="wizardState.nombre" type="text" placeholder="Ej. Estación Clima Los Pinos" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold" required />
+            <input v-model="wizardState.nombre" type="text" placeholder="Ej. Estación Clima Los Pinos" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.nombre}" required />
+            <p v-if="equipoFormErrors.nombre" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.nombre[0] }}</p>
           </div>
           <div>
             <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">MQTT Username (opcional)</label>
-            <input v-model="wizardState.mqttUsername" type="text" placeholder="Ej. user_pinos" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold" />
+            <input v-model="wizardState.mqttUsername" type="text" placeholder="Ej. user_pinos" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.mqtt_username}" />
+            <p v-if="equipoFormErrors.mqtt_username" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.mqtt_username[0] }}</p>
           </div>
 
           <div class="pt-4 border-t border-mako-100 dark:border-mako-800/50 flex justify-between items-center">
@@ -1994,47 +2093,54 @@ const copyToClipboard = (text) => {
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">1. Empresa</label>
-              <select v-model="newEquipoEmpresa" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold">
+              <select v-model="newEquipoEmpresa" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.empresa}">
                 <option value="" disabled>Seleccione...</option>
                 <option v-for="empresa in empresas" :key="empresa.id" :value="empresa.id">{{ empresa.nombre }}</option>
               </select>
+              <p v-if="equipoFormErrors.empresa" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.empresa[0] }}</p>
             </div>
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">2. Sitio</label>
-              <select v-model="newEquipoSitio" :disabled="!newEquipoEmpresa" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold disabled:opacity-50">
+              <select v-model="newEquipoSitio" :disabled="!newEquipoEmpresa" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold disabled:opacity-50 transition-all" :class="{'border-red-500': equipoFormErrors.sitio}">
                 <option value="" disabled>Seleccione...</option>
                 <option v-for="sitio in newEquipoSitiosList" :key="sitio.id" :value="sitio.id">{{ sitio.nombre }}</option>
               </select>
+              <p v-if="equipoFormErrors.sitio" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.sitio[0] }}</p>
             </div>
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">3. Zona</label>
-              <select v-model="newEquipoZona" :disabled="!newEquipoSitio" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold disabled:opacity-50">
+              <select v-model="newEquipoZona" :disabled="!newEquipoSitio" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold disabled:opacity-50 transition-all" :class="{'border-red-500': equipoFormErrors.zona}">
                 <option value="" disabled>Seleccione...</option>
                 <option v-for="zona in newEquipoZonasList" :key="zona.id" :value="zona.id">{{ zona.nombre }}</option>
               </select>
+              <p v-if="equipoFormErrors.zona" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.zona[0] }}</p>
             </div>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Número de Serie</label>
-              <input v-model="newEquipoSerial" type="text" placeholder="Ej. SN_AG_999" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-mono font-semibold" required />
+              <input v-model="newEquipoSerial" type="text" placeholder="Ej. SN_AG_999" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-mono font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.serial}" required />
+              <p v-if="equipoFormErrors.serial" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.serial[0] }}</p>
             </div>
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre del Nodo</label>
-              <input v-model="newEquipoNombre" type="text" placeholder="Ej. Estación Clima Norte" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold" required />
+              <input v-model="newEquipoNombre" type="text" placeholder="Ej. Estación Clima Norte" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.nombre}" required />
+              <p v-if="equipoFormErrors.nombre" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.nombre[0] }}</p>
             </div>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Modelo (Tipo Dispositivo)</label>
-              <select v-model="newEquipoTipoDispositivo" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold">
+              <select v-model="newEquipoTipoDispositivo" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.tipo_dispositivo}">
                 <option value="" disabled>Seleccione el modelo...</option>
                 <option v-for="tipo in tiposDispositivo" :key="tipo.id" :value="tipo.id">{{ tipo.nombre }}</option>
               </select>
+              <p v-if="equipoFormErrors.tipo_dispositivo" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.tipo_dispositivo[0] }}</p>
             </div>
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">MQTT Username (opcional)</label>
-              <input v-model="newEquipoMqttUsername" type="text" placeholder="Ej. user_norte" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold" />
+              <input v-model="newEquipoMqttUsername" type="text" placeholder="Ej. user_norte" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.mqtt_username}" />
+              <p v-if="equipoFormErrors.mqtt_username" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.mqtt_username[0] }}</p>
             </div>
           </div>
           <div class="pt-4 border-t border-mako-200 dark:border-mako-700/50 flex gap-3 justify-end">
@@ -2060,21 +2166,24 @@ const copyToClipboard = (text) => {
         <form @submit.prevent="handleAddTipoDispositivo" class="space-y-5">
           <div>
             <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Código Único (para Tópico MQTT)</label>
-            <input v-model="newTipoDispositivoCodigo" type="text" placeholder="Ej. estacion_meteorologica" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-mono font-bold" required />
+            <input v-model="newTipoDispositivoCodigo" type="text" placeholder="Ej. estacion_meteorologica" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-mono font-bold transition-all" :class="{'border-red-500': tipoDispositivoFormErrors.codigo}" required />
+            <p v-if="tipoDispositivoFormErrors.codigo" class="text-red-500 text-[10px] mt-1">{{ tipoDispositivoFormErrors.codigo[0] }}</p>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre Comercial</label>
-              <input v-model="newTipoDispositivoNombre" type="text" placeholder="Ej. Estación Meteorológica Base" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold" required />
+              <input v-model="newTipoDispositivoNombre" type="text" placeholder="Ej. Estación Meteorológica Base" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': tipoDispositivoFormErrors.nombre}" required />
+              <p v-if="tipoDispositivoFormErrors.nombre" class="text-red-500 text-[10px] mt-1">{{ tipoDispositivoFormErrors.nombre[0] }}</p>
             </div>
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Modelo Físico</label>
-              <input v-model="newTipoDispositivoModelo" type="text" placeholder="Ej. Davis Pro v2" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold" />
+              <input v-model="newTipoDispositivoModelo" type="text" placeholder="Davis Pro v2 (no guardado en backend)" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold" />
             </div>
           </div>
           <div>
             <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Descripción</label>
-            <textarea v-model="newTipoDispositivoDescripcion" placeholder="Detalles o capacidades del modelo..." class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold h-24 resize-none"></textarea>
+            <textarea v-model="newTipoDispositivoDescripcion" placeholder="Detalles o capacidades del modelo..." class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold h-24 resize-none transition-all" :class="{'border-red-500': tipoDispositivoFormErrors.descripcion}"></textarea>
+            <p v-if="tipoDispositivoFormErrors.descripcion" class="text-red-500 text-[10px] mt-1">{{ tipoDispositivoFormErrors.descripcion[0] }}</p>
           </div>
           <div class="pt-4 border-t border-mako-200 dark:border-mako-700/50 flex gap-3 justify-end">
             <button type="button" @click="isAddTipoDispositivoModalOpen = false" class="px-5 py-3 border border-mako-300 dark:border-mako-700 text-sm font-semibold rounded-xl hover:bg-mako-100 dark:hover:bg-white/5 transition-all">Cancelar</button>
@@ -2100,35 +2209,41 @@ const copyToClipboard = (text) => {
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Código (para Payload MQTT)</label>
-              <input v-model="newSensorCodigo" type="text" placeholder="Ej. temperatura_suelo" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none font-mono font-bold" :disabled="!!editingSensorId" required />
+              <input v-model="newSensorCodigo" type="text" placeholder="Ej. temperatura_suelo" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none font-mono font-bold transition-all" :class="{'border-red-500': tipoSensorFormErrors.codigo}" :disabled="!!editingSensorId" required />
+              <p v-if="tipoSensorFormErrors.codigo" class="text-red-500 text-[10px] mt-1">{{ tipoSensorFormErrors.codigo[0] }}</p>
             </div>
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre Visible</label>
-              <input v-model="newSensorNombreVisible" type="text" placeholder="Ej. Temperatura de Suelo" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none font-semibold" required />
+              <input v-model="newSensorNombreVisible" type="text" placeholder="Ej. Temperatura de Suelo" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none font-semibold transition-all" :class="{'border-red-500': tipoSensorFormErrors.nombre_visible}" required />
+              <p v-if="tipoSensorFormErrors.nombre_visible" class="text-red-500 text-[10px] mt-1">{{ tipoSensorFormErrors.nombre_visible[0] }}</p>
             </div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Unidad de Medida</label>
-              <input v-model="newSensorUnidad" type="text" placeholder="Ej. °C, %, hPa" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none font-semibold" />
+              <input v-model="newSensorUnidad" type="text" placeholder="Ej. °C, %, hPa" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none font-semibold transition-all" :class="{'border-red-500': tipoSensorFormErrors.unidad}" />
+              <p v-if="tipoSensorFormErrors.unidad" class="text-red-500 text-[10px] mt-1">{{ tipoSensorFormErrors.unidad[0] }}</p>
             </div>
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Tipo de Dato</label>
-              <select v-model="newSensorTipoDato" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none font-semibold">
+              <select v-model="newSensorTipoDato" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none font-semibold transition-all" :class="{'border-red-500': tipoSensorFormErrors.tipo_dato}">
                 <option value="integer">Entero (Integer)</option>
                 <option value="float">Decimal (Float)</option>
                 <option value="boolean">Verdadero/Falso (Boolean)</option>
                 <option value="string">Texto (String)</option>
               </select>
+              <p v-if="tipoSensorFormErrors.tipo_dato" class="text-red-500 text-[10px] mt-1">{{ tipoSensorFormErrors.tipo_dato[0] }}</p>
             </div>
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Categoría</label>
-              <input v-model="newSensorCategoria" type="text" placeholder="Ej. clima, suelo, bateria" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none font-semibold" />
+              <input v-model="newSensorCategoria" type="text" placeholder="Ej. clima, suelo, bateria" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none font-semibold transition-all" :class="{'border-red-500': tipoSensorFormErrors.categoria}" />
+              <p v-if="tipoSensorFormErrors.categoria" class="text-red-500 text-[10px] mt-1">{{ tipoSensorFormErrors.categoria[0] }}</p>
             </div>
           </div>
           <div>
             <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Descripción</label>
-            <textarea v-model="newSensorDescripcion" placeholder="Detalles de medición del sensor..." class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none font-semibold h-20 resize-none"></textarea>
+            <textarea v-model="newSensorDescripcion" placeholder="Detalles de medición del sensor..." class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none font-semibold h-20 resize-none transition-all" :class="{'border-red-500': tipoSensorFormErrors.descripcion}"></textarea>
+            <p v-if="tipoSensorFormErrors.descripcion" class="text-red-500 text-[10px] mt-1">{{ tipoSensorFormErrors.descripcion[0] }}</p>
           </div>
 
           <!-- Permisos y Widget Sugerido -->
@@ -2179,16 +2294,19 @@ const copyToClipboard = (text) => {
         <form @submit.prevent="handleAddClient" class="space-y-4">
           <div>
             <label class="block text-xs font-bold text-mako-400 uppercase">Nombre Legal</label>
-            <input v-model="newClientName" type="text" placeholder="Ej. Agrícola Los Pinos" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold" required />
+            <input v-model="newClientName" type="text" placeholder="Ej. Agrícola Los Pinos" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': clientFormErrors.nombre}" required />
+            <p v-if="clientFormErrors.nombre" class="text-red-500 text-[10px] mt-1">{{ clientFormErrors.nombre[0] }}</p>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-bold text-mako-400 uppercase">RUT</label>
-              <input v-model="newClientRut" type="text" placeholder="76.123.456-7" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold" required />
+              <input v-model="newClientRut" type="text" placeholder="76.123.456-7" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': clientFormErrors.rut}" required />
+              <p v-if="clientFormErrors.rut" class="text-red-500 text-[10px] mt-1">{{ clientFormErrors.rut[0] }}</p>
             </div>
             <div>
               <label class="block text-xs font-bold text-mako-400 uppercase">Código Único</label>
-              <input v-model="newClientCode" type="text" placeholder="LOS-PINOS" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-mono font-bold" required />
+              <input v-model="newClientCode" type="text" placeholder="LOS-PINOS" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-mono font-bold transition-all" :class="{'border-red-500': clientFormErrors.codigo}" required />
+              <p v-if="clientFormErrors.codigo" class="text-red-500 text-[10px] mt-1">{{ clientFormErrors.codigo[0] }}</p>
             </div>
           </div>
           <div class="pt-4 flex gap-3 justify-end">
@@ -2207,19 +2325,22 @@ const copyToClipboard = (text) => {
         <form @submit.prevent="handleAddSitio" class="space-y-4">
           <div v-if="activeTab !== 'alta-rapida'">
             <label class="block text-xs font-bold text-mako-400 uppercase">Empresa</label>
-            <select v-model="newSitioEmpresa" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold">
+            <select v-model="newSitioEmpresa" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': sitioFormErrors.empresa}">
               <option value="" disabled>Seleccione...</option>
               <option v-for="emp in empresas" :key="emp.id" :value="emp.id">{{ emp.nombre }}</option>
             </select>
+            <p v-if="sitioFormErrors.empresa" class="text-red-500 text-[10px] mt-1">{{ sitioFormErrors.empresa[0] }}</p>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-bold text-mako-400 uppercase">Nombre del Sitio / Fundo</label>
-              <input v-model="newSitioName" type="text" placeholder="Ej. Fundo El Roble" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold" required />
+              <input v-model="newSitioName" type="text" placeholder="Ej. Fundo El Roble" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': sitioFormErrors.nombre}" required />
+              <p v-if="sitioFormErrors.nombre" class="text-red-500 text-[10px] mt-1">{{ sitioFormErrors.nombre[0] }}</p>
             </div>
             <div>
               <label class="block text-xs font-bold text-mako-400 uppercase">Código Único</label>
-              <input v-model="newSitioCode" type="text" placeholder="Ej. ST-01" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-mono font-bold text-primary" required />
+              <input v-model="newSitioCode" type="text" placeholder="Ej. ST-01" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-mono font-bold text-primary transition-all" :class="{'border-red-500': sitioFormErrors.codigo}" required />
+              <p v-if="sitioFormErrors.codigo" class="text-red-500 text-[10px] mt-1">{{ sitioFormErrors.codigo[0] }}</p>
             </div>
           </div>
           <div class="pt-4 flex gap-3 justify-end">
@@ -2239,27 +2360,31 @@ const copyToClipboard = (text) => {
           <div v-if="activeTab !== 'alta-rapida'" class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-bold text-mako-400 uppercase">Empresa</label>
-              <select v-model="newZonaEmpresa" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold">
+              <select v-model="newZonaEmpresa" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': zonaFormErrors.empresa}">
                 <option value="" disabled>Seleccione...</option>
                 <option v-for="emp in empresas" :key="emp.id" :value="emp.id">{{ emp.nombre }}</option>
               </select>
+              <p v-if="zonaFormErrors.empresa" class="text-red-500 text-[10px] mt-1">{{ zonaFormErrors.empresa[0] }}</p>
             </div>
             <div>
               <label class="block text-xs font-bold text-mako-400 uppercase">Sitio</label>
-              <select v-model="newZonaSitio" :disabled="!newZonaEmpresa" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold">
+              <select v-model="newZonaSitio" :disabled="!newZonaEmpresa" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': zonaFormErrors.sitio}">
                 <option value="" disabled>Seleccione...</option>
                 <option v-for="sit in newZonaSitiosList" :key="sit.id" :value="sit.id">{{ sit.nombre }}</option>
               </select>
+              <p v-if="zonaFormErrors.sitio" class="text-red-500 text-[10px] mt-1">{{ zonaFormErrors.sitio[0] }}</p>
             </div>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-bold text-mako-400 uppercase">Nombre de la Zona / Sector</label>
-              <input v-model="newZonaName" type="text" placeholder="Ej. Sector Norte" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold" required />
+              <input v-model="newZonaName" type="text" placeholder="Ej. Sector Norte" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': zonaFormErrors.nombre}" required />
+              <p v-if="zonaFormErrors.nombre" class="text-red-500 text-[10px] mt-1">{{ zonaFormErrors.nombre[0] }}</p>
             </div>
             <div>
               <label class="block text-xs font-bold text-mako-400 uppercase">Código de la Zona</label>
-              <input v-model="newZonaCode" type="text" placeholder="Ej. ZN-01" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-mono font-bold text-primary" required />
+              <input v-model="newZonaCode" type="text" placeholder="Ej. ZN-01" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-mono font-bold text-primary transition-all" :class="{'border-red-500': zonaFormErrors.codigo}" required />
+              <p v-if="zonaFormErrors.codigo" class="text-red-500 text-[10px] mt-1">{{ zonaFormErrors.codigo[0] }}</p>
             </div>
           </div>
           <div class="pt-4 flex gap-3 justify-end">
