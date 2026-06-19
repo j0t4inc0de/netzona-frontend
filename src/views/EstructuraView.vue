@@ -332,9 +332,7 @@ const fetchSitios = async (empresaId, isForZonasForm = false) => {
     const res = await api(`/empresas/sitios/?empresa=${empresaId}`)
     if (res.ok) {
       const data = await res.json()
-      if (!isForZonasForm) {
-        sitios.value = data.results || data
-      }
+      sitios.value = data.results || data
     }
   } catch (error) {
     console.error('Error al obtener sitios:', error)
@@ -812,7 +810,7 @@ const openActiveModal = () => {
             </div>
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Código Único</label>
-              <input v-model="newSitioCode" type="text" placeholder="Ej. ST-01" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-mono font-bold text-primary transition-all" :class="{'border-red-500': sitioFormErrors.codigo}" />
+              <input v-model="newSitioCode" type="text" placeholder="Ej. st_01" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-mono font-bold text-primary transition-all" :class="{'border-red-500': sitioFormErrors.codigo}" />
               <p v-if="sitioFormErrors.codigo" class="text-red-500 text-[10px] mt-1">{{ sitioFormErrors.codigo[0] }}</p>
             </div>
           </div>
@@ -862,7 +860,7 @@ const openActiveModal = () => {
             </div>
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Código de la Zona</label>
-              <input v-model="newZonaCode" type="text" placeholder="Ej. ZN-01" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-mono font-bold text-primary transition-all" :class="{'border-red-500': zonaFormErrors.codigo}" />
+              <input v-model="newZonaCode" type="text" placeholder="Ej. zn_01" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-mono font-bold text-primary transition-all" :class="{'border-red-500': zonaFormErrors.codigo}" />
               <p v-if="zonaFormErrors.codigo" class="text-red-500 text-[10px] mt-1">{{ zonaFormErrors.codigo[0] }}</p>
             </div>
           </div>
