@@ -6,6 +6,7 @@ import { useTelemetricsStore } from '../stores/telemetrics'
 
 // Estado Global
 const isLoading = ref(true)
+const telemetricsStore = useTelemetricsStore()
 const activeTab = ref('equipos') // 'equipos', 'tipos-dispositivo', 'tipos-sensor', 'alta-rapida', 'mqtt'
 
 // Listas de Datos desde Backend
@@ -447,6 +448,7 @@ const handleAddClient = async () => {
       newClientRut.value = ''
       isAddClientModalOpen.value = false
       await fetchEmpresas()
+      await telemetricsStore.fetchDataFromBackend()
     } else {
       clientFormErrors.value = await handleBackendError(res, 'Error al registrar empresa.')
     }
@@ -487,6 +489,7 @@ const handleAddSitio = async () => {
       newSitioName.value = ''
       newSitioCode.value = ''
       isAddSitioModalOpen.value = false
+      await telemetricsStore.fetchDataFromBackend()
     } else {
       sitioFormErrors.value = await handleBackendError(res, 'Error al registrar sitio.')
     }
@@ -527,6 +530,7 @@ const handleAddZona = async () => {
       newZonaName.value = ''
       newZonaCode.value = ''
       isAddZonaModalOpen.value = false
+      await telemetricsStore.fetchDataFromBackend()
     } else {
       zonaFormErrors.value = await handleBackendError(res, 'Error al registrar zona.')
     }

@@ -2,9 +2,11 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import { api } from '../services/api'
 import { toast } from 'vue-sonner'
+import { useTelemetricsStore } from '../stores/telemetrics'
 
 // Estado Global
 const isLoading = ref(true)
+const telemetricsStore = useTelemetricsStore()
  // 'nodos', 'estructura', 'mqtt'
 const activeEstructuraSubTab = ref('clientes') // 'clientes', 'sitios', 'zonas'
 
@@ -109,6 +111,7 @@ const handleDeleteClient = async (id) => {
     if (res.ok) {
       toast.success('Cliente eliminado correctamente.')
       await fetchEmpresas()
+      await telemetricsStore.fetchDataFromBackend()
     } else {
       toast.error('Error al eliminar cliente.')
     }
@@ -144,6 +147,7 @@ const handleUpdateClient = async () => {
       toast.success('Cliente actualizado con éxito.')
       editingClientId.value = null
       await fetchEmpresas()
+      await telemetricsStore.fetchDataFromBackend()
     } else {
       await handleBackendError(res, 'Error al actualizar cliente.')
     }
@@ -161,6 +165,7 @@ const handleDeleteSitio = async (id) => {
       if (selectedEmpresaForSitios.value) {
         await fetchSitios(selectedEmpresaForSitios.value)
       }
+      await telemetricsStore.fetchDataFromBackend()
     } else {
       toast.error('Error al eliminar sitio.')
     }
@@ -196,6 +201,7 @@ const handleUpdateSitio = async (empresaId) => {
       if (selectedEmpresaForSitios.value) {
         await fetchSitios(selectedEmpresaForSitios.value)
       }
+      await telemetricsStore.fetchDataFromBackend()
     } else {
       await handleBackendError(res, 'Error al actualizar sitio.')
     }
@@ -213,6 +219,7 @@ const handleDeleteZona = async (id) => {
       if (selectedSitioForZonas.value) {
         await fetchZonas(selectedSitioForZonas.value)
       }
+      await telemetricsStore.fetchDataFromBackend()
     } else {
       toast.error('Error al eliminar zona.')
     }
@@ -248,6 +255,7 @@ const handleUpdateZona = async (sitioId) => {
       if (selectedSitioForZonas.value) {
         await fetchZonas(selectedSitioForZonas.value)
       }
+      await telemetricsStore.fetchDataFromBackend()
     } else {
       await handleBackendError(res, 'Error al actualizar zona.')
     }
@@ -401,6 +409,7 @@ const handleAddClient = async () => {
       newClientRut.value = ''
       isAddClientModalOpen.value = false
       await fetchEmpresas()
+      await telemetricsStore.fetchDataFromBackend()
     } else {
       clientFormErrors.value = await handleBackendError(res, 'Error al registrar cliente.')
     }
@@ -438,6 +447,7 @@ const handleAddSitio = async () => {
       if (selectedEmpresaForSitios.value === newSitioEmpresa.value) {
         fetchSitios(selectedEmpresaForSitios.value)
       }
+      await telemetricsStore.fetchDataFromBackend()
     } else {
       sitioFormErrors.value = await handleBackendError(res, 'Error al registrar sitio.')
     }
@@ -475,6 +485,7 @@ const handleAddZona = async () => {
       if (selectedSitioForZonas.value === newZonaSitio.value) {
         fetchZonas(selectedSitioForZonas.value)
       }
+      await telemetricsStore.fetchDataFromBackend()
     } else {
       zonaFormErrors.value = await handleBackendError(res, 'Error al registrar zona.')
     }
