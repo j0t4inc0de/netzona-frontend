@@ -50,28 +50,6 @@ const tipoDispositivoFormErrors = ref({})
 const tipoSensorFormErrors = ref({})
 const equipoFormErrors = ref({})
 
-watch(isAddClientModalOpen, (newVal) => {
-  if (newVal) clientFormErrors.value = {}
-})
-watch(isAddSitioModalOpen, (newVal) => {
-  if (newVal) sitioFormErrors.value = {}
-})
-watch(isAddZonaModalOpen, (newVal) => {
-  if (newVal) zonaFormErrors.value = {}
-})
-watch(isAddTipoDispositivoModalOpen, (newVal) => {
-  if (newVal) tipoDispositivoFormErrors.value = {}
-})
-watch(isAddTipoSensorModalOpen, (newVal) => {
-  if (newVal) tipoSensorFormErrors.value = {}
-})
-watch(isAddEquipoModalOpen, (newVal) => {
-  if (newVal) equipoFormErrors.value = {}
-})
-watch(wizardStep, () => {
-  equipoFormErrors.value = {}
-})
-
 const handleBackendError = async (res, defaultMsg) => {
   try {
     const data = await res.json().catch(() => ({}))
@@ -175,6 +153,28 @@ const newWidgetTitulo = ref('')
 // 9. Activar Sensor Real en Equipo Físico
 const newRealSensorId = ref('')
 const newRealSensorNombreVisible = ref('')
+
+watch(isAddClientModalOpen, (newVal) => {
+  if (newVal) clientFormErrors.value = {}
+})
+watch(isAddSitioModalOpen, (newVal) => {
+  if (newVal) sitioFormErrors.value = {}
+})
+watch(isAddZonaModalOpen, (newVal) => {
+  if (newVal) zonaFormErrors.value = {}
+})
+watch(isAddTipoDispositivoModalOpen, (newVal) => {
+  if (newVal) tipoDispositivoFormErrors.value = {}
+})
+watch(isAddTipoSensorModalOpen, (newVal) => {
+  if (newVal) tipoSensorFormErrors.value = {}
+})
+watch(isAddEquipoModalOpen, (newVal) => {
+  if (newVal) equipoFormErrors.value = {}
+})
+watch(wizardStep, () => {
+  equipoFormErrors.value = {}
+})
 
 // ==========================================
 // WATCHERS DE FILTROS Y DEPENDENCIAS
