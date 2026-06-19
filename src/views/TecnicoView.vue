@@ -53,12 +53,14 @@ const newClientRut = ref('')
 const isAddSitioModalOpen = ref(false)
 const newSitioEmpresa = ref('')
 const newSitioName = ref('')
+const newSitioCode = ref('')
 
 // 3. Zona
 const isAddZonaModalOpen = ref(false)
 const newZonaEmpresa = ref('')
 const newZonaSitio = ref('')
 const newZonaName = ref('')
+const newZonaCode = ref('')
 const newZonaSitiosList = ref([])
 
 // 4. Tipo de Dispositivo
@@ -386,8 +388,8 @@ const handleAddClient = async () => {
 // 2. Crear Sitio
 const handleAddSitio = async () => {
   const empresaId = activeTab.value === 'alta-rapida' ? wizardState.value.empresaId : newSitioEmpresa.value
-  if (!empresaId || !newSitioName.value.trim()) {
-    toast.error('Complete la empresa y el nombre del sitio.')
+  if (!empresaId || !newSitioName.value.trim() || !newSitioCode.value.trim()) {
+    toast.error('Complete la empresa, el nombre y el código del sitio.')
     return
   }
   try {
@@ -395,7 +397,8 @@ const handleAddSitio = async () => {
       method: 'POST',
       body: JSON.stringify({
         nombre: newSitioName.value.trim(),
-        empresa: empresaId
+        empresa: empresaId,
+        codigo: newSitioCode.value.trim()
       })
     })
     if (res.ok) {
@@ -405,6 +408,7 @@ const handleAddSitio = async () => {
         wizardState.value.sitioId = data.id
       }
       newSitioName.value = ''
+      newSitioCode.value = ''
       isAddSitioModalOpen.value = false
     } else {
       toast.error('Error al registrar sitio.')
@@ -417,8 +421,8 @@ const handleAddSitio = async () => {
 // 3. Crear Zona
 const handleAddZona = async () => {
   const sitioId = activeTab.value === 'alta-rapida' ? wizardState.value.sitioId : newZonaSitio.value
-  if (!sitioId || !newZonaName.value.trim()) {
-    toast.error('Seleccione sitio y asigne un nombre a la zona.')
+  if (!sitioId || !newZonaName.value.trim() || !newZonaCode.value.trim()) {
+    toast.error('Seleccione sitio y asigne un nombre y código a la zona.')
     return
   }
   try {
@@ -426,7 +430,8 @@ const handleAddZona = async () => {
       method: 'POST',
       body: JSON.stringify({
         nombre: newZonaName.value.trim(),
-        sitio: sitioId
+        sitio: sitioId,
+        codigo: newZonaCode.value.trim()
       })
     })
     if (res.ok) {
@@ -436,6 +441,7 @@ const handleAddZona = async () => {
         wizardState.value.zonaId = data.id
       }
       newZonaName.value = ''
+      newZonaCode.value = ''
       isAddZonaModalOpen.value = false
     } else {
       toast.error('Error al registrar zona.')
@@ -2206,9 +2212,15 @@ const copyToClipboard = (text) => {
               <option v-for="emp in empresas" :key="emp.id" :value="emp.id">{{ emp.nombre }}</option>
             </select>
           </div>
-          <div>
-            <label class="block text-xs font-bold text-mako-400 uppercase">Nombre del Sitio / Fundo</label>
-            <input v-model="newSitioName" type="text" placeholder="Ej. Fundo El Roble" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold" required />
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-mako-400 uppercase">Nombre del Sitio / Fundo</label>
+              <input v-model="newSitioName" type="text" placeholder="Ej. Fundo El Roble" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold" required />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-mako-400 uppercase">Código Único</label>
+              <input v-model="newSitioCode" type="text" placeholder="Ej. ST-01" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-mono font-bold text-primary" required />
+            </div>
           </div>
           <div class="pt-4 flex gap-3 justify-end">
             <button type="button" @click="isAddSitioModalOpen = false" class="px-4 py-2 border rounded-xl hover:bg-white/5 transition-all text-xs font-bold">Cancelar</button>
@@ -2240,9 +2252,15 @@ const copyToClipboard = (text) => {
               </select>
             </div>
           </div>
-          <div>
-            <label class="block text-xs font-bold text-mako-400 uppercase">Nombre de la Zona / Sector</label>
-            <input v-model="newZonaName" type="text" placeholder="Ej. Sector Norte" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold" required />
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-mako-400 uppercase">Nombre de la Zona / Sector</label>
+              <input v-model="newZonaName" type="text" placeholder="Ej. Sector Norte" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold" required />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-mako-400 uppercase">Código de la Zona</label>
+              <input v-model="newZonaCode" type="text" placeholder="Ej. ZN-01" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-mono font-bold text-primary" required />
+            </div>
           </div>
           <div class="pt-4 flex gap-3 justify-end">
             <button type="button" @click="isAddZonaModalOpen = false" class="px-4 py-2 border rounded-xl hover:bg-white/5 transition-all text-xs font-bold">Cancelar</button>

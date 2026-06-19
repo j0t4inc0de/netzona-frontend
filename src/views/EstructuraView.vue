@@ -47,9 +47,11 @@ const editingClientCode = ref('')
 
 const editingSitioId = ref(null)
 const editingSitioName = ref('')
+const editingSitioCode = ref('')
 
 const editingZonaId = ref(null)
 const editingZonaName = ref('')
+const editingZonaCode = ref('')
 
 const handleDeleteClient = async (id) => {
   if (!confirm('¿Está seguro de eliminar esta empresa cliente? Se desactivará del sistema.')) return
@@ -116,6 +118,7 @@ const handleDeleteSitio = async (id) => {
 const startEditSitio = (sitio) => {
   editingSitioId.value = sitio.id
   editingSitioName.value = sitio.nombre
+  editingSitioCode.value = sitio.codigo || ''
 }
 
 const handleUpdateSitio = async (empresaId) => {
@@ -124,7 +127,8 @@ const handleUpdateSitio = async (empresaId) => {
       method: 'PUT',
       body: JSON.stringify({
         nombre: editingSitioName.value,
-        empresa: empresaId
+        empresa: empresaId,
+        codigo: editingSitioCode.value.trim()
       })
     })
     if (res.ok) {
@@ -161,6 +165,7 @@ const handleDeleteZona = async (id) => {
 const startEditZona = (zona) => {
   editingZonaId.value = zona.id
   editingZonaName.value = zona.nombre
+  editingZonaCode.value = zona.codigo || ''
 }
 
 const handleUpdateZona = async (sitioId) => {
@@ -169,7 +174,8 @@ const handleUpdateZona = async (sitioId) => {
       method: 'PUT',
       body: JSON.stringify({
         nombre: editingZonaName.value,
-        sitio: sitioId
+        sitio: sitioId,
+        codigo: editingZonaCode.value.trim()
       })
     })
     if (res.ok) {
@@ -211,10 +217,12 @@ const newClientRut = ref('')
 
 const newSitioEmpresa = ref('')
 const newSitioName = ref('')
+const newSitioCode = ref('')
 
 const newZonaEmpresa = ref('')
 const newZonaSitio = ref('')
 const newZonaName = ref('')
+const newZonaCode = ref('')
 const zonasSitios = ref([]) // Sitios para el form de Zonas
 
 watch(newZonaEmpresa, async (newVal) => {
@@ -331,8 +339,8 @@ const handleAddClient = async () => {
 }
 
 const handleAddSitio = async () => {
-  if (!newSitioEmpresa.value || !newSitioName.value.trim()) {
-    toast.error('Complete la empresa y el nombre del sitio.')
+  if (!newSitioEmpresa.value || !newSitioName.value.trim() || !newSitioCode.value.trim()) {
+    toast.error('Complete la empresa, el nombre y el código del sitio.')
     return
   }
   try {
@@ -340,12 +348,14 @@ const handleAddSitio = async () => {
       method: 'POST',
       body: JSON.stringify({
         nombre: newSitioName.value.trim(),
-        empresa: newSitioEmpresa.value
+        empresa: newSitioEmpresa.value,
+        codigo: newSitioCode.value.trim()
       })
     })
     if (res.ok) {
       toast.success(`Sitio "${newSitioName.value}" registrado con éxito.`)
       newSitioName.value = ''
+      newSitioCode.value = ''
       isAddSitioModalOpen.value = false
       if (selectedEmpresaForSitios.value === newSitioEmpresa.value) {
         fetchSitios(selectedEmpresaForSitios.value)
@@ -359,8 +369,8 @@ const handleAddSitio = async () => {
 }
 
 const handleAddZona = async () => {
-  if (!newZonaEmpresa.value || !newZonaSitio.value || !newZonaName.value.trim()) {
-    toast.error('Seleccione empresa, sitio y asigne un nombre a la zona.')
+  if (!newZonaEmpresa.value || !newZonaSitio.value || !newZonaName.value.trim() || !newZonaCode.value.trim()) {
+    toast.error('Seleccione empresa, sitio y asigne un nombre y código a la zona.')
     return
   }
   try {
@@ -368,12 +378,14 @@ const handleAddZona = async () => {
       method: 'POST',
       body: JSON.stringify({
         nombre: newZonaName.value.trim(),
-        sitio: newZonaSitio.value
+        sitio: newZonaSitio.value,
+        codigo: newZonaCode.value.trim()
       })
     })
     if (res.ok) {
       toast.success(`Zona "${newZonaName.value}" registrada con éxito.`)
       newZonaName.value = ''
+      newZonaCode.value = ''
       isAddZonaModalOpen.value = false
       if (selectedSitioForZonas.value === newZonaSitio.value) {
         fetchZonas(selectedSitioForZonas.value)
@@ -554,7 +566,10 @@ const openActiveModal = () => {
             </thead>
             <tbody class="divide-y divide-mako-100 dark:divide-mako-800/60">
               <tr v-for="sit in sitios" :key="sit.id" class="hover:bg-mako-50/50 dark:hover:bg-white/5 transition-colors">
-                <td class="px-6 py-4 font-mono font-bold text-mako-500">{{ sit.codigo || 'N/A' }}</td>
+                <td class="px-6 py-4 font-mono font-bold text-mako-500">
+                  <input v-if="editingSitioId === sit.id" v-model="editingSitioCode" class="px-3 py-1.5 bg-white dark:bg-mako-800 border dark:border-mako-700 rounded-lg text-sm w-full outline-none focus:border-primary font-mono font-bold" />
+                  <span v-else>{{ sit.codigo || 'N/A' }}</span>
+                </td>
                 <td class="px-6 py-4">
                   <input v-if="editingSitioId === sit.id" v-model="editingSitioName" class="px-3 py-1.5 bg-white dark:bg-mako-800 border dark:border-mako-700 rounded-lg text-sm w-full outline-none focus:border-primary" />
                   <span v-else class="text-sm font-semibold">{{ sit.nombre }}</span>
@@ -605,7 +620,10 @@ const openActiveModal = () => {
             </thead>
             <tbody class="divide-y divide-mako-100 dark:divide-mako-800/60">
               <tr v-for="zon in zonas" :key="zon.id" class="hover:bg-mako-50/50 dark:hover:bg-white/5 transition-colors">
-                <td class="px-6 py-4 font-mono font-bold text-mako-500">{{ zon.codigo || 'N/A' }}</td>
+                <td class="px-6 py-4 font-mono font-bold text-mako-500">
+                  <input v-if="editingZonaId === zon.id" v-model="editingZonaCode" class="px-3 py-1.5 bg-white dark:bg-mako-800 border dark:border-mako-700 rounded-lg text-sm w-full outline-none focus:border-primary font-mono font-bold" />
+                  <span v-else>{{ zon.codigo || 'N/A' }}</span>
+                </td>
                 <td class="px-6 py-4">
                   <input v-if="editingZonaId === zon.id" v-model="editingZonaName" class="px-3 py-1.5 bg-white dark:bg-mako-800 border dark:border-mako-700 rounded-lg text-sm w-full outline-none focus:border-primary" />
                   <span v-else class="text-sm font-semibold">{{ zon.nombre }}</span>
@@ -686,9 +704,15 @@ const openActiveModal = () => {
               <option v-for="empresa in empresas" :key="empresa.id" :value="empresa.id">{{ empresa.nombre }}</option>
             </select>
           </div>
-          <div>
-            <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre del Sitio</label>
-            <input v-model="newSitioName" type="text" placeholder="Ej. Fundo El Carmen" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold" />
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre del Sitio</label>
+              <input v-model="newSitioName" type="text" placeholder="Ej. Fundo El Carmen" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold" />
+            </div>
+            <div>
+              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Código Único</label>
+              <input v-model="newSitioCode" type="text" placeholder="Ej. ST-01" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-mono font-bold text-primary" />
+            </div>
           </div>
           <div class="pt-4 border-t border-mako-200 dark:border-mako-700/50 flex gap-3 justify-end">
             <button type="button" @click="isAddSitioModalOpen = false" class="px-5 py-3 border border-mako-300 dark:border-mako-700 text-sm font-semibold rounded-xl hover:bg-mako-100 dark:hover:bg-white/5 transition-all">Cancelar</button>
@@ -727,9 +751,15 @@ const openActiveModal = () => {
               </select>
             </div>
           </div>
-          <div>
-            <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre de la Zona</label>
-            <input v-model="newZonaName" type="text" placeholder="Ej. Sector Caseta 1" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold" />
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre de la Zona</label>
+              <input v-model="newZonaName" type="text" placeholder="Ej. Sector Caseta 1" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold" />
+            </div>
+            <div>
+              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Código de la Zona</label>
+              <input v-model="newZonaCode" type="text" placeholder="Ej. ZN-01" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-mono font-bold text-primary" />
+            </div>
           </div>
           <div class="pt-4 border-t border-mako-200 dark:border-mako-700/50 flex gap-3 justify-end">
             <button type="button" @click="isAddZonaModalOpen = false" class="px-5 py-3 border border-mako-300 dark:border-mako-700 text-sm font-semibold rounded-xl hover:bg-mako-100 dark:hover:bg-white/5 transition-all">Cancelar</button>
