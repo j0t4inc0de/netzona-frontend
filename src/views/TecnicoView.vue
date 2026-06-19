@@ -1842,7 +1842,7 @@ const copyToClipboard = (text) => {
         <form @submit.prevent="handleRegisterNode" class="max-w-md space-y-4">
           <div>
             <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Número de Serie (ID Único)</label>
-            <input v-model="wizardState.serial" type="text" placeholder="Ej. DEV-000123" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-mono font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.serial}" required />
+            <input v-model="wizardState.serial" type="text" placeholder="Ej. num_s_0" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-mono font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.serial}" required />
             <p v-if="equipoFormErrors.serial" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.serial[0] }}</p>
           </div>
           <div>
@@ -2123,7 +2123,7 @@ const copyToClipboard = (text) => {
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Número de Serie</label>
-              <input v-model="newEquipoSerial" type="text" placeholder="Ej. SN_AG_999" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-mono font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.serial}" required />
+              <input v-model="newEquipoSerial" type="text" placeholder="Ej. num_s_0" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-mono font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.serial}" required />
               <p v-if="equipoFormErrors.serial" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.serial[0] }}</p>
             </div>
             <div>
