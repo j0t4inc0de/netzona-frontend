@@ -72,7 +72,7 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await fetch(`${API_URL}/auth/token/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ email: username, password })
       })
 
       if (!response.ok) return false
