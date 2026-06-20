@@ -70,13 +70,15 @@ const router = createRouter({
       meta: { requiresAuth: false }
     },
     {
-      path: '/password/reset',
+      path: '/password-reset',
+      alias: '/password/reset',
       name: 'password-reset',
       component: () => import('../views/PasswordResetView.vue'),
       meta: { requiresAuth: false }
     },
     {
-      path: '/verificacion/confirmar',
+      path: '/verificar-cuenta',
+      alias: '/verificacion/confirmar',
       name: 'account-activation',
       component: () => import('../views/AccountActivationView.vue'),
       meta: { requiresAuth: false }
