@@ -276,10 +276,10 @@ const sitesForEditUser = computed(() => {
         </div>
         <button
           @click="isAddModalOpen = true"
-          class="rounded-xl relative w-full sm:w-48 h-12 cursor-pointer flex items-center border border-primary bg-primary group overflow-hidden transition-all hover:shadow-[0_0_20px_rgba(0,209,94,0.4)]"
+          class="rounded-xl relative w-full sm:w-52 h-12 cursor-pointer flex items-center border border-primary bg-primary group overflow-hidden transition-all hover:shadow-[0_0_20px_rgba(0,209,94,0.4)]"
         >
           <span
-            class="text-white w-full text-center sm:text-left sm:ml-6 transform group-hover:translate-x-40 transition-all duration-300"
+            class="text-white font-semibold w-full text-center sm:text-left sm:ml-5 transform group-hover:translate-x-40 transition-all duration-300 text-sm"
           >
             Nuevo Usuario
           </span>

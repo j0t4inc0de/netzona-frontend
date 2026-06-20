@@ -1205,7 +1205,7 @@ const copyToClipboard = (text) => {
           @click="isAddEquipoModalOpen = true"
           class="rounded-xl relative w-full sm:w-52 h-12 cursor-pointer flex items-center border border-primary bg-primary group overflow-hidden transition-all hover:shadow-[0_0_20px_rgba(0,209,94,0.4)]"
         >
-          <span class="text-white font-bold w-full text-center sm:text-left sm:ml-5 transform group-hover:translate-x-40 transition-all duration-300 text-sm">
+          <span class="text-white font-semibold w-full text-center sm:text-left sm:ml-5 transform group-hover:translate-x-40 transition-all duration-300 text-sm">
             Nuevo Dispositivo
           </span>
           <span class="absolute right-0 h-full w-12 rounded-xl bg-primary flex items-center justify-center transform group-hover:translate-x-0 group-hover:w-full transition-all duration-300">
@@ -1215,18 +1215,26 @@ const copyToClipboard = (text) => {
         <button
           v-if="activeTab === 'tipos-dispositivo'"
           @click="isAddTipoDispositivoModalOpen = true"
-          class="px-5 py-3 rounded-xl bg-primary text-white font-bold hover:shadow-[0_0_20px_rgba(0,209,94,0.4)] transition-all flex items-center gap-2 text-sm"
+          class="rounded-xl relative w-full sm:w-52 h-12 cursor-pointer flex items-center border border-primary bg-primary group overflow-hidden transition-all hover:shadow-[0_0_20px_rgba(0,209,94,0.4)]"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-          Crear Modelo
+          <span class="text-white font-semibold w-full text-center sm:text-left sm:ml-5 transform group-hover:translate-x-40 transition-all duration-300 text-sm">
+            Crear Modelo
+          </span>
+          <span class="absolute right-0 h-full w-12 rounded-xl bg-primary flex items-center justify-center transform group-hover:translate-x-0 group-hover:w-full transition-all duration-300">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24"><line x1="12" x2="12" y1="5" y2="19"></line><line x1="5" x2="19" y1="12" y2="12"></line></svg>
+          </span>
         </button>
         <button
           v-if="activeTab === 'tipos-sensor'"
           @click="isAddTipoSensorModalOpen = true; editingSensorId = null"
-          class="px-5 py-3 rounded-xl bg-primary text-white font-bold hover:shadow-[0_0_20px_rgba(0,209,94,0.4)] transition-all flex items-center gap-2 text-sm"
+          class="rounded-xl relative w-full sm:w-52 h-12 cursor-pointer flex items-center border border-primary bg-primary group overflow-hidden transition-all hover:shadow-[0_0_20px_rgba(0,209,94,0.4)]"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-          Nuevo Tipo Sensor
+          <span class="text-white font-semibold w-full text-center sm:text-left sm:ml-5 transform group-hover:translate-x-40 transition-all duration-300 text-sm">
+            Nuevo Tipo Sensor
+          </span>
+          <span class="absolute right-0 h-full w-12 rounded-xl bg-primary flex items-center justify-center transform group-hover:translate-x-0 group-hover:w-full transition-all duration-300">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24"><line x1="12" x2="12" y1="5" y2="19"></line><line x1="5" x2="19" y1="12" y2="12"></line></svg>
+          </span>
         </button>
       </div>
     </div>
@@ -1465,7 +1473,6 @@ const copyToClipboard = (text) => {
               <tr class="text-[11px] uppercase tracking-widest text-mako-500 dark:text-mako-400 font-bold">
                 <th class="px-6 py-4">Código / Modelo</th>
                 <th class="px-6 py-4">Nombre Comercial</th>
-                <th class="px-6 py-4">Descripción</th>
                 <th class="px-6 py-4 text-right">Estado</th>
               </tr>
             </thead>
@@ -1482,7 +1489,6 @@ const copyToClipboard = (text) => {
                   <div class="text-[10px] text-mako-400 font-semibold mt-0.5">{{ tipo.modelo || 'S/M' }}</div>
                 </td>
                 <td class="px-6 py-4 text-xs font-semibold text-mako-700 dark:text-mako-200">{{ tipo.nombre }}</td>
-                <td class="px-6 py-4 text-xs text-mako-500 max-w-[200px] truncate">{{ tipo.descripcion || 'Sin descripción' }}</td>
                 <td class="px-6 py-4 text-right">
                   <span class="px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded-md" :class="tipo.activo ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'">{{ tipo.activo ? 'Activo' : 'Inactivo' }}</span>
                 </td>
