@@ -1203,10 +1203,14 @@ const copyToClipboard = (text) => {
         <button
           v-if="activeTab === 'equipos'"
           @click="isAddEquipoModalOpen = true"
-          class="px-5 py-3 rounded-xl bg-primary text-white font-bold hover:shadow-[0_0_20px_rgba(0,209,94,0.4)] transition-all flex items-center gap-2 text-sm"
+          class="rounded-xl relative w-full sm:w-52 h-12 cursor-pointer flex items-center border border-primary bg-primary group overflow-hidden transition-all hover:shadow-[0_0_20px_rgba(0,209,94,0.4)] text-sm"
         >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-          Nuevo Dispositivo
+          <span class="text-white font-bold w-full text-center sm:text-left sm:ml-5 transform group-hover:translate-x-40 transition-all duration-300">
+            Nuevo Dispositivo
+          </span>
+          <span class="absolute right-0 h-full w-12 rounded-xl bg-primary flex items-center justify-center transform group-hover:translate-x-0 group-hover:w-full transition-all duration-300">
+            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24"><line x1="12" x2="12" y1="5" y2="19"></line><line x1="5" x2="19" y1="12" y2="12"></line></svg>
+          </span>
         </button>
         <button
           v-if="activeTab === 'tipos-dispositivo'"
@@ -1290,7 +1294,6 @@ const copyToClipboard = (text) => {
               <tr class="text-[11px] uppercase tracking-widest text-mako-500 dark:text-mako-400 font-bold">
                 <th class="px-6 py-4">Serial / Nombre</th>
                 <th class="px-6 py-4">Ubicación</th>
-                <th class="px-6 py-4">Tipo</th>
                 <th class="px-6 py-4 text-right">Acciones</th>
               </tr>
             </thead>
@@ -1309,9 +1312,6 @@ const copyToClipboard = (text) => {
                 <td class="px-6 py-4 text-xs">
                   <div class="font-semibold text-mako-700 dark:text-mako-200">{{ node.empresa_codigo || 'N/A' }}</div>
                   <div class="text-[10px] text-mako-400 font-mono mt-0.5">{{ node.sitio_codigo }} / {{ node.zona_codigo || 'Global' }}</div>
-                </td>
-                <td class="px-6 py-4 text-xs font-mono">
-                  <span class="px-2.5 py-1 bg-mako-100 dark:bg-mako-800 border border-mako-200 dark:border-mako-700 rounded-lg text-mako-700 dark:text-mako-300 font-bold uppercase text-[10px]">{{ node.tipo_dispositivo_codigo }}</span>
                 </td>
                 <td class="px-6 py-4 text-right" @click.stop>
                   <button @click="handleDeleteEquipo(node.id)" class="p-2 text-mako-400 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-colors" title="Eliminar"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
@@ -1387,6 +1387,10 @@ const copyToClipboard = (text) => {
             </div>
 
             <div class="border-t border-mako-100 dark:border-mako-700/50 pt-4 space-y-2.5">
+              <div class="flex justify-between items-center text-xs">
+                <span class="text-mako-400">Tipo:</span>
+                <span class="font-semibold text-mako-700 dark:text-mako-200">{{ tiposDispositivo.find(t => t.id === selectedEquipo.tipo_dispositivo)?.nombre || 'N/A' }}</span>
+              </div>
               <div class="flex justify-between items-center text-xs">
                 <span class="text-mako-400">Modelo:</span>
                 <span class="font-semibold text-mako-700 dark:text-mako-200">{{ selectedEquipo.tipo_dispositivo_codigo }}</span>
