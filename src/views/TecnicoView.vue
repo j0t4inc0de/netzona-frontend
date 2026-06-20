@@ -30,7 +30,7 @@ const selectedTipoDispositivoDashboard = ref(null) // template de dashboard de l
 const selectedTipoDispositivoDashboardWidgets = ref([]) // widgets de la plantilla
 
 // Estado del Wizard (Alta Rápida)
-const wizardStep = ref(1) // 1 a 9
+const wizardStep = ref(1) // 1 a 8
 const wizardState = ref({
   empresaId: '',
   sitioId: '',
@@ -1724,7 +1724,7 @@ const copyToClipboard = (text) => {
 
       <!-- Barra de Progreso Visual -->
       <div class="relative w-full h-1 bg-mako-200 dark:bg-mako-800 rounded-full overflow-hidden">
-        <div class="absolute top-0 left-0 h-full bg-primary transition-all duration-300" :style="`width: ${(wizardStep / 9) * 100}%`"></div>
+        <div class="absolute top-0 left-0 h-full bg-primary transition-all duration-300" :style="`width: ${(wizardStep / 8) * 100}%`"></div>
       </div>
 
       <!-- PASOS DEL WIZARD -->
@@ -1880,7 +1880,7 @@ const copyToClipboard = (text) => {
             <h3 class="text-base font-bold text-mako-800 dark:text-mako-100">Paso 7: Configuración del Dashboard</h3>
             <p class="text-xs text-mako-400 mt-0.5">Define cómo se presentarán visualmente los datos recolectados.</p>
           </div>
-          <button @click="wizardStep = 8; fetchWizardEquipoSensors()" class="px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold">Siguiente</button>
+          <button @click="wizardStep = 8; fetchWizardEquipoSensors()" class="px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold">Siguiente (Finalizar)</button>
         </div>
 
         <div v-if="!wizardState.createdDashboardTemplate" class="p-6 text-center space-y-3 bg-mako-100/30 dark:bg-mako-900/10 rounded-2xl border border-dashed border-mako-300 dark:border-mako-700">
@@ -1934,38 +1934,9 @@ const copyToClipboard = (text) => {
         </div>
       </div>
 
-      <!-- PASO 8: ACTIVAR SENSORES REALES -->
-      <div v-if="wizardStep === 8" class="space-y-5">
-        <div class="flex justify-between items-center">
-          <div>
-            <h3 class="text-base font-bold text-mako-800 dark:text-mako-100">Paso 8: Sensores Reales Activos</h3>
-            <p class="text-xs text-mako-400 mt-0.5">Indica qué sensores físicos posee este equipo en particular.</p>
-          </div>
-          <button @click="wizardStep = 9" class="px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold">Siguiente (Finalizar)</button>
-        </div>
-
-        <div class="max-w-md border border-mako-200 dark:border-mako-700 rounded-3xl p-5 space-y-4">
-          <span class="text-xs font-bold text-mako-400 uppercase tracking-widest block">Sensores Disponibles</span>
-          <div class="space-y-2">
-            <div v-for="rel in wizardPermittedSensors" :key="rel.id" class="flex items-center justify-between p-3.5 bg-mako-100/50 dark:bg-mako-800/40 border border-mako-200/50 dark:border-mako-700/50 rounded-2xl">
-              <div>
-                <span class="font-bold text-xs text-mako-700 dark:text-mako-200">{{ rel.tipo_sensor_codigo }}</span>
-              </div>
-              <button 
-                @click="handleWizardToggleRealSensor(rel.tipo_sensor_codigo, !wizardEquipoSensors.some(es => es.tipo_sensor_codigo === rel.tipo_sensor_codigo && es.activo))"
-                class="px-3 py-1.5 text-xs font-bold rounded-xl transition-all"
-                :class="wizardEquipoSensors.some(es => es.tipo_sensor_codigo === rel.tipo_sensor_codigo && es.activo) ? 'bg-primary text-white' : 'bg-mako-200 dark:bg-mako-800 text-mako-600 dark:text-mako-300'"
-              >
-                {{ wizardEquipoSensors.some(es => es.tipo_sensor_codigo === rel.tipo_sensor_codigo && es.activo) ? 'Activado' : 'Desactivado' }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- PASO 9: DETALLES MQTT DE LA INSTALACIÓN Y TÓPICO -->
-      <div v-if="wizardStep === 9" class="space-y-6">
-        <h3 class="text-base font-bold text-mako-800 dark:text-mako-100">Paso 9: Resumen de Configuración MQTT</h3>
+      <!-- PASO 8: DETALLES MQTT DE LA INSTALACIÓN Y TÓPICO -->
+      <div v-if="wizardStep === 8" class="space-y-6">
+        <h3 class="text-base font-bold text-mako-800 dark:text-mako-100">Paso 8: Resumen de Configuración MQTT</h3>
         
         <div class="bg-green-500/10 border border-green-500/20 rounded-3xl p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div class="space-y-1">
