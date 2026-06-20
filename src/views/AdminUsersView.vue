@@ -279,7 +279,7 @@ const sitesForEditUser = computed(() => {
           class="rounded-xl relative w-full sm:w-48 h-12 cursor-pointer flex items-center border border-primary bg-primary group overflow-hidden transition-all hover:shadow-[0_0_20px_rgba(0,209,94,0.4)]"
         >
           <span
-            class="text-white font-bold w-full text-center sm:text-left sm:ml-6 transform group-hover:translate-x-40 transition-all duration-300"
+            class="text-white w-full text-center sm:text-left sm:ml-6 transform group-hover:translate-x-40 transition-all duration-300"
           >
             Nuevo Usuario
           </span>
