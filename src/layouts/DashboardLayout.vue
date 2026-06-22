@@ -307,20 +307,27 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
 
     <!-- SIDEBAR (Escritorio) -->
     <aside
-      class="bg-white/80 dark:bg-mako-800/60 border-r border-mako-200 dark:border-white/5 backdrop-blur-xl shrink-0 hidden md:flex flex-col sticky top-0 h-screen z-20 transition-all duration-300"
+      class="bg-white/80 dark:bg-mako-800/60 border-r border-mako-200 dark:border-white/5 backdrop-blur-xl shrink-0 hidden md:flex flex-col sticky top-0 h-screen z-20 transition-[width,background-color,border-color] duration-300 ease-in-out"
       :class="isDesktopSidebarCollapsed ? 'w-20' : 'w-64'"
+      style="will-change: width;"
     >
-      <div class="min-h-[73px] py-2 flex items-center border-b border-transparent overflow-hidden transition-all duration-300" :class="isDesktopSidebarCollapsed ? 'px-[24px]' : 'px-6'">
-        <!-- Si está colapsado, mostrar solo el logo de Netzona -->
-        <div v-if="isDesktopSidebarCollapsed" class="flex justify-center w-full">
+      <div class="min-h-[73px] py-3 flex items-center border-b border-transparent overflow-hidden px-6 relative transition-all duration-300 justify-center">
+        <!-- Logo colapsado (Netzona solo) -->
+        <div 
+          class="absolute inset-0 flex items-center justify-center transition-all duration-300"
+          :class="isDesktopSidebarCollapsed ? 'opacity-100 scale-100' : 'opacity-0 scale-75 pointer-events-none'"
+        >
           <img src="/netzona_logo.png" alt="Netzona Logo" class="h-8 w-auto object-contain shrink-0" />
         </div>
-        <!-- Si está expandido -->
-        <div v-else class="w-full flex">
+        <!-- Logo expandido (con/sin empresa) -->
+        <div 
+          class="w-full flex items-center transition-all duration-300"
+          :class="isDesktopSidebarCollapsed ? 'opacity-0 scale-95 pointer-events-none translate-x-4' : 'opacity-100 scale-100 translate-x-0'"
+        >
           <!-- Con Logo de Empresa -->
           <div v-if="auth.currentUser?.empresa_logo" class="w-full flex flex-col items-center py-1">
             <img :src="auth.currentUser.empresa_logo" alt="Logo Empresa" class="h-10 max-w-[85%] object-contain shrink-0" />
-            <div class="flex items-center gap-1 text-[9px] font-bold text-mako-400 dark:text-mako-400 uppercase tracking-widest leading-none select-none">
+            <div class="flex items-center gap-1 text-[9px] font-bold text-mako-400 dark:text-mako-400 uppercase tracking-widest leading-none select-none mt-1">
               <span>Powered by</span>
               <img src="/netzona_logo.png" alt="Netzona" class="h-3.5 w-auto object-contain shrink-0" />
               <span class="text-primary font-extrabold text-[10px] tracking-normal">Netzona</span>
@@ -329,7 +336,7 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
           <!-- Sin Logo de Empresa (Por defecto) -->
           <div v-else class="flex items-center">
             <img src="/netzona_logo.png" alt="Netzona Logo" class="h-8 w-auto object-contain shrink-0" />
-            <span class="font-bold text-lg tracking-tight text-mako-900 dark:text-white whitespace-nowrap overflow-hidden transition-all duration-300 ml-2">
+            <span class="font-bold text-lg tracking-tight text-mako-900 dark:text-white whitespace-nowrap ml-2">
               Telemetrics
             </span>
           </div>
