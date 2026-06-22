@@ -3,9 +3,12 @@ export const API_URL = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, 
 export const api = async (endpoint, options = {}) => {
   const token = localStorage.getItem('access_token');
   const headers = {
-    'Content-Type': 'application/json',
     ...options.headers,
   };
+
+  if (!(options.body instanceof FormData)) {
+    headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+  }
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;

@@ -88,6 +88,88 @@ const logout = () => {
   router.push('/login')
 }
 
+const bgFileInput = ref(null)
+const isUploadingBg = ref(false)
+
+const handleUploadBg = async (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+
+  if (!['image/jpeg', 'image/jpg', 'image/webp'].includes(file.type)) {
+    toast.error('Formato no permitido. Solo se acepta JPG, JPEG y WEBP.')
+    event.target.value = ''
+    return
+  }
+
+  if (file.size > 2 * 1024 * 1024) {
+    toast.error('La imagen supera el peso máximo de 2 MB.')
+    event.target.value = ''
+    return
+  }
+
+  isUploadingBg.value = true
+  try {
+    const formData = new FormData()
+    formData.append('fondo_dashboard', file)
+
+    const res = await api('/cuentas/preferencias/', {
+      method: 'PATCH',
+      body: formData
+    })
+
+    if (res.ok) {
+      const data = await res.json()
+      if (auth.currentUser) {
+        auth.currentUser.fondo_dashboard = data.fondo_dashboard
+      }
+      toast.success('Fondo del dashboard actualizado.')
+    } else {
+      const errorMsg = await res.json().catch(() => ({}))
+      toast.error(errorMsg.detail || errorMsg.fondo_dashboard?.[0] || 'Error al subir la imagen. Asegúrese de que cumple con los requisitos.')
+    }
+  } catch (e) {
+    console.error(e)
+    toast.error('Error al subir el fondo del dashboard.')
+  } finally {
+    isUploadingBg.value = false
+    if (bgFileInput.value) bgFileInput.value.value = ''
+  }
+}
+
+const handleRemoveBg = async () => {
+  try {
+    const res = await api('/cuentas/preferencias/', {
+      method: 'PATCH',
+      body: JSON.stringify({ fondo_dashboard: null })
+    })
+
+    if (res.ok) {
+      if (auth.currentUser) {
+        auth.currentUser.fondo_dashboard = null
+      }
+      toast.success('Fondo sólido restaurado.')
+    } else {
+      toast.error('Error al quitar el fondo.')
+    }
+  } catch (e) {
+    console.error(e)
+    toast.error('Error al restaurar el fondo.')
+  }
+}
+
+const mainContainerStyle = computed(() => {
+  if (route.path.startsWith('/dashboard') && auth.currentUser?.fondo_dashboard) {
+    return {
+      backgroundImage: `url(${auth.currentUser.fondo_dashboard})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundAttachment: 'fixed',
+      backgroundRepeat: 'no-repeat'
+    }
+  }
+  return {}
+})
+
 // Configuración (Modal)
 const showSettings = ref(false)
 const reloadKey = ref(0)
@@ -228,8 +310,23 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
       class="bg-white/80 dark:bg-mako-800/60 border-r border-mako-200 dark:border-white/5 backdrop-blur-xl shrink-0 hidden md:flex flex-col sticky top-0 h-screen z-20 transition-all duration-300"
       :class="isDesktopSidebarCollapsed ? 'w-20' : 'w-64'"
     >
-      <div class="h-[73px] flex items-center border-b border-transparent overflow-hidden transition-all duration-300" :class="isDesktopSidebarCollapsed ? 'px-[24px]' : 'px-6'">
-        <div class="flex items-center">
+      <div class="min-h-[73px] py-2 flex items-center border-b border-transparent overflow-hidden transition-all duration-300" :class="isDesktopSidebarCollapsed ? 'px-[24px]' : 'px-6'">
+        <!-- Con Logo de Empresa -->
+        <div v-if="auth.currentUser?.empresa_logo" class="w-full flex flex-col items-center">
+          <div v-if="!isDesktopSidebarCollapsed" class="flex flex-col items-center gap-1.5 w-full py-1">
+            <img :src="auth.currentUser.empresa_logo" alt="Logo Empresa" class="h-10 max-w-[85%] object-contain shrink-0" />
+            <div class="flex items-center gap-1 text-[9px] font-bold text-mako-400 dark:text-mako-400 uppercase tracking-widest leading-none select-none">
+              <span>Powered by</span>
+              <img src="/netzona_logo.png" alt="Netzona" class="h-3.5 w-auto object-contain shrink-0" />
+              <span class="text-primary font-extrabold text-[10px] tracking-normal">Netzona</span>
+            </div>
+          </div>
+          <div v-else class="flex justify-center w-full">
+            <img :src="auth.currentUser.empresa_logo" alt="Logo Empresa" class="h-9 w-9 rounded-xl object-contain bg-mako-100/50 p-1.5 border border-mako-200 dark:border-mako-750" />
+          </div>
+        </div>
+        <!-- Default (Sin Logo de Empresa) -->
+        <div v-else class="flex items-center">
           <img src="/netzona_logo.png" alt="Netzona Logo" class="h-8 w-auto object-contain shrink-0" />
           <span class="font-bold text-lg tracking-tight text-mako-900 dark:text-white whitespace-nowrap overflow-hidden transition-all duration-300"
                 :class="isDesktopSidebarCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[150px] opacity-100 ml-2'">
@@ -399,9 +496,17 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
       class="fixed top-0 bottom-0 left-0 w-64 bg-white/95 dark:bg-mako-900/95 backdrop-blur-xl border-r border-mako-200 dark:border-white/5 z-50 transition-transform duration-300 md:hidden flex flex-col shadow-2xl"
       :class="isSidebarOpen ? 'translate-x-0' : '-translate-x-full'"
     >
-      <div class="h-[73px] px-6 flex items-center justify-between border-b border-transparent">
-        <div class="flex items-center gap-2">
-          <img src="/netzona_logo.png" alt="Netzona Logo" class="h-8 w-auto object-contain" />
+      <div class="min-h-[73px] py-2 px-6 flex items-center justify-between border-b border-transparent">
+        <div v-if="auth.currentUser?.empresa_logo" class="flex flex-col items-start gap-1 py-1">
+          <img :src="auth.currentUser.empresa_logo" alt="Logo Empresa" class="h-10 max-w-[160px] object-contain shrink-0" />
+          <div class="flex items-center gap-1 text-[9px] font-bold text-mako-400 dark:text-mako-400 uppercase tracking-widest leading-none select-none">
+            <span>Powered by</span>
+            <img src="/netzona_logo.png" alt="Netzona" class="h-3.5 w-auto object-contain shrink-0" />
+            <span class="text-primary font-extrabold text-[10px] tracking-normal">Netzona</span>
+          </div>
+        </div>
+        <div v-else class="flex items-center gap-2">
+          <img src="/netzona_logo.png" alt="Netzona Logo" class="h-8 w-auto object-contain shrink-0" />
           <span class="font-bold text-lg tracking-tight text-mako-900 dark:text-white"
             >Telemetrics</span
           >
@@ -543,12 +648,13 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
             </svg>
           </button>
           <div class="flex items-center gap-2">
-            <img
-              src="/netzona_logo.png"
-              alt="Netzona Logo"
-              class="h-8 w-auto object-contain md:hidden"
-            />
-            <span class="font-bold text-lg tracking-tight md:hidden">Telemetrics</span>
+            <template v-if="auth.currentUser?.empresa_logo">
+              <img :src="auth.currentUser.empresa_logo" alt="Logo Empresa" class="h-8 w-auto object-contain md:hidden" />
+            </template>
+            <template v-else>
+              <img src="/netzona_logo.png" alt="Netzona Logo" class="h-8 w-auto object-contain md:hidden" />
+              <span class="font-bold text-lg tracking-tight md:hidden">Telemetrics</span>
+            </template>
           </div>
         </div>
 
@@ -602,7 +708,7 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
         </div>
       </header>
 
-      <main class="flex-1 p-6 relative">
+      <main class="flex-1 p-6 relative" :style="mainContainerStyle">
         <router-view v-slot="{ Component }">
           <transition name="fade" mode="out-in">
             <component :is="Component" :key="route.fullPath + reloadKey" />
@@ -701,6 +807,34 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
             >
               <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300" :class="isDark ? 'translate-x-6' : 'translate-x-1'"></span>
             </button>
+          </div>
+
+          <!-- Fondo de Dashboard -->
+          <div class="pt-4">
+            <div class="flex flex-col gap-2">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                  </div>
+                  <div>
+                    <h3 class="font-medium text-sm text-mako-800 dark:text-mako-100">Fondo de Dashboard</h3>
+                    <p class="text-[11px] text-mako-500">Tema personalizado (máx 2MB)</p>
+                  </div>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                  <button v-if="auth.currentUser?.fondo_dashboard" @click="handleRemoveBg" class="text-xs font-semibold text-red-500 hover:underline">Quitar</button>
+                  <label class="cursor-pointer px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary font-bold text-[11px] rounded-xl transition-all">
+                    <span>{{ isUploadingBg ? 'Subiendo...' : 'Subir' }}</span>
+                    <input ref="bgFileInput" type="file" @change="handleUploadBg" accept="image/jpeg, image/jpg, image/webp" class="hidden" :disabled="isUploadingBg" />
+                  </label>
+                </div>
+              </div>
+              <div v-if="auth.currentUser?.fondo_dashboard" class="ml-11">
+                <img :src="auth.currentUser.fondo_dashboard" alt="Vista previa del fondo" class="h-12 w-24 rounded-lg object-cover border border-mako-200 dark:border-mako-700" />
+              </div>
+            </div>
           </div>
 
           <!-- Restablecer Layout -->

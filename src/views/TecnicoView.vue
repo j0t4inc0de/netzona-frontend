@@ -760,6 +760,7 @@ const handleRegisterNode = async () => {
     if (res.ok) {
       const data = await res.json()
       toast.success(editingEquipoId.value ? `Dispositivo ${serial} actualizado con éxito.` : `Dispositivo ${serial} registrado con éxito.`)
+      await telemetricsStore.fetchDataFromBackend()
       
       if (activeTab.value === 'alta-rapida') {
         wizardState.value.createdEquipo = data
@@ -2088,28 +2089,28 @@ const copyToClipboard = (text) => {
                 <span class="text-[10px] text-mako-400 uppercase font-semibold">Tópico Publicación (Topic)</span>
                 <div class="bg-white dark:bg-mako-800 border border-mako-200 dark:border-mako-700 px-3 py-2 rounded-xl mt-1 flex items-center justify-between">
                   <span class="font-mono text-xs font-bold text-mako-700 dark:text-mako-200 break-all select-all">{{ wizardState.createdEquipo.mqtt_topic }}</span>
-                  <button @click="copyToClipboard(wizardState.createdEquipo.mqtt_topic)" class="text-[10px] font-bold text-primary shrink-0 ml-2">Copiar</button>
+                  <button type="button" @click.stop.prevent="copyToClipboard(wizardState.createdEquipo.mqtt_topic)" class="text-[10px] font-bold text-primary shrink-0 ml-2">Copiar</button>
                 </div>
               </div>
               <div v-if="wizardState.createdEquipo.mqtt_payload_ejemplo">
                 <span class="text-[10px] text-mako-400 uppercase font-semibold">Ejemplo Telemetría JSON (MQTT)</span>
                 <div class="bg-white dark:bg-mako-800 border border-mako-200 dark:border-mako-700 px-3 py-2 rounded-xl mt-1 flex flex-col gap-1">
                   <pre class="font-mono text-[10px] text-mako-700 dark:text-mako-200 overflow-x-auto whitespace-pre max-h-32 custom-scrollbar">{{ typeof wizardState.createdEquipo.mqtt_payload_ejemplo === 'string' ? wizardState.createdEquipo.mqtt_payload_ejemplo : JSON.stringify(wizardState.createdEquipo.mqtt_payload_ejemplo, null, 2) }}</pre>
-                  <button @click="copyToClipboard(typeof wizardState.createdEquipo.mqtt_payload_ejemplo === 'string' ? wizardState.createdEquipo.mqtt_payload_ejemplo : JSON.stringify(wizardState.createdEquipo.mqtt_payload_ejemplo))" class="text-[10px] font-bold text-primary self-start mt-1">Copiar JSON</button>
+                  <button type="button" @click.stop.prevent="copyToClipboard(typeof wizardState.createdEquipo.mqtt_payload_ejemplo === 'string' ? wizardState.createdEquipo.mqtt_payload_ejemplo : JSON.stringify(wizardState.createdEquipo.mqtt_payload_ejemplo, null, 2))" class="text-[10px] font-bold text-primary self-start mt-1">Copiar JSON</button>
                 </div>
               </div>
               <div>
                 <span class="text-[10px] text-mako-400 uppercase font-semibold">Client ID (Serial)</span>
                 <div class="bg-white dark:bg-mako-800 border border-mako-200 dark:border-mako-700 px-3 py-2 rounded-xl mt-1 flex items-center justify-between">
                   <span class="font-mono text-xs font-bold text-mako-700 dark:text-mako-200">{{ wizardState.createdEquipo.serial }}</span>
-                  <button @click="copyToClipboard(wizardState.createdEquipo.serial)" class="text-[10px] font-bold text-primary shrink-0 ml-2">Copiar</button>
+                  <button type="button" @click.stop.prevent="copyToClipboard(wizardState.createdEquipo.serial)" class="text-[10px] font-bold text-primary shrink-0 ml-2">Copiar</button>
                 </div>
               </div>
               <div>
                 <span class="text-[10px] text-mako-400 uppercase font-semibold">MQTT Username</span>
                 <div class="bg-white dark:bg-mako-800 border border-mako-200 dark:border-mako-700 px-3 py-2 rounded-xl mt-1 flex items-center justify-between">
                   <span class="font-mono text-xs font-bold text-mako-700 dark:text-mako-200">{{ wizardState.createdEquipo.mqtt_username || 'Ninguno' }}</span>
-                  <button @click="copyToClipboard(wizardState.createdEquipo.mqtt_username || '')" class="text-[10px] font-bold text-primary shrink-0 ml-2">Copiar</button>
+                  <button type="button" @click.stop.prevent="copyToClipboard(wizardState.createdEquipo.mqtt_username || '')" class="text-[10px] font-bold text-primary shrink-0 ml-2">Copiar</button>
                 </div>
               </div>
             </div>

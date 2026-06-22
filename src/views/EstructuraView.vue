@@ -95,6 +95,23 @@ const editingClientId = ref(null)
 const editingClientName = ref('')
 const editingClientRut = ref('')
 const editingClientCode = ref('')
+const selectedLogoFile = ref(null)
+
+const handleLogoChange = (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+  if (!['image/png', 'image/webp'].includes(file.type)) {
+    toast.error('Formato no permitido. Solo se acepta PNG y WEBP.')
+    event.target.value = ''
+    return
+  }
+  if (file.size > 500 * 1024) {
+    toast.error('La imagen supera el peso máximo de 500 KB.')
+    event.target.value = ''
+    return
+  }
+  selectedLogoFile.value = file
+}
 
 const editingSitioId = ref(null)
 const editingSitioName = ref('')
@@ -125,6 +142,7 @@ const startEditClient = (empresa) => {
   editingClientName.value = empresa.nombre
   editingClientRut.value = empresa.rut
   editingClientCode.value = empresa.codigo
+  selectedLogoFile.value = null
 }
 
 const handleUpdateClient = async () => {
@@ -134,18 +152,23 @@ const handleUpdateClient = async () => {
     return
   }
   try {
+    const formData = new FormData()
+    formData.append('nombre', editingClientName.value)
+    formData.append('rut', editingClientRut.value)
+    formData.append('codigo', editingClientCode.value)
+    formData.append('activo', 'true')
+    if (selectedLogoFile.value) {
+      formData.append('logo', selectedLogoFile.value)
+    }
+
     const res = await api(`/empresas/clientes/${editingClientId.value}/`, {
-      method: 'PUT',
-      body: JSON.stringify({
-        nombre: editingClientName.value,
-        rut: editingClientRut.value,
-        codigo: editingClientCode.value,
-        activo: true
-      })
+      method: 'PATCH',
+      body: formData
     })
     if (res.ok) {
       toast.success('Cliente actualizado con éxito.')
       editingClientId.value = null
+      selectedLogoFile.value = null
       await fetchEmpresas()
       await telemetricsStore.fetchDataFromBackend()
     } else {
@@ -286,6 +309,23 @@ watch(selectedSitioForZonas, (newVal) => {
 const newClientName = ref('')
 const newClientCode = ref('')
 const newClientRut = ref('')
+const newClientLogoFile = ref(null)
+
+const handleNewClientLogoChange = (event) => {
+  const file = event.target.files[0]
+  if (!file) return
+  if (!['image/png', 'image/webp'].includes(file.type)) {
+    toast.error('Formato no permitido. Solo se acepta PNG y WEBP.')
+    event.target.value = ''
+    return
+  }
+  if (file.size > 500 * 1024) {
+    toast.error('La imagen supera el peso máximo de 500 KB.')
+    event.target.value = ''
+    return
+  }
+  newClientLogoFile.value = file
+}
 
 const newSitioEmpresa = ref('')
 const newSitioName = ref('')
@@ -391,20 +431,25 @@ const handleAddClient = async () => {
     return
   }
   try {
+    const formData = new FormData()
+    formData.append('nombre', newClientName.value.trim())
+    formData.append('rut', newClientRut.value.trim())
+    formData.append('codigo', newClientCode.value.trim())
+    formData.append('activo', 'true')
+    if (newClientLogoFile.value) {
+      formData.append('logo', newClientLogoFile.value)
+    }
+
     const res = await api('/empresas/clientes/', {
       method: 'POST',
-      body: JSON.stringify({
-        nombre: newClientName.value.trim(),
-        rut: newClientRut.value.trim(),
-        codigo: newClientCode.value.trim(),
-        activo: true
-      })
+      body: formData
     })
     if (res.ok) {
       toast.success(`Cliente "${newClientName.value}" registrado con éxito.`)
       newClientName.value = ''
       newClientCode.value = ''
       newClientRut.value = ''
+      newClientLogoFile.value = null
       isAddClientModalOpen.value = false
       await fetchEmpresas()
       await telemetricsStore.fetchDataFromBackend()
@@ -597,6 +642,7 @@ const openActiveModal = () => {
           <table class="w-full text-left whitespace-nowrap block sm:table">
             <thead class="hidden sm:table-header-group bg-mako-50 dark:bg-mako-800/50 border-b border-mako-100 dark:border-mako-700/50">
               <tr class="text-[11px] uppercase tracking-widest text-mako-500 dark:text-mako-400 font-bold">
+                <th class="px-6 py-4">Logo</th>
                 <th class="px-6 py-4">Código</th>
                 <th class="px-6 py-4">Nombre Legal</th>
                 <th class="px-6 py-4">RUT</th>
@@ -606,6 +652,19 @@ const openActiveModal = () => {
             <tbody class="flex flex-col sm:table-row-group divide-y divide-mako-100 dark:divide-mako-800/60 p-4 sm:p-0">
               <tr v-for="emp in empresas" :key="emp.id" class="block sm:table-row hover:bg-mako-50/50 dark:hover:bg-white/5 transition-colors group bg-white dark:bg-mako-800/40 sm:bg-transparent rounded-2xl sm:rounded-none border border-mako-100 dark:border-mako-700/50 sm:border-0 overflow-hidden mb-4 sm:mb-0">
                 <td class="block sm:table-cell px-4 py-4 sm:px-6">
+                  <div class="text-[10px] font-bold text-mako-400 uppercase sm:hidden mb-1">Logo</div>
+                  <div class="flex items-center gap-3">
+                    <img v-if="emp.logo" :src="emp.logo" alt="Logo Empresa" class="w-8 h-8 rounded-lg object-contain bg-mako-100/50 p-1 border border-mako-200 dark:border-mako-700 shrink-0" />
+                    <div v-else class="w-8 h-8 rounded-lg bg-mako-100 dark:bg-mako-800/40 flex items-center justify-center text-mako-400 border border-mako-200 dark:border-mako-700 shrink-0">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                    </div>
+                    <div v-if="editingClientId === emp.id" class="flex flex-col gap-1">
+                      <input type="file" @change="handleLogoChange" accept="image/png, image/webp" class="text-[10px] w-40 text-mako-500 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-[10px] file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20" />
+                      <p class="text-[9px] text-mako-400 font-medium">PNG/WEBP, máx 500KB</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="block sm:table-cell px-4 py-4 sm:px-6 border-t border-mako-50 dark:border-mako-700/30 sm:border-0">
                   <div class="text-[10px] font-bold text-mako-400 uppercase sm:hidden mb-1">Código</div>
                   <div class="font-mono font-bold text-primary">{{ emp.codigo }}</div>
                 </td>
@@ -763,15 +822,20 @@ const openActiveModal = () => {
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">RUT / ID</label>
-              <input v-model="newClientRut" type="text" placeholder="Ej. 76.543.210-K" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold transition-all" :class="{'border-red-500': clientFormErrors.rut}" />
-              <p v-if="clientFormErrors.rut" class="text-red-500 text-[10px] mt-1">{{ clientFormErrors.rut[0] }}</p>
+               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">RUT / ID</label>
+               <input v-model="newClientRut" type="text" placeholder="Ej. 76.543.210-K" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-semibold transition-all" :class="{'border-red-500': clientFormErrors.rut}" />
+               <p v-if="clientFormErrors.rut" class="text-red-500 text-[10px] mt-1">{{ clientFormErrors.rut[0] }}</p>
             </div>
             <div>
-              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Código Único</label>
-              <input v-model="newClientCode" type="text" placeholder="Ej. em_01" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-mono font-bold transition-all" :class="{'border-red-500': clientFormErrors.codigo}" />
-              <p v-if="clientFormErrors.codigo" class="text-red-500 text-[10px] mt-1">{{ clientFormErrors.codigo[0] }}</p>
+               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Código Único</label>
+               <input v-model="newClientCode" type="text" placeholder="Ej. em_01" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm font-mono font-bold transition-all" :class="{'border-red-500': clientFormErrors.codigo}" />
+               <p v-if="clientFormErrors.codigo" class="text-red-500 text-[10px] mt-1">{{ clientFormErrors.codigo[0] }}</p>
             </div>
+          </div>
+          <div>
+            <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Logo de la Empresa (opcional)</label>
+            <input type="file" @change="handleNewClientLogoChange" accept="image/png, image/webp" class="w-full px-4 py-3 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none focus:border-primary text-sm transition-all file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20" />
+            <p class="text-mako-400 text-[10px] mt-1">Formatos permitidos: PNG y WEBP. Peso máximo: 500 KB.</p>
           </div>
           <div class="pt-4 border-t border-mako-200 dark:border-mako-700/50 flex gap-3 justify-end">
             <button type="button" @click="isAddClientModalOpen = false" class="px-5 py-3 border border-mako-300 dark:border-mako-700 text-sm font-semibold rounded-xl hover:bg-mako-100 dark:hover:bg-white/5 transition-all">Cancelar</button>
