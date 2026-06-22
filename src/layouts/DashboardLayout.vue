@@ -311,9 +311,14 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
       :class="isDesktopSidebarCollapsed ? 'w-20' : 'w-64'"
     >
       <div class="min-h-[73px] py-2 flex items-center border-b border-transparent overflow-hidden transition-all duration-300" :class="isDesktopSidebarCollapsed ? 'px-[24px]' : 'px-6'">
-        <!-- Con Logo de Empresa -->
-        <div v-if="auth.currentUser?.empresa_logo" class="w-full flex flex-col items-center">
-          <div v-if="!isDesktopSidebarCollapsed" class="flex flex-col items-center gap-1.5 w-full py-1">
+        <!-- Si está colapsado, mostrar solo el logo de Netzona -->
+        <div v-if="isDesktopSidebarCollapsed" class="flex justify-center w-full">
+          <img src="/netzona_logo.png" alt="Netzona Logo" class="h-8 w-auto object-contain shrink-0" />
+        </div>
+        <!-- Si está expandido -->
+        <div v-else class="w-full flex">
+          <!-- Con Logo de Empresa -->
+          <div v-if="auth.currentUser?.empresa_logo" class="w-full flex flex-col items-center py-1">
             <img :src="auth.currentUser.empresa_logo" alt="Logo Empresa" class="h-10 max-w-[85%] object-contain shrink-0" />
             <div class="flex items-center gap-1 text-[9px] font-bold text-mako-400 dark:text-mako-400 uppercase tracking-widest leading-none select-none">
               <span>Powered by</span>
@@ -321,17 +326,13 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
               <span class="text-primary font-extrabold text-[10px] tracking-normal">Netzona</span>
             </div>
           </div>
-          <div v-else class="flex justify-center w-full">
-            <img :src="auth.currentUser.empresa_logo" alt="Logo Empresa" class="h-9 w-9 rounded-xl object-contain bg-mako-100/50 p-1.5 border border-mako-200 dark:border-mako-750" />
+          <!-- Sin Logo de Empresa (Por defecto) -->
+          <div v-else class="flex items-center">
+            <img src="/netzona_logo.png" alt="Netzona Logo" class="h-8 w-auto object-contain shrink-0" />
+            <span class="font-bold text-lg tracking-tight text-mako-900 dark:text-white whitespace-nowrap overflow-hidden transition-all duration-300 ml-2">
+              Telemetrics
+            </span>
           </div>
-        </div>
-        <!-- Default (Sin Logo de Empresa) -->
-        <div v-else class="flex items-center">
-          <img src="/netzona_logo.png" alt="Netzona Logo" class="h-8 w-auto object-contain shrink-0" />
-          <span class="font-bold text-lg tracking-tight text-mako-900 dark:text-white whitespace-nowrap overflow-hidden transition-all duration-300"
-                :class="isDesktopSidebarCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[150px] opacity-100 ml-2'">
-            Telemetrics
-          </span>
         </div>
       </div>
 
