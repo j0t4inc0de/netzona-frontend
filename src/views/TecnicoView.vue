@@ -39,6 +39,8 @@ const wizardState = ref({
   serial: '',
   nombre: '',
   mqttUsername: '',
+  latitud: '',
+  longitud: '',
   createdEquipo: null,
   createdDashboardTemplate: null
 })
@@ -136,6 +138,9 @@ const newEquipoTipoDispositivo = ref('')
 const newEquipoSerial = ref('')
 const newEquipoNombre = ref('')
 const newEquipoMqttUsername = ref('')
+const newEquipoLatitud = ref('')
+const newEquipoLongitud = ref('')
+const editingEquipoId = ref(null)
 const newEquipoSitiosList = ref([])
 const newEquipoZonasList = ref([])
 
@@ -686,6 +691,8 @@ const handleRegisterNode = async () => {
   const serial = activeTab.value === 'alta-rapida' ? wizardState.value.serial : newEquipoSerial.value
   const name = activeTab.value === 'alta-rapida' ? wizardState.value.nombre : newEquipoNombre.value
   const mqttUser = activeTab.value === 'alta-rapida' ? wizardState.value.mqttUsername : newEquipoMqttUsername.value
+  const latStr = activeTab.value === 'alta-rapida' ? String(wizardState.value.latitud || '').trim() : String(newEquipoLatitud.value || '').trim()
+  const lngStr = activeTab.value === 'alta-rapida' ? String(wizardState.value.longitud || '').trim() : String(newEquipoLongitud.value || '').trim()
 
   if (!empresaId || !sitioId || !zonaId || !tipoDispId || !serial.trim() || !name.trim()) {
     toast.error('Complete todos los campos obligatorios.')
@@ -697,6 +704,33 @@ const handleRegisterNode = async () => {
     toast.error('El Serial solo puede contener letras, números, guiones o guiones bajos.')
     return
   }
+
+  if ((latStr && !lngStr) || (!latStr && lngStr)) {
+    toast.error('Debe ingresar tanto Latitud como Longitud, o dejar ambas vacías.')
+    equipoFormErrors.value = {
+      latitud: !latStr ? ['La latitud es requerida si se ingresa longitud.'] : undefined,
+      longitud: !lngStr ? ['La longitud es requerida si se ingresa latitud.'] : undefined
+    }
+    return
+  }
+
+  let latVal = null
+  let lngVal = null
+  if (latStr && lngStr) {
+    latVal = parseFloat(latStr)
+    lngVal = parseFloat(lngStr)
+    if (isNaN(latVal) || latVal < -90 || latVal > 90) {
+      equipoFormErrors.value = { latitud: ['La latitud debe estar entre -90 y 90.'] }
+      toast.error('La latitud debe ser un número entre -90 y 90.')
+      return
+    }
+    if (isNaN(lngVal) || lngVal < -180 || lngVal > 180) {
+      equipoFormErrors.value = { longitud: ['La longitud debe estar entre -180 y 180.'] }
+      toast.error('La longitud debe ser un número entre -180 y 180.')
+      return
+    }
+  }
+
   try {
     const payload = {
       empresa: empresaId,
@@ -705,21 +739,30 @@ const handleRegisterNode = async () => {
       tipo_dispositivo: tipoDispId,
       serial: serial.trim(),
       nombre: name.trim(),
-      mqtt_username: mqttUser.trim() || undefined
+      mqtt_username: mqttUser.trim() || undefined,
+      latitud: latVal,
+      longitud: lngVal
     }
-    const res = await api('/dispositivos/equipos/', {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    })
+
+    let res
+    if (activeTab.value !== 'alta-rapida' && editingEquipoId.value) {
+      res = await api(`/dispositivos/equipos/${editingEquipoId.value}/`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+      })
+    } else {
+      res = await api('/dispositivos/equipos/', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })
+    }
+
     if (res.ok) {
       const data = await res.json()
-      toast.success(`Dispositivo ${serial} registrado con éxito.`)
+      toast.success(editingEquipoId.value ? `Dispositivo ${serial} actualizado con éxito.` : `Dispositivo ${serial} registrado con éxito.`)
       
       if (activeTab.value === 'alta-rapida') {
         wizardState.value.createdEquipo = data
-        // Avanzar al paso del Dashboard
-        // Al crear un dispositivo físico, el backend asegura el dashboard.
-        // Vamos a intentar obtener ese dashboard
         try {
           const dashRes = await api(`/dashboards/templates/?empresa=${empresaId}&tipo_dispositivo=${tipoDispId}`)
           if (dashRes.ok) {
@@ -737,15 +780,18 @@ const handleRegisterNode = async () => {
         newEquipoSerial.value = ''
         newEquipoNombre.value = ''
         newEquipoMqttUsername.value = ''
+        newEquipoLatitud.value = ''
+        newEquipoLongitud.value = ''
         isAddEquipoModalOpen.value = false
+        editingEquipoId.value = null
         await fetchEquipos()
       }
     } else {
-      equipoFormErrors.value = await handleBackendError(res, 'Error al registrar dispositivo.')
+      equipoFormErrors.value = await handleBackendError(res, 'Error al guardar dispositivo.')
     }
   } catch (error) {
     console.error(error)
-    toast.error('Error de conexión al registrar dispositivo.')
+    toast.error('Error de conexión al guardar dispositivo.')
   }
 }
 
@@ -1161,6 +1207,59 @@ const handleWizardToggleRealSensor = async (sensorCode, isActivated) => {
   }
 }
 
+const startEditEquipo = async (equipo) => {
+  editingEquipoId.value = equipo.id
+  newEquipoEmpresa.value = equipo.empresa || ''
+  newEquipoSitio.value = equipo.sitio || ''
+  newEquipoZona.value = equipo.zona || ''
+  newEquipoTipoDispositivo.value = equipo.tipo_dispositivo || ''
+  newEquipoSerial.value = equipo.serial || ''
+  newEquipoNombre.value = equipo.nombre || ''
+  newEquipoMqttUsername.value = equipo.mqtt_username || ''
+  newEquipoLatitud.value = equipo.latitud !== null && equipo.latitud !== undefined ? String(equipo.latitud) : ''
+  newEquipoLongitud.value = equipo.longitud !== null && equipo.longitud !== undefined ? String(equipo.longitud) : ''
+
+  if (equipo.empresa) {
+    try {
+      const res = await api(`/empresas/sitios/?empresa=${equipo.empresa}`)
+      if (res.ok) {
+        const data = await res.json()
+        newEquipoSitiosList.value = data.results || data
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+  if (equipo.sitio) {
+    try {
+      const res = await api(`/empresas/zonas/?sitio=${equipo.sitio}`)
+      if (res.ok) {
+        const data = await res.json()
+        newEquipoZonasList.value = data.results || data
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+  isAddEquipoModalOpen.value = true
+}
+
+const startCreateEquipo = () => {
+  editingEquipoId.value = null
+  newEquipoEmpresa.value = ''
+  newEquipoSitio.value = ''
+  newEquipoZona.value = ''
+  newEquipoTipoDispositivo.value = ''
+  newEquipoSerial.value = ''
+  newEquipoNombre.value = ''
+  newEquipoMqttUsername.value = ''
+  newEquipoLatitud.value = ''
+  newEquipoLongitud.value = ''
+  newEquipoSitiosList.value = []
+  newEquipoZonasList.value = []
+  isAddEquipoModalOpen.value = true
+}
+
 const handleStartWizard = () => {
   wizardStep.value = 1
   wizardState.value = {
@@ -1171,6 +1270,8 @@ const handleStartWizard = () => {
     serial: '',
     nombre: '',
     mqttUsername: '',
+    latitud: '',
+    longitud: '',
     createdEquipo: null,
     createdDashboardTemplate: null
   }
@@ -1202,7 +1303,7 @@ const copyToClipboard = (text) => {
       <div class="flex items-center gap-3">
         <button
           v-if="activeTab === 'equipos'"
-          @click="isAddEquipoModalOpen = true"
+          @click="startCreateEquipo"
           class="rounded-xl relative w-full sm:w-52 h-12 cursor-pointer flex items-center border border-primary bg-primary group overflow-hidden transition-all hover:shadow-[0_0_20px_rgba(0,209,94,0.4)]"
         >
           <span class="text-white font-semibold w-full text-center sm:text-left sm:ml-5 transform group-hover:translate-x-40 transition-all duration-300 text-sm">
@@ -1344,7 +1445,12 @@ const copyToClipboard = (text) => {
               <span class="text-[10px] font-bold text-primary uppercase font-mono tracking-widest bg-primary/10 px-2 py-0.5 rounded-full">Dispositivo Seleccionado</span>
               <h2 class="text-xl font-bold mt-1 text-mako-900 dark:text-white truncate max-w-[200px]">{{ selectedEquipo.nombre }}</h2>
             </div>
-            <button @click="selectedEquipo = null" class="p-2 text-mako-400 hover:text-mako-700 dark:hover:text-white rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            <div class="flex items-center gap-1">
+              <button @click="startEditEquipo(selectedEquipo)" class="p-2 text-mako-400 hover:text-primary rounded-lg transition-colors" title="Editar Dispositivo">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+              </button>
+              <button @click="selectedEquipo = null" class="p-2 text-mako-400 hover:text-mako-700 dark:hover:text-white rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
           </div>
 
           <!-- Pestañas Internas del Equipo -->
@@ -1383,6 +1489,14 @@ const copyToClipboard = (text) => {
               </div>
             </div>
 
+            <div v-if="selectedEquipo.mqtt_payload_ejemplo" class="space-y-2">
+              <span class="text-[10px] font-bold text-mako-400 uppercase tracking-widest block">Ejemplo Telemetría JSON (MQTT)</span>
+              <div class="bg-mako-100/50 dark:bg-mako-800/40 border border-mako-200 dark:border-mako-700 px-4 py-3 rounded-2xl flex flex-col gap-1">
+                <pre class="font-mono text-[10px] text-mako-700 dark:text-mako-200 overflow-x-auto whitespace-pre max-h-40 custom-scrollbar">{{ typeof selectedEquipo.mqtt_payload_ejemplo === 'string' ? selectedEquipo.mqtt_payload_ejemplo : JSON.stringify(selectedEquipo.mqtt_payload_ejemplo, null, 2) }}</pre>
+                <button @click="copyToClipboard(typeof selectedEquipo.mqtt_payload_ejemplo === 'string' ? selectedEquipo.mqtt_payload_ejemplo : JSON.stringify(selectedEquipo.mqtt_payload_ejemplo))" class="text-[10px] font-bold text-primary hover:underline text-left mt-1 self-start">Copiar JSON</button>
+              </div>
+            </div>
+
             <div class="grid grid-cols-2 gap-4">
               <div class="bg-mako-100/20 dark:bg-mako-900/10 p-3 rounded-2xl border border-mako-200/50 dark:border-mako-800/50">
                 <span class="text-[10px] font-bold text-mako-400 uppercase">MQTT User</span>
@@ -1410,6 +1524,13 @@ const copyToClipboard = (text) => {
               <div class="flex justify-between items-center text-xs">
                 <span class="text-mako-400">Estado:</span>
                 <span class="font-bold" :class="selectedEquipo.activo ? 'text-green-500' : 'text-red-500'">{{ selectedEquipo.activo ? 'Activo' : 'Inactivo' }}</span>
+              </div>
+              <div v-if="selectedEquipo.latitud !== null && selectedEquipo.latitud !== undefined && selectedEquipo.latitud !== '' && selectedEquipo.longitud !== null && selectedEquipo.longitud !== undefined && selectedEquipo.longitud !== ''" class="flex justify-between items-center text-xs">
+                <span class="text-mako-400">Ubicación GPS:</span>
+                <a :href="`https://www.google.com/maps?q=${selectedEquipo.latitud},${selectedEquipo.longitud}`" target="_blank" rel="noopener noreferrer" class="font-bold text-primary hover:underline flex items-center gap-1">
+                  Ver en Google Maps
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                </a>
               </div>
             </div>
           </div>
@@ -1865,6 +1986,18 @@ const copyToClipboard = (text) => {
             <input v-model="wizardState.mqttUsername" type="text" placeholder="Ej. user_pinos" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.mqtt_username}" />
             <p v-if="equipoFormErrors.mqtt_username" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.mqtt_username[0] }}</p>
           </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Latitud (opcional)</label>
+              <input v-model="wizardState.latitud" type="text" placeholder="Ej. -33.456" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.latitud}" />
+              <p v-if="equipoFormErrors.latitud" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.latitud[0] }}</p>
+            </div>
+            <div>
+              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Longitud (opcional)</label>
+              <input v-model="wizardState.longitud" type="text" placeholder="Ej. -70.648" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.longitud}" />
+              <p v-if="equipoFormErrors.longitud" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.longitud[0] }}</p>
+            </div>
+          </div>
 
           <div class="pt-4 border-t border-mako-100 dark:border-mako-800/50 flex justify-between items-center">
             <button type="button" @click="wizardStep = 5" class="text-xs font-bold text-mako-400 hover:text-white">Atrás</button>
@@ -1956,6 +2089,13 @@ const copyToClipboard = (text) => {
                 <div class="bg-white dark:bg-mako-800 border border-mako-200 dark:border-mako-700 px-3 py-2 rounded-xl mt-1 flex items-center justify-between">
                   <span class="font-mono text-xs font-bold text-mako-700 dark:text-mako-200 break-all select-all">{{ wizardState.createdEquipo.mqtt_topic }}</span>
                   <button @click="copyToClipboard(wizardState.createdEquipo.mqtt_topic)" class="text-[10px] font-bold text-primary shrink-0 ml-2">Copiar</button>
+                </div>
+              </div>
+              <div v-if="wizardState.createdEquipo.mqtt_payload_ejemplo">
+                <span class="text-[10px] text-mako-400 uppercase font-semibold">Ejemplo Telemetría JSON (MQTT)</span>
+                <div class="bg-white dark:bg-mako-800 border border-mako-200 dark:border-mako-700 px-3 py-2 rounded-xl mt-1 flex flex-col gap-1">
+                  <pre class="font-mono text-[10px] text-mako-700 dark:text-mako-200 overflow-x-auto whitespace-pre max-h-32 custom-scrollbar">{{ typeof wizardState.createdEquipo.mqtt_payload_ejemplo === 'string' ? wizardState.createdEquipo.mqtt_payload_ejemplo : JSON.stringify(wizardState.createdEquipo.mqtt_payload_ejemplo, null, 2) }}</pre>
+                  <button @click="copyToClipboard(typeof wizardState.createdEquipo.mqtt_payload_ejemplo === 'string' ? wizardState.createdEquipo.mqtt_payload_ejemplo : JSON.stringify(wizardState.createdEquipo.mqtt_payload_ejemplo))" class="text-[10px] font-bold text-primary self-start mt-1">Copiar JSON</button>
                 </div>
               </div>
               <div>
@@ -2072,7 +2212,7 @@ const copyToClipboard = (text) => {
           <div class="p-2 bg-primary/10 rounded-xl">
             <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
-          Registrar e Instalar Dispositivo
+          {{ editingEquipoId ? 'Editar Dispositivo' : 'Registrar e Instalar Dispositivo' }}
         </h3>
         <form @submit.prevent="handleRegisterNode" class="space-y-5">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -2128,9 +2268,23 @@ const copyToClipboard = (text) => {
               <p v-if="equipoFormErrors.mqtt_username" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.mqtt_username[0] }}</p>
             </div>
           </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Latitud (opcional)</label>
+              <input v-model="newEquipoLatitud" type="text" placeholder="Ej. -33.456" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.latitud}" />
+              <p v-if="equipoFormErrors.latitud" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.latitud[0] }}</p>
+            </div>
+            <div>
+              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Longitud (opcional)</label>
+              <input v-model="newEquipoLongitud" type="text" placeholder="Ej. -70.648" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.longitud}" />
+              <p v-if="equipoFormErrors.longitud" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.longitud[0] }}</p>
+            </div>
+          </div>
           <div class="pt-4 border-t border-mako-200 dark:border-mako-700/50 flex gap-3 justify-end">
             <button type="button" @click="isAddEquipoModalOpen = false" class="px-5 py-3 border border-mako-300 dark:border-mako-700 text-sm font-semibold rounded-xl hover:bg-mako-100 dark:hover:bg-white/5 transition-all">Cancelar</button>
-            <button type="submit" class="px-6 py-3 rounded-xl bg-primary text-white font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.4)] transition-all">Registrar Dispositivo</button>
+            <button type="submit" class="px-6 py-3 rounded-xl bg-primary text-white font-bold hover:shadow-[0_0_15px_rgba(0,209,94,0.4)] transition-all">
+              {{ editingEquipoId ? 'Actualizar Dispositivo' : 'Registrar Dispositivo' }}
+            </button>
           </div>
         </form>
       </div>

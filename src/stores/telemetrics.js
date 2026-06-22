@@ -375,7 +375,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                     lat: sitio.latitud ? parseFloat(sitio.latitud) : -36.6083,
                     lng: sitio.longitud ? parseFloat(sitio.longitud) : -72.1022,
                     zoom: 15,
-                    dashboard_template_id: null,
+                    dispositivos: [],
                     sensors: [],
                     repeaters: [],
                     metrics: {
@@ -391,7 +391,6 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                       doorOpen: false,
                       relayState: false,
                     },
-                    widgets: [],
                     weatherForecast: [
                       { day: 'Lun', temp: '15°C', status: 'Despejado', icon: 'Sun' }
                     ]
@@ -416,12 +415,22 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                       serial: d.serial
                     })
 
+                    const devObj = {
+                      id: d.id,
+                      nombre: d.nombre,
+                      serial: d.serial,
+                      latitud: d.latitud,
+                      longitud: d.longitud,
+                      dashboard_template_id: null,
+                      widgets: []
+                    }
+
                     try {
                       const resDash = await api(`/dispositivos/${d.serial}/dashboard/`)
                       if (resDash.ok) {
                         const dash = await resDash.json()
                         if (dash.dashboard && dash.dashboard.id) {
-                          mappedZona.dashboard_template_id = dash.dashboard.id
+                          devObj.dashboard_template_id = dash.dashboard.id
                         }
                         const widgets = dash.dashboard ? dash.dashboard.widgets : dash.widgets || []
                         widgets.forEach(w => {
@@ -435,13 +444,14 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                           if (w.codigo_sensor === 'HUMEDAD_SUELO' || w.titulo.toLowerCase().includes('suelo')) { mappedZona.metrics.soilMoisture = val; mappedZona.metrics.soil_widget_id = w.id }
                           if (w.codigo_sensor === 'VOLTAJE_PANEL' || w.titulo.toLowerCase().includes('panel')) { mappedZona.metrics.solarPanelVoltage = val; mappedZona.metrics.solar_widget_id = w.id }
                         })
-                        mappedZona.widgets.push(...widgets)
+                        devObj.widgets = widgets
                       }
 
                       // Historial se cargará dinámicamente cuando el usuario navegue a la vista de la zona
                     } catch {
                       // ignore error
                     }
+                    mappedZona.dispositivos.push(devObj)
                   }))
 
                   const realWeather = await fetchWeatherForecast(mappedZona.lat, mappedZona.lng)
