@@ -41,6 +41,9 @@ onMounted(async () => {
       if (typeof pref.tema_oscuro === 'boolean') {
         isDark.value = pref.tema_oscuro
       }
+      if (pref.fondo_dashboard && auth.currentUser) {
+        auth.currentUser.fondo_dashboard = pref.fondo_dashboard
+      }
     }
   } catch {
     console.warn('Backend API missing or failed, using local dark mode preference')

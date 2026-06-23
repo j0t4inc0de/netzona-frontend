@@ -47,6 +47,17 @@ export const useAuthStore = defineStore('auth', () => {
           }
         }
 
+        let preferencesBg = null
+        try {
+          const prefRes = await api('/cuentas/preferencias/')
+          if (prefRes.ok) {
+            const prefData = await prefRes.json()
+            preferencesBg = prefData.fondo_dashboard || null
+          }
+        } catch (prefErr) {
+          console.warn("Could not load user preferences during profile fetch", prefErr)
+        }
+
         currentUser.value = {
           id: userData.id,
           username: userData.email,
@@ -55,7 +66,7 @@ export const useAuthStore = defineStore('auth', () => {
           empresa: userData.empresa,
           empresa_nombre: userData.empresa_nombre || null,
           empresa_logo: userData.empresa_logo || null,
-          fondo_dashboard: userData.fondo_dashboard || userData.preferencias?.fondo_dashboard || userData.preferencias_usuario?.fondo_dashboard || null,
+          fondo_dashboard: preferencesBg || userData.fondo_dashboard || userData.preferencias?.fondo_dashboard || userData.preferencias_usuario?.fondo_dashboard || null,
           permissions: permissions,
           group_names: userData.group_names || [],
           groups: userData.groups || [],
