@@ -68,7 +68,7 @@ const toggleDark = () => {
     // Guardar preferencia en el backend
     try {
       api('/cuentas/preferencias/', {
-        method: 'PUT',
+        method: 'PATCH',
         body: JSON.stringify({ tema_oscuro: isDark.value })
       })
     } catch {

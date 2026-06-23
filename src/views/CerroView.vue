@@ -237,7 +237,7 @@ const initGrid = async () => {
         if (backendLayout.length > 0) {
           try {
             await api('/cuentas/preferencias/', {
-              method: 'PUT',
+              method: 'PATCH',
               body: JSON.stringify({
                 sitio_id: selectedCerro.value.id,
                 dashboard_template_id: dev.dashboard_template_id,
