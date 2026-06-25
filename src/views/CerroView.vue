@@ -264,6 +264,13 @@ onMounted(() => {
   initGrid()
 })
 
+// Cargar dinámicamente zonas, dispositivos y dashboards para el cerro seleccionado
+watch(selectedCerroId, async (newId) => {
+  if (newId) {
+    await store.fetchCerroDetails(newId)
+  }
+}, { immediate: true })
+
 watch(
   [selectedCerroId, selectedZonaId],
   () => {

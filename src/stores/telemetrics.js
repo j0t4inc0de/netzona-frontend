@@ -399,7 +399,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
     const authStore = useAuthStore()
     isLoading.value = true
     
-    // 1. Obtener Sitios (Cerros)
+    // 1. Obtener Sitios (Cerros) de forma plana
     const fetchSitios = async () => {
       try {
         const resSitios = await api('/empresas/sitios/')
@@ -407,134 +407,30 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
           const dataSitios = await resSitios.json()
           const sitios = dataSitios.results || dataSitios
 
-          const newCerros = await Promise.all(sitios.map(async (sitio) => {
-            const cerro = {
+          const newCerros = sitios.map((sitio) => {
+            return {
               id: sitio.id,
               name: sitio.nombre,
               client: sitio.empresa,
               lat: sitio.latitud ? parseFloat(sitio.latitud) : -36.6083,
               lng: sitio.longitud ? parseFloat(sitio.longitud) : -72.1022,
               zoom: 15,
-              zonas: []
+              zonas: [],
+              isLoaded: false
             }
+          })
 
-            try {
-              const resDisp = await api(`/dispositivos/equipos/?sitio=${sitio.id}`)
-              let allDispositivos = []
-              if (resDisp.ok) {
-                const dataDisp = await resDisp.json()
-                allDispositivos = dataDisp.results || dataDisp
+          if (newCerros.length > 0) {
+            // Preservar detalles ya cargados si existen
+            newCerros.forEach(newC => {
+              const existing = cerros.value.find(c => c.id === newC.id)
+              if (existing && existing.isLoaded) {
+                newC.zonas = existing.zonas
+                newC.isLoaded = true
               }
-
-              const resZonas = await api(`/empresas/zonas/?sitio=${sitio.id}`)
-              if (resZonas.ok) {
-                const dataZonas = await resZonas.json()
-                const zonas = dataZonas.results || dataZonas
-
-                const zonasPromises = zonas.map(async (zona) => {
-                  const mappedZona = {
-                    id: zona.id,
-                    name: zona.nombre,
-                    cerroId: sitio.id,
-                    lat: sitio.latitud ? parseFloat(sitio.latitud) : -36.6083,
-                    lng: sitio.longitud ? parseFloat(sitio.longitud) : -72.1022,
-                    zoom: 15,
-                    dispositivos: [],
-                    sensors: [],
-                    repeaters: [],
-                    metrics: {
-                      temperature: 0, temp_widget_id: 'widget-temp',
-                      humidity: 0, hum_widget_id: 'widget-hum',
-                      soilMoisture: 0, soil_widget_id: 'widget-soil',
-                      battery: 0, bat_widget_id: 'widget-bat',
-                      solarPanelVoltage: 0, solar_widget_id: 'widget-solar',
-                      voltage: 0, volt_widget_id: 'widget-volt',
-                      power: 0, pow_widget_id: 'widget-pow',
-                      windSpeed: 0,
-                      batteryTemp: 0,
-                      doorOpen: false,
-                      relayState: false,
-                    },
-                    weatherForecast: [
-                      { day: 'Lun', temp: '15°C', status: 'Despejado', icon: 'Sun' }
-                    ]
-                  }
-
-                  const dispositivosZona = allDispositivos.filter(d => d.zona === zona.id || d.zona_codigo === zona.codigo)
-                  
-                  await Promise.all(dispositivosZona.map(async (d) => {
-                    mappedZona.sensors.push({
-                      id: d.id,
-                      name: d.nombre,
-                      serial: d.serial,
-                      latOffset: (Math.random() - 0.5) * 0.005,
-                      lngOffset: (Math.random() - 0.5) * 0.005,
-                      value: 0,
-                      unit: ''
-                    })
-
-                    mappedZona.repeaters.push({
-                      id: d.id,
-                      name: d.nombre,
-                      serial: d.serial
-                    })
-
-                    const devObj = {
-                      id: d.id,
-                      nombre: d.nombre,
-                      serial: d.serial,
-                      latitud: d.latitud,
-                      longitud: d.longitud,
-                      dashboard_template_id: null,
-                      widgets: []
-                    }
-
-                    try {
-                      const resDash = await api(`/dispositivos/${d.serial}/dashboard/`)
-                      if (resDash.ok) {
-                        const dash = await resDash.json()
-                        if (dash.dashboard && dash.dashboard.id) {
-                          devObj.dashboard_template_id = dash.dashboard.id
-                        }
-                        const widgets = dash.dashboard ? dash.dashboard.widgets : dash.widgets || []
-                        widgets.forEach(w => {
-                          w.device_serial = d.serial
-                          const val = w.valor || 0
-                          if (w.codigo_sensor === 'TEMPERATURA' || w.titulo.toLowerCase().includes('temp')) { mappedZona.metrics.temperature = val; mappedZona.metrics.temp_widget_id = w.id }
-                          if (w.codigo_sensor === 'HUMEDAD' || w.titulo.toLowerCase().includes('hum')) { mappedZona.metrics.humidity = val; mappedZona.metrics.hum_widget_id = w.id }
-                          if (w.codigo_sensor === 'BATERIA' || w.titulo.toLowerCase().includes('bat')) { mappedZona.metrics.battery = val; mappedZona.metrics.bat_widget_id = w.id }
-                          if (w.codigo_sensor === 'VOLTAJE' || w.titulo.toLowerCase().includes('volt')) { mappedZona.metrics.voltage = val; mappedZona.metrics.volt_widget_id = w.id }
-                          if (w.codigo_sensor === 'POTENCIA' || w.titulo.toLowerCase().includes('pot')) { mappedZona.metrics.power = val; mappedZona.metrics.pow_widget_id = w.id }
-                          if (w.codigo_sensor === 'HUMEDAD_SUELO' || w.titulo.toLowerCase().includes('suelo')) { mappedZona.metrics.soilMoisture = val; mappedZona.metrics.soil_widget_id = w.id }
-                          if (w.codigo_sensor === 'VOLTAJE_PANEL' || w.titulo.toLowerCase().includes('panel')) { mappedZona.metrics.solarPanelVoltage = val; mappedZona.metrics.solar_widget_id = w.id }
-                        })
-                        devObj.widgets = widgets
-                      }
-
-                      // Historial se cargará dinámicamente cuando el usuario navegue a la vista de la zona
-                    } catch {
-                      // ignore error
-                    }
-                    mappedZona.dispositivos.push(devObj)
-                  }))
-
-                  const realWeather = await fetchWeatherForecast(mappedZona.lat, mappedZona.lng)
-                  if (realWeather) {
-                    mappedZona.weatherForecast = realWeather
-                  }
-                  
-                  return mappedZona
-                })
-                
-                cerro.zonas = await Promise.all(zonasPromises)
-              }
-            } catch (e) {
-              console.warn('Error fetching zonas/dispositivos para cerro', sitio.id, e)
-            }
-            return cerro
-          }))
-
-          if (newCerros.length > 0) cerros.value = newCerros
+            })
+            cerros.value = newCerros
+          }
         }
       } catch (e) {
         console.error('Error al sincronizar sitios:', e)
@@ -575,14 +471,12 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
 
     // Build fallback groups array from existing users & current user if API failed or returned empty
     const groupMap = new Map()
-    // Current user's groups
     if (authStore.currentUser && authStore.currentUser.group_names && authStore.currentUser.groups) {
       authStore.currentUser.group_names.forEach((name, idx) => {
         const id = authStore.currentUser.groups[idx]
         if (id !== undefined) groupMap.set(name, id)
       })
     }
-    // Loaded users' groups
     workers.value.forEach(w => {
       if (w.group_names && w.groups) {
         w.group_names.forEach((name, idx) => {
@@ -621,6 +515,129 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
     }
 
     isLoading.value = false
+  }
+
+  // --- CARGA BAJO DEMANDA DE ZONAS Y DISPOSITIVOS DE UN CERRO ---
+  const fetchCerroDetails = async (cerroId, force = false) => {
+    const cerro = cerros.value.find(c => String(c.id) === String(cerroId))
+    if (!cerro) return
+    if (cerro.isLoaded && !force) return
+
+    isLoading.value = true
+    try {
+      const resDisp = await api(`/dispositivos/equipos/?sitio=${cerroId}`)
+      let allDispositivos = []
+      if (resDisp.ok) {
+        const dataDisp = await resDisp.json()
+        allDispositivos = dataDisp.results || dataDisp
+      }
+
+      const resZonas = await api(`/empresas/zonas/?sitio=${cerroId}`)
+      if (resZonas.ok) {
+        const dataZonas = await resZonas.json()
+        const zonas = dataZonas.results || dataZonas
+
+        const zonasPromises = zonas.map(async (zona) => {
+          const mappedZona = {
+            id: zona.id,
+            name: zona.nombre,
+            cerroId: cerroId,
+            lat: cerro.lat,
+            lng: cerro.lng,
+            zoom: 15,
+            dispositivos: [],
+            sensors: [],
+            repeaters: [],
+            metrics: {
+              temperature: 0, temp_widget_id: 'widget-temp',
+              humidity: 0, hum_widget_id: 'widget-hum',
+              soilMoisture: 0, soil_widget_id: 'widget-soil',
+              battery: 0, bat_widget_id: 'widget-bat',
+              solarPanelVoltage: 0, solar_widget_id: 'widget-solar',
+              voltage: 0, volt_widget_id: 'widget-volt',
+              power: 0, pow_widget_id: 'widget-pow',
+              windSpeed: 0,
+              batteryTemp: 0,
+              doorOpen: false,
+              relayState: false,
+            },
+            weatherForecast: [
+              { day: 'Lun', temp: '15°C', status: 'Despejado', icon: 'Sun' }
+            ]
+          }
+
+          const dispositivosZona = allDispositivos.filter(d => d.zona === zona.id || d.zona_codigo === zona.codigo)
+          
+          await Promise.all(dispositivosZona.map(async (d) => {
+            mappedZona.sensors.push({
+              id: d.id,
+              name: d.nombre,
+              serial: d.serial,
+              latOffset: (Math.random() - 0.5) * 0.005,
+              lngOffset: (Math.random() - 0.5) * 0.005,
+              value: 0,
+              unit: ''
+            })
+
+            mappedZona.repeaters.push({
+              id: d.id,
+              name: d.nombre,
+              serial: d.serial
+            })
+
+            const devObj = {
+              id: d.id,
+              nombre: d.nombre,
+              serial: d.serial,
+              latitud: d.latitud,
+              longitud: d.longitud,
+              dashboard_template_id: null,
+              widgets: []
+            }
+
+            try {
+              const resDash = await api(`/dispositivos/${d.serial}/dashboard/`)
+              if (resDash.ok) {
+                const dash = await resDash.json()
+                if (dash.dashboard && dash.dashboard.id) {
+                  devObj.dashboard_template_id = dash.dashboard.id
+                }
+                const widgets = dash.dashboard ? dash.dashboard.widgets : dash.widgets || []
+                widgets.forEach(w => {
+                  w.device_serial = d.serial
+                  const val = w.valor || 0
+                  if (w.codigo_sensor === 'TEMPERATURA' || w.titulo.toLowerCase().includes('temp')) { mappedZona.metrics.temperature = val; mappedZona.metrics.temp_widget_id = w.id }
+                  if (w.codigo_sensor === 'HUMEDAD' || w.titulo.toLowerCase().includes('hum')) { mappedZona.metrics.humidity = val; mappedZona.metrics.hum_widget_id = w.id }
+                  if (w.codigo_sensor === 'BATERIA' || w.titulo.toLowerCase().includes('bat')) { mappedZona.metrics.battery = val; mappedZona.metrics.bat_widget_id = w.id }
+                  if (w.codigo_sensor === 'VOLTAJE' || w.titulo.toLowerCase().includes('volt')) { mappedZona.metrics.voltage = val; mappedZona.metrics.volt_widget_id = w.id }
+                  if (w.codigo_sensor === 'POTENCIA' || w.titulo.toLowerCase().includes('pot')) { mappedZona.metrics.power = val; mappedZona.metrics.pow_widget_id = w.id }
+                  if (w.codigo_sensor === 'HUMEDAD_SUELO' || w.titulo.toLowerCase().includes('suelo')) { mappedZona.metrics.soilMoisture = val; mappedZona.metrics.soil_widget_id = w.id }
+                  if (w.codigo_sensor === 'VOLTAJE_PANEL' || w.titulo.toLowerCase().includes('panel')) { mappedZona.metrics.solarPanelVoltage = val; mappedZona.metrics.solar_widget_id = w.id }
+                })
+                devObj.widgets = widgets
+              }
+            } catch {
+              // ignore error
+            }
+            mappedZona.dispositivos.push(devObj)
+          }))
+
+          const realWeather = await fetchWeatherForecast(mappedZona.lat, mappedZona.lng)
+          if (realWeather) {
+            mappedZona.weatherForecast = realWeather
+          }
+          
+          return mappedZona
+        })
+        
+        cerro.zonas = await Promise.all(zonasPromises)
+        cerro.isLoaded = true
+      }
+    } catch (e) {
+      console.warn('Error fetching zonas/dispositivos para cerro', cerroId, e)
+    } finally {
+      isLoading.value = false
+    }
   }
 
 
@@ -721,6 +738,7 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
     toggleRelay,
     updateRealtimeMetrics,
     fetchDataFromBackend,
+    fetchCerroDetails,
     fetchZonaHistory,
   }
 })
