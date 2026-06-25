@@ -9,11 +9,23 @@ export const useAuthStore = defineStore('auth', () => {
   const userRole = computed(() => currentUser.value?.role || null)
   const accessibleItems = computed(() => currentUser.value?.permissions || [])
 
+  const isInitializing = ref(true)
+  let resolveInit
+  const initializationPromise = new Promise((resolve) => {
+    resolveInit = resolve
+  })
+
   // Cargar usuario desde local storage si existe el token
   const initializeAuth = async () => {
-    const token = localStorage.getItem('access_token')
-    if (token) {
-      await fetchCurrentUser()
+    isInitializing.value = true
+    try {
+      const token = localStorage.getItem('access_token')
+      if (token) {
+        await fetchCurrentUser()
+      }
+    } finally {
+      isInitializing.value = false
+      resolveInit()
     }
   }
 
@@ -123,5 +135,7 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     hasPermission,
     initializeAuth,
+    isInitializing,
+    initializationPromise,
   }
 })

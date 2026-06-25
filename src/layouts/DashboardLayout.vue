@@ -421,23 +421,6 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
         </div>
 
         <router-link
-          v-if="showAdminLink"
-          to="/admin"
-          class="flex items-center py-3 rounded-2xl transition-all duration-300 text-mako-600 dark:text-mako-300 hover:bg-mako-100 dark:hover:bg-white/5"
-          :class="isDesktopSidebarCollapsed ? 'px-[14px]' : 'px-4'"
-          active-class="!text-primary font-semibold"
-          :title="isDesktopSidebarCollapsed ? 'Cuentas y Usuarios' : ''"
-        >
-          <svg class="w-5 h-5 shrink-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-          </svg>
-          <span class="whitespace-nowrap overflow-hidden transition-all duration-300"
-                :class="isDesktopSidebarCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[200px] opacity-100 ml-3'">
-            Usuarios
-          </span>
-        </router-link>
-
-        <router-link
           v-if="showTecnicoLink"
           to="/estructura"
           class="flex items-center py-3 rounded-2xl transition-all duration-300 text-mako-600 dark:text-mako-300 hover:bg-mako-100 dark:hover:bg-white/5"
@@ -451,6 +434,23 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
           <span class="whitespace-nowrap overflow-hidden transition-all duration-300"
                 :class="isDesktopSidebarCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[200px] opacity-100 ml-3'">
             Estructura
+          </span>
+        </router-link>
+
+        <router-link
+          v-if="showAdminLink"
+          to="/admin"
+          class="flex items-center py-3 rounded-2xl transition-all duration-300 text-mako-600 dark:text-mako-300 hover:bg-mako-100 dark:hover:bg-white/5"
+          :class="isDesktopSidebarCollapsed ? 'px-[14px]' : 'px-4'"
+          active-class="!text-primary font-semibold"
+          :title="isDesktopSidebarCollapsed ? 'Cuentas y Usuarios' : ''"
+        >
+          <svg class="w-5 h-5 shrink-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <span class="whitespace-nowrap overflow-hidden transition-all duration-300"
+                :class="isDesktopSidebarCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[200px] opacity-100 ml-3'">
+            Usuarios
           </span>
         </router-link>
 
@@ -589,16 +589,6 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
         </div>
 
         <router-link
-          v-if="showAdminLink"
-          to="/admin"
-          @click="isSidebarOpen = false"
-          class="flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 text-mako-600 dark:text-mako-300 hover:bg-mako-100 dark:hover:bg-white/5"
-          active-class="!text-primary font-semibold"
-        >
-          Administrar Personal
-        </router-link>
-
-        <router-link
           v-if="showTecnicoLink"
           to="/estructura"
           @click="isSidebarOpen = false"
@@ -606,6 +596,16 @@ const showTecnicoLink = computed(() => auth.userRole === 'tecnico')
           active-class="!text-primary font-semibold"
         >
           Estructura
+        </router-link>
+
+        <router-link
+          v-if="showAdminLink"
+          to="/admin"
+          @click="isSidebarOpen = false"
+          class="flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-200 text-mako-600 dark:text-mako-300 hover:bg-mako-100 dark:hover:bg-white/5"
+          active-class="!text-primary font-semibold"
+        >
+          Administrar Personal
         </router-link>
 
         <router-link

@@ -639,14 +639,26 @@ const handleAddZona = async () => {
 // 4. Crear Tipo de Dispositivo
 const handleAddTipoDispositivo = async () => {
   tipoDispositivoFormErrors.value = {}
-  if (!newTipoDispositivoCodigo.value.trim() || !newTipoDispositivoNombre.value.trim()) {
-    toast.error('Complete código y nombre del tipo de dispositivo.')
+  if (!newTipoDispositivoNombre.value.trim()) {
+    toast.error('Complete el nombre comercial del modelo de dispositivo.')
     return
   }
+
+  // Auto-generar el código único en formato snake_case desde el nombre comercial
+  const generatedCode = newTipoDispositivoNombre.value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // quitar tildes y diacríticos
+    .replace(/[^a-z0-9_]/g, "_")      // caracteres no válidos -> _
+    .replace(/_+/g, "_")            // colapsar guiones bajos
+    .replace(/^_+|_+$/g, "")        // quitar guiones iniciales y finales
+
+  newTipoDispositivoCodigo.value = generatedCode || 'modelo_' + Math.random().toString(36).substring(2, 7)
+
   const codeRegex = /^[a-z0-9_]+$/
   if (!codeRegex.test(newTipoDispositivoCodigo.value.trim())) {
-    tipoDispositivoFormErrors.value = { codigo: ['El código debe usar snake_case (solo minúsculas, números y guión bajo).'] }
-    toast.error('El código debe usar snake_case (solo minúsculas, números y guión bajo).')
+    tipoDispositivoFormErrors.value = { codigo: ['El código auto-generado es inválido. Intente con otro nombre comercial.'] }
+    toast.error('El código auto-generado es inválido.')
     return
   }
   try {
@@ -1051,7 +1063,11 @@ const handleAddSimpleWidget = async () => {
       
       try {
         const telemetricsStore = useTelemetricsStore()
-        telemetricsStore.fetchDataFromBackend()
+        await telemetricsStore.fetchDataFromBackend()
+        const sitioId = activeTab.value === 'alta-rapida' ? wizardState.value.sitioId : selectedTipoDispositivoDashboard.value?.sitio_id
+        if (sitioId) {
+          await telemetricsStore.fetchCerroDetails(sitioId, true)
+        }
       } catch (e) {
         console.error('Failed to reload telemetrics store:', e)
       }
@@ -1329,6 +1345,13 @@ const fetchWizardEquipoSensors = async () => {
     if (res.ok) {
       const data = await res.json()
       wizardEquipoSensors.value = data.results || data
+    }
+    
+    // Forzar recarga de los detalles del sitio/cerro en el telemetrics store
+    if (wizardState.value.sitioId) {
+      const telemetricsStore = useTelemetricsStore()
+      await telemetricsStore.fetchDataFromBackend()
+      await telemetricsStore.fetchCerroDetails(wizardState.value.sitioId, true)
     }
   } catch (e) {
     console.error(e)
@@ -2189,11 +2212,7 @@ const copyToClipboard = (text) => {
             <input v-model="wizardState.nombre" type="text" placeholder="Ej. Estación Clima Los Pinos" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.nombre}" required />
             <p v-if="equipoFormErrors.nombre" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.nombre[0] }}</p>
           </div>
-          <div>
-            <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">MQTT Username (opcional)</label>
-            <input v-model="wizardState.mqttUsername" type="text" placeholder="Ej. user_pinos" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.mqtt_username}" />
-            <p v-if="equipoFormErrors.mqtt_username" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.mqtt_username[0] }}</p>
-          </div>
+          <!-- Campo MQTT Username quitado por requerimiento -->
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Latitud (opcional)</label>
@@ -2462,7 +2481,7 @@ const copyToClipboard = (text) => {
               <p v-if="equipoFormErrors.nombre" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.nombre[0] }}</p>
             </div>
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 gap-4">
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Modelo (Tipo Dispositivo)</label>
               <select v-model="newEquipoTipoDispositivo" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.tipo_dispositivo}">
@@ -2470,11 +2489,6 @@ const copyToClipboard = (text) => {
                 <option v-for="tipo in tiposDispositivo" :key="tipo.id" :value="tipo.id">{{ tipo.nombre }}</option>
               </select>
               <p v-if="equipoFormErrors.tipo_dispositivo" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.tipo_dispositivo[0] }}</p>
-            </div>
-            <div>
-              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">MQTT Username (opcional)</label>
-              <input v-model="newEquipoMqttUsername" type="text" placeholder="Ej. user_norte" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-semibold transition-all" :class="{'border-red-500': equipoFormErrors.mqtt_username}" />
-              <p v-if="equipoFormErrors.mqtt_username" class="text-red-500 text-[10px] mt-1">{{ equipoFormErrors.mqtt_username[0] }}</p>
             </div>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -2512,11 +2526,7 @@ const copyToClipboard = (text) => {
           Crear Modelo de Dispositivo
         </h3>
         <form @submit.prevent="handleAddTipoDispositivo" class="space-y-5">
-          <div>
-            <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Código Único (para Tópico MQTT)</label>
-            <input v-model="newTipoDispositivoCodigo" type="text" placeholder="Ej. estacion_meteorologica" class="w-full px-4 py-3.5 rounded-xl bg-mako-100 dark:bg-mako-800/40 border border-mako-300 dark:border-mako-700 outline-none text-sm font-mono font-bold transition-all" :class="{'border-red-500': tipoDispositivoFormErrors.codigo}" required />
-            <p v-if="tipoDispositivoFormErrors.codigo" class="text-red-500 text-[10px] mt-1">{{ tipoDispositivoFormErrors.codigo[0] }}</p>
-          </div>
+          <!-- Código único auto-generado -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Nombre Comercial</label>

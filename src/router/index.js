@@ -90,8 +90,13 @@ const router = createRouter({
   ],
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   const auth = useAuthStore()
+
+  // Esperar a que termine la inicialización de autenticación si está en proceso
+  if (auth.isInitializing) {
+    await auth.initializationPromise
+  }
   
   if (to.meta.requiresAuth !== false && !auth.isAuthenticated) {
     return '/login'
