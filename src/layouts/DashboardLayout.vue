@@ -26,7 +26,7 @@ onMounted(async () => {
     if (route.name === 'cerro-view' && route.params.id) {
       telemetrics.updateRealtimeMetrics(route.params.id)
     }
-  }, 5000)
+  }, 10000)
 
   // Esperar a que se carguen los cerros para cerrarlo si hay más de 3
   setTimeout(() => {

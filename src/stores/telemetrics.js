@@ -279,6 +279,21 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                     zona.history.power.push({ x: time, y: data['POTENCIA'].valor })
                     if (zona.history.power.length > 30) zona.history.power.shift()
                   }
+
+                  // Sincronizar directamente con los widgets dinámicos en pantalla
+                  const device = zona.dispositivos.find(d => d.serial === s.serial)
+                  if (device && device.widgets) {
+                    device.widgets.forEach(w => {
+                      if (rawData.sensores && Array.isArray(rawData.sensores)) {
+                        const sensorData = rawData.sensores.find(sd => sd.codigo_sensor === w.codigo_sensor)
+                        if (sensorData) {
+                          w.valor = sensorData.valor
+                          w.medido_en = sensorData.medido_en
+                          w.estado = sensorData.estado || 'ok'
+                        }
+                      }
+                    })
+                  }
                 }
               } catch {
                 // ignore
@@ -326,6 +341,21 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                   }
                   if (data['VOLTAJE_PANEL']) {
                     zona.metrics.solarPanelVoltage = data['VOLTAJE_PANEL'].valor
+                  }
+
+                  // Sincronizar directamente con los widgets dinámicos en pantalla
+                  const device = zona.dispositivos.find(d => d.serial === r.serial)
+                  if (device && device.widgets) {
+                    device.widgets.forEach(w => {
+                      if (rawData.sensores && Array.isArray(rawData.sensores)) {
+                        const sensorData = rawData.sensores.find(sd => sd.codigo_sensor === w.codigo_sensor)
+                        if (sensorData) {
+                          w.valor = sensorData.valor
+                          w.medido_en = sensorData.medido_en
+                          w.estado = sensorData.estado || 'ok'
+                        }
+                      }
+                    })
                   }
                 }
               } catch {
