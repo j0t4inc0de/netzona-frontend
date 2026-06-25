@@ -182,6 +182,98 @@ watch(wizardStep, () => {
   equipoFormErrors.value = {}
 })
 
+// Variables para Errores de Validación Adicionales
+const permittedSensorFormErrors = ref({})
+const simpleWidgetFormErrors = ref({})
+
+// Computed para obtener las capacidades del sensor seleccionado en el selector de widgets
+const selectedWidgetSensor = computed(() => {
+  if (!newWidgetSensorId.value) return null
+  return tiposSensor.value.find(s => s.id === newWidgetSensorId.value)
+})
+
+// Visualizaciones sugeridas basadas en el tipo de sensor (validación preventiva)
+const availableVisualizations = computed(() => {
+  const sensor = selectedWidgetSensor.value
+  if (!sensor) {
+    return [
+      { value: 'valor_actual', label: 'Valor Actual' },
+      { value: 'historico', label: 'Histórico (Gráfico)' },
+      { value: 'estado', label: 'Estado (Badge)' },
+      { value: 'indicador', label: 'Indicador (Gauge)' }
+    ]
+  }
+
+  const options = []
+
+  // Valor actual
+  if (sensor.permite_valor_actual) {
+    options.push({ value: 'valor_actual', label: 'Valor Actual' })
+  }
+
+  // Histórico (solo si es numérico y soporta historial/agregación)
+  const isNumeric = sensor.tipo_dato === 'integer' || sensor.tipo_dato === 'float'
+  if (isNumeric && sensor.permite_historico && sensor.permite_agregacion_promedio) {
+    options.push({ value: 'historico', label: 'Histórico (Gráfico)' })
+  }
+
+  // Indicador (solo numéricos)
+  if (isNumeric) {
+    options.push({ value: 'indicador', label: 'Indicador (Gauge)' })
+  }
+
+  // Estado (booleanos, strings o de categoría estado)
+  const isStringOrBool = sensor.tipo_dato === 'boolean' || sensor.tipo_dato === 'string'
+  const isEstadoCategory = sensor.categoria && sensor.categoria.toLowerCase() === 'estado'
+  if (isStringOrBool || isEstadoCategory) {
+    options.push({ value: 'estado', label: 'Estado (Badge)' })
+  }
+
+  return options
+})
+
+// Resetear visualización si la seleccionada deja de estar disponible para el nuevo sensor
+watch(availableVisualizations, (newOptions) => {
+  if (newOptions.length > 0) {
+    const stillAvailable = newOptions.some(opt => opt.value === newWidgetVisualizacion.value)
+    if (!stillAvailable) {
+      newWidgetVisualizacion.value = newOptions[0].value
+    }
+  } else {
+    newWidgetVisualizacion.value = ''
+  }
+})
+
+// Watchers para limpiar errores al cambiar de contexto
+watch(selectedTipoDispositivo, () => {
+  permittedSensorFormErrors.value = {}
+  newPermittedSensorId.value = ''
+  newPermittedSensorRequerido.value = false
+  newPermittedSensorOrden.value = 0
+  newPermittedSensorMin.value = null
+  newPermittedSensorMax.value = null
+})
+
+watch(selectedTipoDispositivoDashboard, () => {
+  simpleWidgetFormErrors.value = {}
+  newWidgetSensorId.value = ''
+  newWidgetVisualizacion.value = 'valor_actual'
+  newWidgetTitulo.value = ''
+})
+
+watch(activeTab, () => {
+  permittedSensorFormErrors.value = {}
+  simpleWidgetFormErrors.value = {}
+  newPermittedSensorId.value = ''
+  newPermittedSensorRequerido.value = false
+  newPermittedSensorOrden.value = 0
+  newPermittedSensorMin.value = null
+  newPermittedSensorMax.value = null
+  newWidgetSensorId.value = ''
+  newWidgetVisualizacion.value = 'valor_actual'
+  newWidgetTitulo.value = ''
+})
+
 // ==========================================
 // WATCHERS DE FILTROS Y DEPENDENCIAS
 // ==========================================
@@ -820,6 +912,7 @@ const handleAddPermittedSensor = async () => {
     toast.error('Seleccione un sensor global para asociar.')
     return
   }
+  permittedSensorFormErrors.value = {}
   try {
     const res = await api('/dispositivos/tipos-dispositivo-sensor/', {
       method: 'POST',
@@ -828,8 +921,8 @@ const handleAddPermittedSensor = async () => {
         tipo_sensor: newPermittedSensorId.value,
         requerido: newPermittedSensorRequerido.value,
         orden: newPermittedSensorOrden.value,
-        valor_min: newPermittedSensorMin.value !== null ? newPermittedSensorMin.value : undefined,
-        valor_max: newPermittedSensorMax.value !== null ? newPermittedSensorMax.value : undefined,
+        valor_min: newPermittedSensorMin.value !== null && newPermittedSensorMin.value !== '' ? parseFloat(newPermittedSensorMin.value) : undefined,
+        valor_max: newPermittedSensorMax.value !== null && newPermittedSensorMax.value !== '' ? parseFloat(newPermittedSensorMax.value) : undefined,
         activo: true
       })
     })
@@ -840,12 +933,32 @@ const handleAddPermittedSensor = async () => {
       newPermittedSensorOrden.value = 0
       newPermittedSensorMin.value = null
       newPermittedSensorMax.value = null
+      permittedSensorFormErrors.value = {}
       await fetchTipoDispositivoSensors(selectedTipoDispositivo.value.id)
     } else {
-      const err = await res.json()
-      toast.error('Error al asociar: ' + JSON.stringify(err))
+      const data = await res.json().catch(() => ({}))
+      if (data.code) {
+        let msg = data.detail
+        if (data.code === 'tipo_dispositivo_en_uso' && data.impacto) {
+          msg += `\nImpacto actual: ${data.impacto.dispositivos || 0} dispositivos, ${data.impacto.dashboard_templates || 0} plantillas de dashboard asociadas.`
+        }
+        toast.error(msg)
+        if (data.field) {
+          permittedSensorFormErrors.value = { [data.field]: [data.detail] }
+        } else {
+          permittedSensorFormErrors.value = { non_field_errors: [data.detail] }
+        }
+      } else {
+        permittedSensorFormErrors.value = data
+        const messages = []
+        for (const [key, value] of Object.entries(data)) {
+          messages.push(`${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+        }
+        toast.error(messages.join('\n') || 'Error al asociar sensor.')
+      }
     }
-  } catch {
+  } catch (error) {
+    console.error(error)
     toast.error('Error de conexión.')
   }
 }
@@ -858,7 +971,16 @@ const handleRemovePermittedSensor = async (id) => {
       toast.success('Asociación eliminada.')
       await fetchTipoDispositivoSensors(selectedTipoDispositivo.value.id)
     } else {
-      toast.error('Error al eliminar asociación.')
+      const data = await res.json().catch(() => ({}))
+      if (data.code) {
+        let msg = data.detail
+        if (data.code === 'tipo_dispositivo_en_uso' && data.impacto) {
+          msg += `\nImpacto actual: ${data.impacto.dispositivos || 0} dispositivos, ${data.impacto.dashboard_templates || 0} plantillas de dashboard asociadas.`
+        }
+        toast.error(msg)
+      } else {
+        toast.error(data.detail || 'Error al eliminar asociación.')
+      }
     }
   } catch {
     toast.error('Error de conexión.')
@@ -906,7 +1028,7 @@ const handleAddSimpleWidget = async () => {
     toast.error('Seleccione un sensor.')
     return
   }
-
+  simpleWidgetFormErrors.value = {}
   try {
     const payload = {
       dashboard_template: templateId,
@@ -925,6 +1047,7 @@ const handleAddSimpleWidget = async () => {
       newWidgetSensorId.value = ''
       newWidgetVisualizacion.value = 'valor_actual'
       newWidgetTitulo.value = ''
+      simpleWidgetFormErrors.value = {}
       
       try {
         const telemetricsStore = useTelemetricsStore()
@@ -940,10 +1063,25 @@ const handleAddSimpleWidget = async () => {
         await fetchDashboardWidgets(templateId)
       }
     } else {
-      const err = await res.json()
-      toast.error('Error al crear widget: ' + JSON.stringify(err))
+      const data = await res.json().catch(() => ({}))
+      if (data.code) {
+        toast.error(data.detail)
+        if (data.field) {
+          simpleWidgetFormErrors.value = { [data.field]: [data.detail] }
+        } else {
+          simpleWidgetFormErrors.value = { non_field_errors: [data.detail] }
+        }
+      } else {
+        simpleWidgetFormErrors.value = data
+        const messages = []
+        for (const [key, value] of Object.entries(data)) {
+          messages.push(`${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+        }
+        toast.error(messages.join('\n') || 'Error al crear widget.')
+      }
     }
-  } catch {
+  } catch (error) {
+    console.error(error)
     toast.error('Error de conexión.')
   }
 }
@@ -1105,6 +1243,7 @@ watch(() => wizardState.value.tipoDispositivoId, async (newVal) => {
 // Asociar sensor en el paso 5 del wizard
 const handleWizardAddPermittedSensor = async () => {
   if (!wizardState.value.tipoDispositivoId || !newPermittedSensorId.value) return
+  permittedSensorFormErrors.value = {}
   try {
     const res = await api('/dispositivos/tipos-dispositivo-sensor/', {
       method: 'POST',
@@ -1113,20 +1252,49 @@ const handleWizardAddPermittedSensor = async () => {
         tipo_sensor: newPermittedSensorId.value,
         requerido: newPermittedSensorRequerido.value,
         orden: newPermittedSensorOrden.value,
+        valor_min: newPermittedSensorMin.value !== null && newPermittedSensorMin.value !== '' ? parseFloat(newPermittedSensorMin.value) : undefined,
+        valor_max: newPermittedSensorMax.value !== null && newPermittedSensorMax.value !== '' ? parseFloat(newPermittedSensorMax.value) : undefined,
         activo: true
       })
     })
     if (res.ok) {
       toast.success('Sensor asociado con éxito.')
       newPermittedSensorId.value = ''
+      newPermittedSensorRequerido.value = false
+      newPermittedSensorOrden.value = 0
+      newPermittedSensorMin.value = null
+      newPermittedSensorMax.value = null
+      permittedSensorFormErrors.value = {}
       // Recargar
       const refreshRes = await api(`/dispositivos/tipos-dispositivo-sensor/?tipo_dispositivo=${wizardState.value.tipoDispositivoId}`)
       if (refreshRes.ok) {
         const data = await refreshRes.json()
         wizardPermittedSensors.value = data.results || data
       }
+    } else {
+      const data = await res.json().catch(() => ({}))
+      if (data.code) {
+        let msg = data.detail
+        if (data.code === 'tipo_dispositivo_en_uso' && data.impacto) {
+          msg += `\nImpacto actual: ${data.impacto.dispositivos || 0} dispositivos, ${data.impacto.dashboard_templates || 0} plantillas de dashboard asociadas.`
+        }
+        toast.error(msg)
+        if (data.field) {
+          permittedSensorFormErrors.value = { [data.field]: [data.detail] }
+        } else {
+          permittedSensorFormErrors.value = { non_field_errors: [data.detail] }
+        }
+      } else {
+        permittedSensorFormErrors.value = data
+        const messages = []
+        for (const [key, value] of Object.entries(data)) {
+          messages.push(`${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+        }
+        toast.error(messages.join('\n') || 'Error al asociar sensor.')
+      }
     }
-  } catch {
+  } catch (error) {
+    console.error(error)
     toast.error('Error de conexión.')
   }
 }
@@ -1684,11 +1852,29 @@ const copyToClipboard = (text) => {
             <div class="bg-mako-100/30 dark:bg-mako-900/10 p-3 rounded-2xl border border-mako-200 dark:border-mako-800 space-y-2">
               <span class="text-[10px] font-bold text-mako-400 uppercase tracking-widest block">Asociar Sensor al Catálogo del Tipo</span>
               <div class="flex flex-col gap-2">
-                <select v-model="newPermittedSensorId" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none text-xs font-semibold">
+                <select v-model="newPermittedSensorId" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none text-xs font-semibold" :class="{'border-red-500': permittedSensorFormErrors.tipo_sensor || permittedSensorFormErrors.tipo_dispositivo}">
                   <option value="" disabled>Seleccione Sensor Global...</option>
                   <option v-for="sensor in tiposSensor" :key="sensor.id" :value="sensor.id">{{ sensor.nombre_visible }} ({{ sensor.codigo }})</option>
                 </select>
-                <div class="flex items-center justify-between text-xs gap-3">
+                <p v-if="permittedSensorFormErrors.tipo_sensor" class="text-red-500 text-[10px] mt-0.5 ml-1">{{ permittedSensorFormErrors.tipo_sensor[0] }}</p>
+                <p v-if="permittedSensorFormErrors.tipo_dispositivo" class="text-red-500 text-[10px] mt-0.5 ml-1">{{ permittedSensorFormErrors.tipo_dispositivo[0] }}</p>
+                <p v-if="permittedSensorFormErrors.non_field_errors" class="text-red-500 text-[10px] mt-0.5 ml-1">{{ permittedSensorFormErrors.non_field_errors[0] }}</p>
+
+                <!-- Rangos de valores para validación -->
+                <div class="grid grid-cols-2 gap-2 mt-1">
+                  <div>
+                    <label class="text-[9px] uppercase font-bold text-mako-400 block mb-0.5">Valor Mínimo</label>
+                    <input v-model="newPermittedSensorMin" type="number" step="any" placeholder="Ej. 0" class="w-full px-2.5 py-1.5 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none text-xs font-semibold" :class="{'border-red-500': permittedSensorFormErrors.valor_min}" />
+                    <p v-if="permittedSensorFormErrors.valor_min" class="text-red-500 text-[9px] mt-0.5 ml-1">{{ permittedSensorFormErrors.valor_min[0] }}</p>
+                  </div>
+                  <div>
+                    <label class="text-[9px] uppercase font-bold text-mako-400 block mb-0.5">Valor Máximo</label>
+                    <input v-model="newPermittedSensorMax" type="number" step="any" placeholder="Ej. 100" class="w-full px-2.5 py-1.5 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none text-xs font-semibold" :class="{'border-red-500': permittedSensorFormErrors.valor_max}" />
+                    <p v-if="permittedSensorFormErrors.valor_max" class="text-red-500 text-[9px] mt-0.5 ml-1">{{ permittedSensorFormErrors.valor_max[0] }}</p>
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-between text-xs gap-3 mt-1">
                   <div class="flex items-center gap-1.5">
                     <input v-model="newPermittedSensorRequerido" type="checkbox" id="req" class="rounded border-mako-300 text-primary focus:ring-primary" />
                     <label for="req" class="text-[10px] uppercase font-bold text-mako-400">Requerido</label>
@@ -1740,19 +1926,22 @@ const copyToClipboard = (text) => {
               <div class="bg-mako-100/30 dark:bg-mako-900/10 p-3 rounded-2xl border border-mako-200 dark:border-mako-800 space-y-2">
                 <span class="text-[10px] font-bold text-mako-400 uppercase tracking-widest block">Agregar Widget Simple</span>
                 <div class="flex flex-col gap-2">
-                  <select v-model="newWidgetSensorId" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none text-xs font-semibold">
+                  <select v-model="newWidgetSensorId" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none text-xs font-semibold" :class="{'border-red-500': simpleWidgetFormErrors.tipo_sensor}">
                     <option value="" disabled>Seleccione Sensor Permitido...</option>
                     <option v-for="rel in selectedTipoDispositivoSensors" :key="rel.tipo_sensor" :value="rel.tipo_sensor">{{ rel.tipo_sensor_codigo }}</option>
                   </select>
+                  <p v-if="simpleWidgetFormErrors.tipo_sensor" class="text-red-500 text-[10px] mt-0.5 ml-1">{{ simpleWidgetFormErrors.tipo_sensor[0] }}</p>
+                  
                   <div class="flex gap-2">
-                    <select v-model="newWidgetVisualizacion" class="flex-1 px-3 py-2 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none text-xs font-semibold">
-                      <option value="valor_actual">Valor Actual</option>
-                      <option value="historico">Histórico (Gráfico)</option>
-                      <option value="estado">Estado (Badge)</option>
-                      <option value="indicador">Indicador (Gauge)</option>
+                    <select v-model="newWidgetVisualizacion" class="flex-1 px-3 py-2 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none text-xs font-semibold" :class="{'border-red-500': simpleWidgetFormErrors.visualizacion}">
+                      <option v-for="opt in availableVisualizations" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                     </select>
-                    <input v-model="newWidgetTitulo" type="text" placeholder="Título opcional" class="flex-1 px-3 py-2 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none text-xs font-semibold" />
+                    <input v-model="newWidgetTitulo" type="text" placeholder="Título opcional" class="flex-1 px-3 py-2 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none text-xs font-semibold" :class="{'border-red-500': simpleWidgetFormErrors.titulo}" />
                   </div>
+                  <p v-if="simpleWidgetFormErrors.visualizacion" class="text-red-500 text-[10px] mt-0.5 ml-1">{{ simpleWidgetFormErrors.visualizacion[0] }}</p>
+                  <p v-if="simpleWidgetFormErrors.titulo" class="text-red-500 text-[10px] mt-0.5 ml-1">{{ simpleWidgetFormErrors.titulo[0] }}</p>
+                  <p v-if="simpleWidgetFormErrors.non_field_errors" class="text-red-500 text-[10px] mt-0.5 ml-1">{{ simpleWidgetFormErrors.non_field_errors[0] }}</p>
+                  
                   <button @click="handleAddSimpleWidget" class="w-full px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold hover:opacity-95">Agregar Widget</button>
                 </div>
               </div>
@@ -1939,10 +2128,28 @@ const copyToClipboard = (text) => {
           <!-- Formulario rápido asociar sensor -->
           <div class="bg-mako-100/30 dark:bg-mako-900/10 p-4 rounded-3xl border border-mako-200 dark:border-mako-800 space-y-3">
             <span class="text-xs font-bold text-mako-400 uppercase tracking-widest block">Asociar Sensor a este Modelo</span>
-            <select v-model="newPermittedSensorId" class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none text-xs font-semibold">
+            <select v-model="newPermittedSensorId" class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none text-xs font-semibold" :class="{'border-red-500': permittedSensorFormErrors.tipo_sensor || permittedSensorFormErrors.tipo_dispositivo}">
               <option value="" disabled>Seleccione Sensor Global...</option>
               <option v-for="sensor in tiposSensor" :key="sensor.id" :value="sensor.id">{{ sensor.nombre_visible }}</option>
             </select>
+            <p v-if="permittedSensorFormErrors.tipo_sensor" class="text-red-500 text-[10px] mt-0.5 ml-1">{{ permittedSensorFormErrors.tipo_sensor[0] }}</p>
+            <p v-if="permittedSensorFormErrors.tipo_dispositivo" class="text-red-500 text-[10px] mt-0.5 ml-1">{{ permittedSensorFormErrors.tipo_dispositivo[0] }}</p>
+            <p v-if="permittedSensorFormErrors.non_field_errors" class="text-red-500 text-[10px] mt-0.5 ml-1">{{ permittedSensorFormErrors.non_field_errors[0] }}</p>
+
+            <!-- Rangos de valores para validación -->
+            <div class="grid grid-cols-2 gap-2 mt-1">
+              <div>
+                <label class="text-[9px] uppercase font-bold text-mako-400 block mb-0.5">Valor Mínimo</label>
+                <input v-model="newPermittedSensorMin" type="number" step="any" placeholder="Ej. 0" class="w-full px-2.5 py-1.5 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none text-xs font-semibold" :class="{'border-red-500': permittedSensorFormErrors.valor_min}" />
+                <p v-if="permittedSensorFormErrors.valor_min" class="text-red-500 text-[9px] mt-0.5 ml-1">{{ permittedSensorFormErrors.valor_min[0] }}</p>
+              </div>
+              <div>
+                <label class="text-[9px] uppercase font-bold text-mako-400 block mb-0.5">Valor Máximo</label>
+                <input v-model="newPermittedSensorMax" type="number" step="any" placeholder="Ej. 100" class="w-full px-2.5 py-1.5 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none text-xs font-semibold" :class="{'border-red-500': permittedSensorFormErrors.valor_max}" />
+                <p v-if="permittedSensorFormErrors.valor_max" class="text-red-500 text-[9px] mt-0.5 ml-1">{{ permittedSensorFormErrors.valor_max[0] }}</p>
+              </div>
+            </div>
+
             <div class="flex items-center justify-between text-xs gap-3">
               <div class="flex items-center gap-1">
                 <input v-model="newPermittedSensorRequerido" type="checkbox" id="wizard_req" class="rounded border-mako-300 text-primary focus:ring-primary" />
@@ -2029,24 +2236,25 @@ const copyToClipboard = (text) => {
             <div class="space-y-3">
               <div>
                 <label class="block text-[10px] font-bold text-mako-400 uppercase tracking-wider mb-1">Sensor</label>
-                <select v-model="newWidgetSensorId" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none text-xs font-semibold">
+                <select v-model="newWidgetSensorId" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none text-xs font-semibold" :class="{'border-red-500': simpleWidgetFormErrors.tipo_sensor}">
                   <option value="" disabled>Seleccione...</option>
                   <option v-for="rel in wizardPermittedSensors" :key="rel.tipo_sensor" :value="rel.tipo_sensor">{{ rel.tipo_sensor_codigo }}</option>
                 </select>
+                <p v-if="simpleWidgetFormErrors.tipo_sensor" class="text-red-500 text-[10px] mt-0.5 ml-1">{{ simpleWidgetFormErrors.tipo_sensor[0] }}</p>
               </div>
               <div>
                 <label class="block text-[10px] font-bold text-mako-400 uppercase tracking-wider mb-1">Visualización</label>
-                <select v-model="newWidgetVisualizacion" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none text-xs font-semibold">
-                  <option value="valor_actual">Valor Actual</option>
-                  <option value="historico">Histórico (Gráfico)</option>
-                  <option value="estado">Estado (Badge)</option>
-                  <option value="indicador">Indicador (Gauge)</option>
+                <select v-model="newWidgetVisualizacion" class="w-full px-3 py-2 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none text-xs font-semibold" :class="{'border-red-500': simpleWidgetFormErrors.visualizacion}">
+                  <option v-for="opt in availableVisualizations" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                 </select>
+                <p v-if="simpleWidgetFormErrors.visualizacion" class="text-red-500 text-[10px] mt-0.5 ml-1">{{ simpleWidgetFormErrors.visualizacion[0] }}</p>
               </div>
               <div>
                 <label class="block text-[10px] font-bold text-mako-400 uppercase tracking-wider mb-1">Título del Widget</label>
-                <input v-model="newWidgetTitulo" type="text" placeholder="Temperatura Norte (ejemplo)" class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none text-xs font-semibold" />
+                <input v-model="newWidgetTitulo" type="text" placeholder="Temperatura Norte (ejemplo)" class="w-full px-3 py-2.5 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none text-xs font-semibold" :class="{'border-red-500': simpleWidgetFormErrors.titulo}" />
+                <p v-if="simpleWidgetFormErrors.titulo" class="text-red-500 text-[10px] mt-0.5 ml-1">{{ simpleWidgetFormErrors.titulo[0] }}</p>
               </div>
+              <p v-if="simpleWidgetFormErrors.non_field_errors" class="text-red-500 text-[10px] mt-0.5 ml-1">{{ simpleWidgetFormErrors.non_field_errors[0] }}</p>
               <button @click="handleAddSimpleWidget" class="w-full px-3 py-2.5 rounded-xl bg-primary text-white text-xs font-bold">Crear Widget</button>
             </div>
           </div>
