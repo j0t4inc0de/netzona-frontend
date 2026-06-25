@@ -221,64 +221,128 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
     return data
   }
 
+  const isUpdatingRealtime = ref(false)
+
   // --- ACTUALIZACIÓN DE MÉTRICAS (LONG POLLING API REAL) ---
-  const updateRealtimeMetrics = async () => {
+  const updateRealtimeMetrics = async (activeCerroId = null) => {
+    if (isUpdatingRealtime.value) return
+    isUpdatingRealtime.value = true
+
     try {
-      for (const cerro of cerros.value) {
+      const cerrosToUpdate = activeCerroId
+        ? cerros.value.filter(c => String(c.id) === String(activeCerroId))
+        : cerros.value
+
+      const promises = []
+      const processedSerials = new Set()
+
+      for (const cerro of cerrosToUpdate) {
         for (const zona of cerro.zonas) {
+          // Process sensors
           for (const s of zona.sensors) {
-            try {
-              const res = await api(`/dispositivos/${s.serial}/estado-actual/`)
-              if (res.ok) {
-                const rawData = await res.json()
-                const data = transformEstadoActual(rawData)
-                const time = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                if (data['TEMPERATURA']) {
-                  zona.metrics.temperature = data['TEMPERATURA'].valor
-                  zona.history.temperature.push({ x: time, y: data['TEMPERATURA'].valor })
-                  if (zona.history.temperature.length > 30) zona.history.temperature.shift()
+            if (!s.serial || processedSerials.has(s.serial)) continue
+            processedSerials.add(s.serial)
+
+            promises.push((async () => {
+              try {
+                const res = await api(`/dispositivos/${s.serial}/estado-actual/`)
+                if (res.ok) {
+                  const rawData = await res.json()
+                  const data = transformEstadoActual(rawData)
+                  const time = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                  
+                  if (data['TEMPERATURA']) {
+                    zona.metrics.temperature = data['TEMPERATURA'].valor
+                    zona.history.temperature.push({ x: time, y: data['TEMPERATURA'].valor })
+                    if (zona.history.temperature.length > 30) zona.history.temperature.shift()
+                  }
+                  if (data['HUMEDAD']) {
+                    zona.metrics.humidity = data['HUMEDAD'].valor
+                    zona.history.humidity.push({ x: time, y: data['HUMEDAD'].valor })
+                    if (zona.history.humidity.length > 30) zona.history.humidity.shift()
+                  }
+                  if (data['BATERIA']) {
+                    zona.metrics.battery = data['BATERIA'].valor
+                  }
+                  if (data['VOLTAJE_PANEL']) {
+                    zona.metrics.solarPanelVoltage = data['VOLTAJE_PANEL'].valor
+                  }
+                  
+                  // Support cross-population in case the device returns repeater metrics
+                  if (data['VOLTAJE']) {
+                    zona.metrics.voltage = data['VOLTAJE'].valor
+                    zona.history.voltage.push({ x: time, y: data['VOLTAJE'].valor })
+                    if (zona.history.voltage.length > 30) zona.history.voltage.shift()
+                  }
+                  if (data['POTENCIA']) {
+                    zona.metrics.power = data['POTENCIA'].valor
+                    zona.history.power.push({ x: time, y: data['POTENCIA'].valor })
+                    if (zona.history.power.length > 30) zona.history.power.shift()
+                  }
                 }
-                if (data['HUMEDAD']) {
-                  zona.metrics.humidity = data['HUMEDAD'].valor
-                  zona.history.humidity.push({ x: time, y: data['HUMEDAD'].valor })
-                  if (zona.history.humidity.length > 30) zona.history.humidity.shift()
-                }
-                if (data['BATERIA']) zona.metrics.battery = data['BATERIA'].valor
-                if (data['VOLTAJE_PANEL']) zona.metrics.solarPanelVoltage = data['VOLTAJE_PANEL'].valor
+              } catch {
+                // ignore
               }
-            } catch {
-              // ignore error
-            }
+            })())
           }
 
+          // Process repeaters
           for (const r of zona.repeaters) {
-            try {
-              const res = await api(`/dispositivos/${r.serial}/estado-actual/`)
-              if (res.ok) {
-                const rawData = await res.json()
-                const data = transformEstadoActual(rawData)
-                const time = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                
-                if (data['VOLTAJE']) {
-                  zona.metrics.voltage = data['VOLTAJE'].valor
-                  zona.history.voltage.push({ x: time, y: data['VOLTAJE'].valor })
-                  if (zona.history.voltage.length > 30) zona.history.voltage.shift()
+            if (!r.serial || processedSerials.has(r.serial)) continue
+            processedSerials.add(r.serial)
+
+            promises.push((async () => {
+              try {
+                const res = await api(`/dispositivos/${r.serial}/estado-actual/`)
+                if (res.ok) {
+                  const rawData = await res.json()
+                  const data = transformEstadoActual(rawData)
+                  const time = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                  
+                  if (data['VOLTAJE']) {
+                    zona.metrics.voltage = data['VOLTAJE'].valor
+                    zona.history.voltage.push({ x: time, y: data['VOLTAJE'].valor })
+                    if (zona.history.voltage.length > 30) zona.history.voltage.shift()
+                  }
+                  if (data['POTENCIA']) {
+                    zona.metrics.power = data['POTENCIA'].valor
+                    zona.history.power.push({ x: time, y: data['POTENCIA'].valor })
+                    if (zona.history.power.length > 30) zona.history.power.shift()
+                  }
+                  if (data['BATERIA']) {
+                    zona.metrics.battery = data['BATERIA'].valor
+                  }
+
+                  // In case repeater response contains sensor metrics
+                  if (data['TEMPERATURA']) {
+                    zona.metrics.temperature = data['TEMPERATURA'].valor
+                    zona.history.temperature.push({ x: time, y: data['TEMPERATURA'].valor })
+                    if (zona.history.temperature.length > 30) zona.history.temperature.shift()
+                  }
+                  if (data['HUMEDAD']) {
+                    zona.metrics.humidity = data['HUMEDAD'].valor
+                    zona.history.humidity.push({ x: time, y: data['HUMEDAD'].valor })
+                    if (zona.history.humidity.length > 30) zona.history.humidity.shift()
+                  }
+                  if (data['VOLTAJE_PANEL']) {
+                    zona.metrics.solarPanelVoltage = data['VOLTAJE_PANEL'].valor
+                  }
                 }
-                if (data['POTENCIA']) {
-                  zona.metrics.power = data['POTENCIA'].valor
-                  zona.history.power.push({ x: time, y: data['POTENCIA'].valor })
-                  if (zona.history.power.length > 30) zona.history.power.shift()
-                }
-                if (data['BATERIA']) zona.metrics.battery = data['BATERIA'].valor
+              } catch {
+                // ignore
               }
-            } catch {
-              // ignore error
-            }
+            })())
           }
         }
       }
+
+      if (promises.length > 0) {
+        await Promise.all(promises)
+      }
     } catch (e) {
       console.warn("Polling de estado actual fallido", e)
+    } finally {
+      isUpdatingRealtime.value = false
     }
   }
 

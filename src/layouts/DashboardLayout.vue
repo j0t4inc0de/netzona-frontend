@@ -21,9 +21,11 @@ const isCerrosDropdownOpen = ref(true)
 onMounted(async () => {
   telemetrics.fetchDataFromBackend()
   
-  // Iniciar polling
+  // Iniciar polling solo para el cerro activo
   pollingInterval = setInterval(() => {
-    telemetrics.updateRealtimeMetrics()
+    if (route.name === 'cerro-view' && route.params.id) {
+      telemetrics.updateRealtimeMetrics(route.params.id)
+    }
   }, 5000)
 
   // Esperar a que se carguen los cerros para cerrarlo si hay más de 3
@@ -56,7 +58,12 @@ watch(() => route.path, (newPath) => {
   }
 })
 
-
+// Forzar actualización inmediata al cambiar de Cerro en el menú lateral
+watch(() => route.params.id, (newCerroId) => {
+  if (route.name === 'cerro-view' && newCerroId) {
+    telemetrics.updateRealtimeMetrics(newCerroId)
+  }
+})
 
 onUnmounted(() => {
   if (pollingInterval) clearInterval(pollingInterval)
