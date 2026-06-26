@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed, nextTick } from 'vue'
 import { api } from '../services/api'
 import { toast } from 'vue-sonner'
 import { useTelemetricsStore } from '../stores/telemetrics'
@@ -8,6 +8,41 @@ import { useTelemetricsStore } from '../stores/telemetrics'
 const isLoading = ref(true)
 const telemetricsStore = useTelemetricsStore()
 const activeTab = ref('equipos') // 'equipos', 'tipos-dispositivo', 'tipos-sensor', 'alta-rapida', 'mqtt'
+
+// Soporte de carrusel/scroll para pestañas
+const tabsContainer = ref(null)
+const tabRefs = {}
+const tabList = [
+  { id: 'equipos', name: 'Dispositivos' },
+  { id: 'tipos-dispositivo', name: 'Modelos' },
+  { id: 'tipos-sensor', name: 'Catálogo Sensores' },
+  { id: 'alta-rapida', name: 'Creación Rápida' },
+  { id: 'mqtt', name: 'Diagnóstico MQTT' }
+]
+
+const handleTabClick = (tabId, index) => {
+  if (activeTab.value === tabId) {
+    if (index === tabList.length - 1) {
+      activeTab.value = tabList[0].id
+    }
+  } else {
+    activeTab.value = tabId
+  }
+}
+
+const scrollToTab = (tabId) => {
+  nextTick(() => {
+    const container = tabsContainer.value
+    const el = tabRefs[tabId]
+    if (container && el) {
+      const targetScroll = el.offsetLeft - container.offsetLeft - 8
+      container.scrollTo({
+        left: targetScroll,
+        behavior: 'smooth'
+      })
+    }
+  })
+}
 
 // Listas de Datos desde Backend
 const empresas = ref([])
@@ -275,7 +310,7 @@ watch(selectedTipoDispositivoDashboard, () => {
   newWidgetTitulo.value = ''
 })
 
-watch(activeTab, () => {
+watch(activeTab, (newTab) => {
   permittedSensorFormErrors.value = {}
   simpleWidgetFormErrors.value = {}
   newPermittedSensorId.value = ''
@@ -286,6 +321,7 @@ watch(activeTab, () => {
   newWidgetSensorId.value = ''
   newWidgetVisualizacion.value = 'valor_actual'
   newWidgetTitulo.value = ''
+  scrollToTab(newTab)
 })
 
 // ==========================================
@@ -499,6 +535,7 @@ onMounted(async () => {
     fetchMqttPayloads()
   ])
   isLoading.value = false
+  scrollToTab(activeTab.value)
 })
 
 // ==========================================
@@ -1574,41 +1611,19 @@ const copyToClipboard = (text) => {
     </div>
 
     <!-- Navegación de Pestañas Principales -->
-    <div class="flex border-b border-mako-200 dark:border-white/5 gap-2 sm:gap-6 overflow-x-auto whitespace-nowrap scrollbar-hide py-1 px-2">
+    <div ref="tabsContainer" class="flex border-b border-mako-200 dark:border-white/5 gap-2 sm:gap-6 overflow-x-auto whitespace-nowrap scrollbar-hide py-1 px-2 scroll-smooth">
       <button
-        @click="activeTab = 'equipos'"
+        v-for="(tab, index) in tabList"
+        :key="tab.id"
+        :ref="el => { tabRefs[tab.id] = el }"
+        @click="handleTabClick(tab.id, index)"
         class="py-3 px-2 text-sm font-bold border-b-2 transition-all outline-none shrink-0"
-        :class="activeTab === 'equipos' ? 'border-primary text-primary' : 'border-transparent text-mako-400 hover:text-mako-600 dark:hover:text-white'"
+        :class="[
+          activeTab === tab.id ? 'border-primary text-primary' : 'border-transparent text-mako-400 hover:text-mako-600 dark:hover:text-white',
+          tab.id === 'alta-rapida' ? 'flex items-center gap-1.5' : ''
+        ]"
       >
-        Dispositivos
-      </button>
-      <button
-        @click="activeTab = 'tipos-dispositivo'"
-        class="py-3 px-2 text-sm font-bold border-b-2 transition-all outline-none shrink-0"
-        :class="activeTab === 'tipos-dispositivo' ? 'border-primary text-primary' : 'border-transparent text-mako-400 hover:text-mako-600 dark:hover:text-white'"
-      >
-        Modelos
-      </button>
-      <button
-        @click="activeTab = 'tipos-sensor'"
-        class="py-3 px-2 text-sm font-bold border-b-2 transition-all outline-none shrink-0"
-        :class="activeTab === 'tipos-sensor' ? 'border-primary text-primary' : 'border-transparent text-mako-400 hover:text-mako-600 dark:hover:text-white'"
-      >
-        Catálogo Sensores
-      </button>
-      <button
-        @click="activeTab = 'alta-rapida'"
-        class="py-3 px-2 text-sm font-bold border-b-2 transition-all outline-none shrink-0 flex items-center gap-1.5"
-        :class="activeTab === 'alta-rapida' ? 'border-primary text-primary' : 'border-transparent text-mako-400 hover:text-mako-600 dark:hover:text-white'"
-      >
-        Creación Rápida
-      </button>
-      <button
-        @click="activeTab = 'mqtt'"
-        class="py-3 px-2 text-sm font-bold border-b-2 transition-all outline-none shrink-0"
-        :class="activeTab === 'mqtt' ? 'border-primary text-primary' : 'border-transparent text-mako-400 hover:text-mako-600 dark:hover:text-white'"
-      >
-        Diagnóstico MQTT
+        {{ tab.name }}
       </button>
     </div>
 
