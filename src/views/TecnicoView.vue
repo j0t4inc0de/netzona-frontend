@@ -1580,14 +1580,14 @@ const copyToClipboard = (text) => {
         class="py-3 px-2 text-sm font-bold border-b-2 transition-all outline-none shrink-0"
         :class="activeTab === 'equipos' ? 'border-primary text-primary' : 'border-transparent text-mako-400 hover:text-mako-600 dark:hover:text-white'"
       >
-        Dispositivos Físicos
+        Dispositivos
       </button>
       <button
         @click="activeTab = 'tipos-dispositivo'"
         class="py-3 px-2 text-sm font-bold border-b-2 transition-all outline-none shrink-0"
         :class="activeTab === 'tipos-dispositivo' ? 'border-primary text-primary' : 'border-transparent text-mako-400 hover:text-mako-600 dark:hover:text-white'"
       >
-        Modelos (Tipo Dispositivo)
+        Modelos
       </button>
       <button
         @click="activeTab = 'tipos-sensor'"
