@@ -1533,40 +1533,40 @@ const copyToClipboard = (text) => {
         </div>
       </div>
       
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 w-full md:w-auto">
         <button
           v-if="activeTab === 'equipos'"
           @click="startCreateEquipo"
-          class="rounded-xl relative w-full sm:w-52 h-12 cursor-pointer flex items-center border border-primary bg-primary group overflow-hidden transition-all hover:shadow-[0_0_20px_rgba(0,209,94,0.4)]"
+          class="rounded-xl relative w-full md:w-52 h-12 cursor-pointer flex items-center border border-primary bg-primary group overflow-hidden transition-all hover:shadow-[0_0_20px_rgba(0,209,94,0.4)]"
         >
-          <span class="text-white font-semibold w-full text-center sm:text-left sm:ml-5 transform group-hover:translate-x-40 transition-all duration-300 text-sm">
+          <span class="text-white font-semibold w-full text-center md:text-left md:ml-5 transform md:group-hover:translate-x-40 transition-all duration-300 text-sm">
             Nuevo Dispositivo
           </span>
-          <span class="absolute right-0 h-full w-12 rounded-xl bg-primary flex items-center justify-center transform group-hover:translate-x-0 group-hover:w-full transition-all duration-300">
+          <span class="absolute right-0 h-full w-12 rounded-xl bg-primary flex items-center justify-center transform md:group-hover:translate-x-0 md:group-hover:w-full transition-all duration-300">
             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24"><line x1="12" x2="12" y1="5" y2="19"></line><line x1="5" x2="19" y1="12" y2="12"></line></svg>
           </span>
         </button>
         <button
           v-if="activeTab === 'tipos-dispositivo'"
           @click="isAddTipoDispositivoModalOpen = true"
-          class="rounded-xl relative w-full sm:w-52 h-12 cursor-pointer flex items-center border border-primary bg-primary group overflow-hidden transition-all hover:shadow-[0_0_20px_rgba(0,209,94,0.4)]"
+          class="rounded-xl relative w-full md:w-52 h-12 cursor-pointer flex items-center border border-primary bg-primary group overflow-hidden transition-all hover:shadow-[0_0_20px_rgba(0,209,94,0.4)]"
         >
-          <span class="text-white font-semibold w-full text-center sm:text-left sm:ml-5 transform group-hover:translate-x-40 transition-all duration-300 text-sm">
+          <span class="text-white font-semibold w-full text-center md:text-left md:ml-5 transform md:group-hover:translate-x-40 transition-all duration-300 text-sm">
             Crear Modelo
           </span>
-          <span class="absolute right-0 h-full w-12 rounded-xl bg-primary flex items-center justify-center transform group-hover:translate-x-0 group-hover:w-full transition-all duration-300">
+          <span class="absolute right-0 h-full w-12 rounded-xl bg-primary flex items-center justify-center transform md:group-hover:translate-x-0 md:group-hover:w-full transition-all duration-300">
             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24"><line x1="12" x2="12" y1="5" y2="19"></line><line x1="5" x2="19" y1="12" y2="12"></line></svg>
           </span>
         </button>
         <button
           v-if="activeTab === 'tipos-sensor'"
           @click="isAddTipoSensorModalOpen = true; editingSensorId = null"
-          class="rounded-xl relative w-full sm:w-52 h-12 cursor-pointer flex items-center border border-primary bg-primary group overflow-hidden transition-all hover:shadow-[0_0_20px_rgba(0,209,94,0.4)]"
+          class="rounded-xl relative w-full md:w-52 h-12 cursor-pointer flex items-center border border-primary bg-primary group overflow-hidden transition-all hover:shadow-[0_0_20px_rgba(0,209,94,0.4)]"
         >
-          <span class="text-white font-semibold w-full text-center sm:text-left sm:ml-5 transform group-hover:translate-x-40 transition-all duration-300 text-sm">
+          <span class="text-white font-semibold w-full text-center md:text-left md:ml-5 transform md:group-hover:translate-x-40 transition-all duration-300 text-sm">
             Nuevo Tipo Sensor
           </span>
-          <span class="absolute right-0 h-full w-12 rounded-xl bg-primary flex items-center justify-center transform group-hover:translate-x-0 group-hover:w-full transition-all duration-300">
+          <span class="absolute right-0 h-full w-12 rounded-xl bg-primary flex items-center justify-center transform md:group-hover:translate-x-0 md:group-hover:w-full transition-all duration-300">
             <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24"><line x1="12" x2="12" y1="5" y2="19"></line><line x1="5" x2="19" y1="12" y2="12"></line></svg>
           </span>
         </button>
@@ -1630,33 +1630,37 @@ const copyToClipboard = (text) => {
           <h3 class="text-base font-semibold text-mako-600 dark:text-mako-300">No hay equipos registrados</h3>
         </div>
 
-        <div v-else class="overflow-x-auto custom-scrollbar flex-1">
-          <table class="w-full text-left whitespace-nowrap">
-            <thead class="bg-mako-50 dark:bg-mako-800/50 border-b border-mako-100 dark:border-mako-700/50">
+        <div v-else class="overflow-x-auto custom-scrollbar flex-1 sm:overflow-visible">
+          <table class="w-full text-left whitespace-nowrap block sm:table">
+            <thead class="hidden sm:table-header-group bg-mako-50 dark:bg-mako-800/50 border-b border-mako-100 dark:border-mako-700/50">
               <tr class="text-[11px] uppercase tracking-widest text-mako-500 dark:text-mako-400 font-bold">
                 <th class="px-6 py-4">Serial / Nombre</th>
                 <th class="px-6 py-4">Ubicación</th>
                 <th class="px-6 py-4 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-mako-100 dark:divide-mako-800/60">
+            <tbody class="flex flex-col sm:table-row-group gap-3 sm:gap-0 p-3 sm:p-0 divide-y-0 sm:divide-y sm:divide-mako-100 dark:sm:divide-mako-800/60">
               <tr 
                 v-for="node in equipos" 
                 :key="node.id" 
                 @click="selectEquipo(node)"
-                class="hover:bg-mako-50/50 dark:hover:bg-white/5 cursor-pointer transition-colors"
-                :class="selectedEquipo && selectedEquipo.id === node.id ? 'bg-primary/5 dark:bg-primary/5' : ''"
+                class="block sm:table-row hover:bg-mako-50/50 dark:hover:bg-white/5 cursor-pointer transition-colors bg-white dark:bg-mako-800/40 sm:bg-transparent rounded-2xl sm:rounded-none border border-mako-100 dark:border-mako-700/50 sm:border-0 overflow-hidden shadow-sm sm:shadow-none"
+                :class="selectedEquipo && selectedEquipo.id === node.id ? 'bg-primary/5 dark:bg-primary/5 !border-primary/30 sm:!border-0' : ''"
               >
-                <td class="px-6 py-4">
+                <td class="block sm:table-cell px-4 py-3 sm:px-6 sm:py-4 border-b border-mako-50 dark:border-mako-700/30 sm:border-0 bg-mako-50/50 dark:bg-mako-800/30 sm:bg-transparent">
                   <div class="font-mono font-bold text-primary">{{ node.serial }}</div>
                   <div class="text-xs text-mako-500 font-medium mt-0.5">{{ node.nombre }}</div>
                 </td>
-                <td class="px-6 py-4 text-xs">
-                  <div class="font-semibold text-mako-700 dark:text-mako-200">{{ node.empresa_codigo || 'N/A' }}</div>
-                  <div class="text-[10px] text-mako-400 font-mono mt-0.5">{{ node.sitio_codigo }} / {{ node.zona_codigo || 'Global' }}</div>
+                <td class="flex sm:table-cell justify-between items-center px-4 py-3 sm:px-6 sm:py-4 border-b border-mako-50 dark:border-mako-700/30 sm:border-0">
+                  <span class="text-[10px] font-bold text-mako-400 uppercase sm:hidden">Ubicación</span>
+                  <div class="text-xs">
+                    <div class="font-semibold text-mako-700 dark:text-mako-200">{{ node.empresa_codigo || 'N/A' }}</div>
+                    <div class="text-[10px] text-mako-400 font-mono mt-0.5">{{ node.sitio_codigo }} / {{ node.zona_codigo || 'Global' }}</div>
+                  </div>
                 </td>
-                <td class="px-6 py-4 text-right" @click.stop>
-                  <button @click="handleDeleteEquipo(node.id)" class="p-2 text-mako-400 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-colors" title="Eliminar"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                <td class="flex sm:table-cell justify-between sm:justify-end items-center px-4 py-3 sm:px-6 sm:py-4 bg-mako-50/30 dark:bg-mako-800/20 sm:bg-transparent" @click.stop>
+                  <span class="text-[10px] font-bold text-mako-400 uppercase sm:hidden">Acciones</span>
+                  <button @click="handleDeleteEquipo(node.id)" class="p-2 text-mako-400 hover:text-red-500 hover:bg-red-500/10 bg-white dark:bg-mako-800 sm:bg-transparent shadow-sm sm:shadow-none border border-mako-100 dark:border-mako-700 sm:border-0 rounded-xl transition-colors" title="Eliminar"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                 </td>
               </tr>
             </tbody>
@@ -1821,29 +1825,33 @@ const copyToClipboard = (text) => {
           <h2 class="text-lg font-bold text-mako-900 dark:text-white">Modelos de Dispositivo Globales</h2>
           <button @click="fetchTiposDispositivo" class="p-2 text-mako-500 hover:text-primary transition-colors bg-mako-100/50 dark:bg-mako-800 rounded-xl"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
         </div>
-        <div class="overflow-x-auto custom-scrollbar">
-          <table class="w-full text-left whitespace-nowrap">
-            <thead class="bg-mako-50 dark:bg-mako-800/50 border-b border-mako-100 dark:border-mako-700/50">
+        <div class="overflow-x-auto custom-scrollbar sm:overflow-visible">
+          <table class="w-full text-left whitespace-nowrap block sm:table">
+            <thead class="hidden sm:table-header-group bg-mako-50 dark:bg-mako-800/50 border-b border-mako-100 dark:border-mako-700/50">
               <tr class="text-[11px] uppercase tracking-widest text-mako-500 dark:text-mako-400 font-bold">
                 <th class="px-6 py-4">Código / Modelo</th>
                 <th class="px-6 py-4">Nombre Comercial</th>
                 <th class="px-6 py-4 text-right">Estado</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-mako-100 dark:divide-mako-800/60">
+            <tbody class="flex flex-col sm:table-row-group gap-3 sm:gap-0 p-3 sm:p-0 divide-y-0 sm:divide-y sm:divide-mako-100 dark:sm:divide-mako-800/60">
               <tr 
                 v-for="tipo in tiposDispositivo" 
                 :key="tipo.id"
                 @click="selectTipoDispositivo(tipo)"
-                class="hover:bg-mako-50/50 dark:hover:bg-white/5 cursor-pointer transition-colors"
-                :class="selectedTipoDispositivo && selectedTipoDispositivo.id === tipo.id ? 'bg-primary/5 dark:bg-primary/5' : ''"
+                class="block sm:table-row hover:bg-mako-50/50 dark:hover:bg-white/5 cursor-pointer transition-colors bg-white dark:bg-mako-800/40 sm:bg-transparent rounded-2xl sm:rounded-none border border-mako-100 dark:border-mako-700/50 sm:border-0 overflow-hidden shadow-sm sm:shadow-none"
+                :class="selectedTipoDispositivo && selectedTipoDispositivo.id === tipo.id ? 'bg-primary/5 dark:bg-primary/5 !border-primary/30 sm:!border-0' : ''"
               >
-                <td class="px-6 py-4">
+                <td class="block sm:table-cell px-4 py-3 sm:px-6 sm:py-4 border-b border-mako-50 dark:border-mako-700/30 sm:border-0 bg-mako-50/50 dark:bg-mako-800/30 sm:bg-transparent">
                   <div class="font-mono font-bold text-primary">{{ tipo.codigo }}</div>
                   <div class="text-[10px] text-mako-400 font-semibold mt-0.5">{{ tipo.modelo || 'S/M' }}</div>
                 </td>
-                <td class="px-6 py-4 text-xs font-semibold text-mako-700 dark:text-mako-200">{{ tipo.nombre }}</td>
-                <td class="px-6 py-4 text-right">
+                <td class="flex sm:table-cell justify-between items-center px-4 py-3 sm:px-6 sm:py-4 border-b border-mako-50 dark:border-mako-700/30 sm:border-0">
+                  <span class="text-[10px] font-bold text-mako-400 uppercase sm:hidden">Nombre</span>
+                  <span class="text-xs font-semibold text-mako-700 dark:text-mako-200">{{ tipo.nombre }}</span>
+                </td>
+                <td class="flex sm:table-cell justify-between sm:justify-end items-center px-4 py-3 sm:px-6 sm:py-4 bg-mako-50/30 dark:bg-mako-800/20 sm:bg-transparent">
+                  <span class="text-[10px] font-bold text-mako-400 uppercase sm:hidden">Estado</span>
                   <span class="px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider rounded-md" :class="tipo.activo ? 'bg-green-500/10 text-green-500 border border-green-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'">{{ tipo.activo ? 'Activo' : 'Inactivo' }}</span>
                 </td>
               </tr>
@@ -2040,9 +2048,9 @@ const copyToClipboard = (text) => {
         <button @click="fetchTiposSensor" class="p-2 text-mako-500 hover:text-primary transition-colors bg-mako-100/50 dark:bg-mako-800 rounded-xl"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg></button>
       </div>
 
-      <div class="overflow-x-auto custom-scrollbar">
-        <table class="w-full text-left whitespace-nowrap">
-          <thead class="bg-mako-50 dark:bg-mako-800/50 border-b border-mako-100 dark:border-mako-700/50">
+      <div class="overflow-x-auto custom-scrollbar sm:overflow-visible">
+        <table class="w-full text-left whitespace-nowrap block sm:table">
+          <thead class="hidden sm:table-header-group bg-mako-50 dark:bg-mako-800/50 border-b border-mako-100 dark:border-mako-700/50">
             <tr class="text-[11px] uppercase tracking-widest text-mako-500 dark:text-mako-400 font-bold">
               <th class="px-6 py-4">Código / Tipo Dato</th>
               <th class="px-6 py-4">Nombre Visible</th>
@@ -2052,26 +2060,37 @@ const copyToClipboard = (text) => {
               <th class="px-6 py-4 text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-mako-100 dark:divide-mako-800/60">
-            <tr v-for="sensor in tiposSensor" :key="sensor.id" class="hover:bg-mako-50/50 dark:hover:bg-white/5 transition-colors">
-              <td class="px-6 py-4">
+          <tbody class="flex flex-col sm:table-row-group gap-3 sm:gap-0 p-3 sm:p-0 divide-y-0 sm:divide-y sm:divide-mako-100 dark:sm:divide-mako-800/60">
+            <tr v-for="sensor in tiposSensor" :key="sensor.id" class="block sm:table-row hover:bg-mako-50/50 dark:hover:bg-white/5 transition-colors bg-white dark:bg-mako-800/40 sm:bg-transparent rounded-2xl sm:rounded-none border border-mako-100 dark:border-mako-700/50 sm:border-0 overflow-hidden shadow-sm sm:shadow-none">
+              <td class="block sm:table-cell px-4 py-3 sm:px-6 sm:py-4 border-b border-mako-50 dark:border-mako-700/30 sm:border-0 bg-mako-50/50 dark:bg-mako-800/30 sm:bg-transparent">
                 <div class="font-mono font-bold text-primary">{{ sensor.codigo }}</div>
                 <div class="text-[9px] text-mako-400 uppercase font-bold mt-0.5">{{ sensor.tipo_dato }}</div>
               </td>
-              <td class="px-6 py-4 text-xs font-semibold text-mako-700 dark:text-mako-200">{{ sensor.nombre_visible }}</td>
-              <td class="px-6 py-4 text-xs font-mono text-mako-500">{{ sensor.unidad || 'N/A' }}</td>
-              <td class="px-6 py-4 text-xs">
-                <div class="flex flex-wrap gap-1.5 max-w-xs">
+              <td class="flex sm:table-cell justify-between items-center px-4 py-3 sm:px-6 sm:py-4 border-b border-mako-50 dark:border-mako-700/30 sm:border-0">
+                <span class="text-[10px] font-bold text-mako-400 uppercase sm:hidden">Nombre</span>
+                <span class="text-xs font-semibold text-mako-700 dark:text-mako-200">{{ sensor.nombre_visible }}</span>
+              </td>
+              <td class="flex sm:table-cell justify-between items-center px-4 py-3 sm:px-6 sm:py-4 border-b border-mako-50 dark:border-mako-700/30 sm:border-0">
+                <span class="text-[10px] font-bold text-mako-400 uppercase sm:hidden">Unidad</span>
+                <span class="text-xs font-mono text-mako-500">{{ sensor.unidad || 'N/A' }}</span>
+              </td>
+              <td class="flex sm:table-cell justify-between items-start px-4 py-3 sm:px-6 sm:py-4 border-b border-mako-50 dark:border-mako-700/30 sm:border-0">
+                <span class="text-[10px] font-bold text-mako-400 uppercase sm:hidden shrink-0 mr-3 pt-0.5">Capacidades</span>
+                <div class="flex flex-wrap gap-1.5 max-w-xs justify-end sm:justify-start">
                   <span v-if="sensor.permite_valor_actual" class="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 font-bold text-[9px] uppercase">Actual</span>
                   <span v-if="sensor.permite_historico" class="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 font-bold text-[9px] uppercase">Histórico</span>
                   <span v-if="sensor.permite_agregacion_promedio" class="px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-500 font-bold text-[9px] uppercase">Promedio</span>
                 </div>
               </td>
-              <td class="px-6 py-4 text-xs text-mako-500">{{ sensor.categoria || 'Global' }}</td>
-              <td class="px-6 py-4 text-right">
-                <div class="flex gap-2 justify-end">
-                  <button @click="startEditTipoSensor(sensor)" class="p-2 text-mako-400 hover:text-blue-500 hover:bg-blue-500/10 rounded-xl transition-colors" title="Editar"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
-                  <button @click="handleDeleteTipoSensor(sensor.id)" class="p-2 text-mako-400 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-colors" title="Eliminar"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+              <td class="flex sm:table-cell justify-between items-center px-4 py-3 sm:px-6 sm:py-4 border-b border-mako-50 dark:border-mako-700/30 sm:border-0">
+                <span class="text-[10px] font-bold text-mako-400 uppercase sm:hidden">Categoría</span>
+                <span class="text-xs text-mako-500">{{ sensor.categoria || 'Global' }}</span>
+              </td>
+              <td class="flex sm:table-cell justify-between sm:justify-end items-center px-4 py-3 sm:px-6 sm:py-4 bg-mako-50/30 dark:bg-mako-800/20 sm:bg-transparent">
+                <span class="text-[10px] font-bold text-mako-400 uppercase sm:hidden">Acciones</span>
+                <div class="flex gap-1 justify-end">
+                  <button @click="startEditTipoSensor(sensor)" class="p-2 text-mako-400 hover:text-blue-500 hover:bg-blue-500/10 bg-white dark:bg-mako-800 sm:bg-transparent shadow-sm sm:shadow-none border border-mako-100 dark:border-mako-700 sm:border-0 rounded-xl transition-colors" title="Editar"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg></button>
+                  <button @click="handleDeleteTipoSensor(sensor.id)" class="p-2 text-mako-400 hover:text-red-500 hover:bg-red-500/10 bg-white dark:bg-mako-800 sm:bg-transparent shadow-sm sm:shadow-none border border-mako-100 dark:border-mako-700 sm:border-0 rounded-xl transition-colors" title="Eliminar"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
                 </div>
               </td>
             </tr>
@@ -2439,9 +2458,9 @@ const copyToClipboard = (text) => {
       <div v-if="isMqttLoading" class="p-16 flex justify-center">
         <span class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></span>
       </div>
-      <div v-else class="overflow-x-auto custom-scrollbar">
-        <table class="w-full text-left whitespace-nowrap">
-          <thead class="bg-mako-50 dark:bg-mako-800/50 border-b border-mako-100 dark:border-mako-700/50">
+      <div v-else class="overflow-x-auto custom-scrollbar sm:overflow-visible">
+        <table class="w-full text-left whitespace-nowrap block sm:table">
+          <thead class="hidden sm:table-header-group bg-mako-50 dark:bg-mako-800/50 border-b border-mako-100 dark:border-mako-700/50">
             <tr class="text-[11px] uppercase tracking-widest text-mako-500 dark:text-mako-400 font-bold">
               <th class="px-6 py-4">Dispositivo</th>
               <th class="px-6 py-4">Tópico</th>
@@ -2450,20 +2469,28 @@ const copyToClipboard = (text) => {
               <th class="px-6 py-4">Detalle</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-mako-100 dark:divide-mako-800/60">
-            <tr v-if="mqttPayloads.length === 0">
-              <td colspan="5" class="py-12 text-center text-sm text-mako-400">Sin tráfico MQTT.</td>
+          <tbody class="flex flex-col sm:table-row-group gap-3 sm:gap-0 p-3 sm:p-0 divide-y-0 sm:divide-y sm:divide-mako-100 dark:sm:divide-mako-800/60">
+            <tr v-if="mqttPayloads.length === 0" class="block sm:table-row">
+              <td colspan="5" class="block sm:table-cell py-12 text-center text-sm text-mako-400">Sin tráfico MQTT.</td>
             </tr>
-            <tr v-for="log in mqttPayloads" :key="log.id" class="hover:bg-mako-50/50 dark:hover:bg-white/5 transition-colors">
-              <td class="px-6 py-4 font-mono font-bold text-primary text-sm">{{ log.dispositivo_serial || 'Desconocido' }}</td>
-              <td class="px-6 py-4 text-xs font-mono text-mako-500 bg-mako-50/50 dark:bg-transparent">{{ log.topic }}</td>
-              <td class="px-6 py-4 text-xs text-mako-600 dark:text-mako-300">{{ new Date(log.recibido_en || log.created_at).toLocaleString('es-CL') }}</td>
-              <td class="px-6 py-4">
+            <tr v-for="log in mqttPayloads" :key="log.id" class="block sm:table-row hover:bg-mako-50/50 dark:hover:bg-white/5 transition-colors bg-white dark:bg-mako-800/40 sm:bg-transparent rounded-2xl sm:rounded-none border border-mako-100 dark:border-mako-700/50 sm:border-0 overflow-hidden shadow-sm sm:shadow-none">
+              <td class="block sm:table-cell px-4 py-3 sm:px-6 sm:py-4 border-b border-mako-50 dark:border-mako-700/30 sm:border-0 bg-mako-50/50 dark:bg-mako-800/30 sm:bg-transparent font-mono font-bold text-primary text-sm">{{ log.dispositivo_serial || 'Desconocido' }}</td>
+              <td class="flex sm:table-cell justify-between items-center px-4 py-3 sm:px-6 sm:py-4 border-b border-mako-50 dark:border-mako-700/30 sm:border-0">
+                <span class="text-[10px] font-bold text-mako-400 uppercase sm:hidden">Tópico</span>
+                <span class="text-xs font-mono text-mako-500 truncate max-w-[200px] sm:max-w-none">{{ log.topic }}</span>
+              </td>
+              <td class="flex sm:table-cell justify-between items-center px-4 py-3 sm:px-6 sm:py-4 border-b border-mako-50 dark:border-mako-700/30 sm:border-0">
+                <span class="text-[10px] font-bold text-mako-400 uppercase sm:hidden">Fecha</span>
+                <span class="text-xs text-mako-600 dark:text-mako-300">{{ new Date(log.recibido_en || log.created_at).toLocaleString('es-CL') }}</span>
+              </td>
+              <td class="flex sm:table-cell justify-between items-center px-4 py-3 sm:px-6 sm:py-4 border-b border-mako-50 dark:border-mako-700/30 sm:border-0">
+                <span class="text-[10px] font-bold text-mako-400 uppercase sm:hidden">Estado</span>
                 <span v-if="log.valido" class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-green-500/10 text-green-500 border border-green-500/20">Válido</span>
                 <span v-else class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-red-500/10 text-red-500 border border-red-500/20">Error</span>
               </td>
-              <td class="px-6 py-4 text-xs text-mako-500 max-w-xs truncate" :title="log.error_validacion || log.payload">
-                {{ log.error_validacion || log.payload }}
+              <td class="flex sm:table-cell justify-between items-start px-4 py-3 sm:px-6 sm:py-4 bg-mako-50/30 dark:bg-mako-800/20 sm:bg-transparent">
+                <span class="text-[10px] font-bold text-mako-400 uppercase sm:hidden shrink-0 mr-3">Detalle</span>
+                <span class="text-xs text-mako-500 max-w-[200px] sm:max-w-xs truncate" :title="log.error_validacion || log.payload">{{ log.error_validacion || log.payload }}</span>
               </td>
             </tr>
           </tbody>
