@@ -223,6 +223,13 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
     return data
   }
 
+  const pushHistory = (zona, key, time, valor) => {
+    if (!zona.history) zona.history = {}
+    if (!zona.history[key]) zona.history[key] = []
+    zona.history[key].push({ x: time, y: valor })
+    if (zona.history[key].length > 30) zona.history[key].shift()
+  }
+
   const isUpdatingRealtime = ref(false)
 
   // --- ACTUALIZACIÓN DE MÉTRICAS (LONG POLLING API REAL) ---
@@ -263,13 +270,11 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                 
                 if (data['TEMPERATURA']) {
                   zona.metrics.temperature = data['TEMPERATURA'].valor
-                  zona.history.temperature.push({ x: time, y: data['TEMPERATURA'].valor })
-                  if (zona.history.temperature.length > 30) zona.history.temperature.shift()
+                  pushHistory(zona, 'temperature', time, data['TEMPERATURA'].valor)
                 }
                 if (data['HUMEDAD']) {
                   zona.metrics.humidity = data['HUMEDAD'].valor
-                  zona.history.humidity.push({ x: time, y: data['HUMEDAD'].valor })
-                  if (zona.history.humidity.length > 30) zona.history.humidity.shift()
+                  pushHistory(zona, 'humidity', time, data['HUMEDAD'].valor)
                 }
                 if (data['BATERIA']) {
                   zona.metrics.battery = data['BATERIA'].valor
@@ -279,13 +284,11 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                 }
                 if (data['VOLTAJE']) {
                   zona.metrics.voltage = data['VOLTAJE'].valor
-                  zona.history.voltage.push({ x: time, y: data['VOLTAJE'].valor })
-                  if (zona.history.voltage.length > 30) zona.history.voltage.shift()
+                  pushHistory(zona, 'voltage', time, data['VOLTAJE'].valor)
                 }
                 if (data['POTENCIA']) {
                   zona.metrics.power = data['POTENCIA'].valor
-                  zona.history.power.push({ x: time, y: data['POTENCIA'].valor })
-                  if (zona.history.power.length > 30) zona.history.power.shift()
+                  pushHistory(zona, 'power', time, data['POTENCIA'].valor)
                 }
               }
 
@@ -298,26 +301,22 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
                 
                 if (data['VOLTAJE']) {
                   zona.metrics.voltage = data['VOLTAJE'].valor
-                  zona.history.voltage.push({ x: time, y: data['VOLTAJE'].valor })
-                  if (zona.history.voltage.length > 30) zona.history.voltage.shift()
+                  pushHistory(zona, 'voltage', time, data['VOLTAJE'].valor)
                 }
                 if (data['POTENCIA']) {
                   zona.metrics.power = data['POTENCIA'].valor
-                  zona.history.power.push({ x: time, y: data['POTENCIA'].valor })
-                  if (zona.history.power.length > 30) zona.history.power.shift()
+                  pushHistory(zona, 'power', time, data['POTENCIA'].valor)
                 }
                 if (data['BATERIA']) {
                   zona.metrics.battery = data['BATERIA'].valor
                 }
                 if (data['TEMPERATURA']) {
                   zona.metrics.temperature = data['TEMPERATURA'].valor
-                  zona.history.temperature.push({ x: time, y: data['TEMPERATURA'].valor })
-                  if (zona.history.temperature.length > 30) zona.history.temperature.shift()
+                  pushHistory(zona, 'temperature', time, data['TEMPERATURA'].valor)
                 }
                 if (data['HUMEDAD']) {
                   zona.metrics.humidity = data['HUMEDAD'].valor
-                  zona.history.humidity.push({ x: time, y: data['HUMEDAD'].valor })
-                  if (zona.history.humidity.length > 30) zona.history.humidity.shift()
+                  pushHistory(zona, 'humidity', time, data['HUMEDAD'].valor)
                 }
                 if (data['VOLTAJE_PANEL']) {
                   zona.metrics.solarPanelVoltage = data['VOLTAJE_PANEL'].valor
@@ -565,6 +564,14 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
               batteryTemp: 0,
               doorOpen: false,
               relayState: false,
+            },
+            history: {
+              temperature: [],
+              humidity: [],
+              voltage: [],
+              power: [],
+              soilMoisture: [],
+              solarPanelVoltage: []
             },
             weatherForecast: [
               { day: 'Lun', temp: '15°C', status: 'Despejado', icon: 'Sun' }
