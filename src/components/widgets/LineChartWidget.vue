@@ -225,7 +225,7 @@ const chartOptions = computed(() => {
     </div>
 
     <!-- Área de Visualización -->
-    <div class="flex-1 min-h-[180px] relative flex items-center justify-center">
+    <div class="flex-1 min-h-[180px] relative">
       <!-- Loading State -->
       <div v-if="isLoading" class="absolute inset-0 flex items-center justify-center bg-white/10 dark:bg-mako-900/10 backdrop-blur-[1px] z-10 rounded-xl">
         <svg class="animate-spin h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24">
@@ -235,7 +235,7 @@ const chartOptions = computed(() => {
       </div>
 
       <!-- Error State -->
-      <div v-else-if="hasError" class="text-center p-4 flex flex-col items-center justify-center">
+      <div v-else-if="hasError" class="absolute inset-0 flex flex-col items-center justify-center text-center p-4">
         <p class="text-xs text-red-500 font-semibold mb-2">No se pudo cargar el historial.</p>
         <button
           @click="fetchHistory"
@@ -246,12 +246,12 @@ const chartOptions = computed(() => {
       </div>
 
       <!-- Empty State -->
-      <div v-else-if="points.length === 0" class="text-xs text-mako-400 italic text-center p-4">
+      <div v-else-if="points.length === 0" class="absolute inset-0 flex items-center justify-center text-xs text-mako-400 italic text-center p-4">
         Sin datos para el rango seleccionado.
       </div>
 
       <!-- ApexChart Render -->
-      <div v-else class="w-full h-full">
+      <div v-else class="absolute inset-0">
         <apexchart
           type="area"
           width="100%"

@@ -131,7 +131,9 @@ const initGrid = async () => {
         },
         disableDrag: isMobile,
         disableResize: isMobile
-      }, el)
+      }, el) || el.gridstack
+
+      if (!gridInst) return
 
       grids.push(gridInst)
 
