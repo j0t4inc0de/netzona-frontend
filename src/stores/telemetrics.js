@@ -214,7 +214,9 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
     if (data.sensores && Array.isArray(data.sensores)) {
       const transformed = {}
       for (const s of data.sensores) {
-        transformed[s.codigo_sensor] = { valor: s.valor }
+        if (s.codigo_sensor) {
+          transformed[s.codigo_sensor.toUpperCase()] = { valor: s.valor }
+        }
       }
       return transformed
     }
@@ -233,141 +235,114 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
         ? cerros.value.filter(c => String(c.id) === String(activeCerroId))
         : cerros.value
 
-      const promises = []
-      const processedSerials = new Set()
-
       for (const cerro of cerrosToUpdate) {
-        for (const zona of cerro.zonas) {
-          // Process sensors
-          for (const s of zona.sensors) {
-            if (!s.serial || processedSerials.has(s.serial)) continue
-            processedSerials.add(s.serial)
+        try {
+          const res = await api(`/empresas/sitios/${cerro.id}/estado-actual/`)
+          if (res.ok) {
+            const rawData = await res.json()
+            if (!rawData.dispositivos || !Array.isArray(rawData.dispositivos)) continue
 
-            promises.push((async () => {
-              try {
-                const res = await api(`/dispositivos/${s.serial}/estado-actual/`)
-                if (res.ok) {
-                  const rawData = await res.json()
-                  const data = transformEstadoActual(rawData)
-                  const time = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                  
-                  if (data['TEMPERATURA']) {
-                    zona.metrics.temperature = data['TEMPERATURA'].valor
-                    zona.history.temperature.push({ x: time, y: data['TEMPERATURA'].valor })
-                    if (zona.history.temperature.length > 30) zona.history.temperature.shift()
-                  }
-                  if (data['HUMEDAD']) {
-                    zona.metrics.humidity = data['HUMEDAD'].valor
-                    zona.history.humidity.push({ x: time, y: data['HUMEDAD'].valor })
-                    if (zona.history.humidity.length > 30) zona.history.humidity.shift()
-                  }
-                  if (data['BATERIA']) {
-                    zona.metrics.battery = data['BATERIA'].valor
-                  }
-                  if (data['VOLTAJE_PANEL']) {
-                    zona.metrics.solarPanelVoltage = data['VOLTAJE_PANEL'].valor
-                  }
-                  
-                  // Support cross-population in case the device returns repeater metrics
-                  if (data['VOLTAJE']) {
-                    zona.metrics.voltage = data['VOLTAJE'].valor
-                    zona.history.voltage.push({ x: time, y: data['VOLTAJE'].valor })
-                    if (zona.history.voltage.length > 30) zona.history.voltage.shift()
-                  }
-                  if (data['POTENCIA']) {
-                    zona.metrics.power = data['POTENCIA'].valor
-                    zona.history.power.push({ x: time, y: data['POTENCIA'].valor })
-                    if (zona.history.power.length > 30) zona.history.power.shift()
-                  }
-
-                  // Sincronizar directamente con los widgets dinámicos en pantalla
-                  const device = zona.dispositivos.find(d => d.serial === s.serial)
-                  if (device && device.widgets) {
-                    device.widgets.forEach(w => {
-                      if (rawData.sensores && Array.isArray(rawData.sensores)) {
-                        const sensorData = rawData.sensores.find(sd => sd.codigo_sensor === w.codigo_sensor)
-                        if (sensorData) {
-                          w.valor = sensorData.valor
-                          w.medido_en = sensorData.medido_en
-                          w.estado = sensorData.estado || 'ok'
-                        }
-                      }
-                    })
-                  }
-                }
-              } catch {
-                // ignore
+            const deviceMap = new Map()
+            rawData.dispositivos.forEach(d => {
+              if (d.dispositivo && d.dispositivo.serial) {
+                deviceMap.set(d.dispositivo.serial, d)
+              } else if (d.serial) {
+                deviceMap.set(d.serial, d)
               }
-            })())
-          }
+            })
 
-          // Process repeaters
-          for (const r of zona.repeaters) {
-            if (!r.serial || processedSerials.has(r.serial)) continue
-            processedSerials.add(r.serial)
+            const time = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 
-            promises.push((async () => {
-              try {
-                const res = await api(`/dispositivos/${r.serial}/estado-actual/`)
-                if (res.ok) {
-                  const rawData = await res.json()
-                  const data = transformEstadoActual(rawData)
-                  const time = new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                  
-                  if (data['VOLTAJE']) {
-                    zona.metrics.voltage = data['VOLTAJE'].valor
-                    zona.history.voltage.push({ x: time, y: data['VOLTAJE'].valor })
-                    if (zona.history.voltage.length > 30) zona.history.voltage.shift()
-                  }
-                  if (data['POTENCIA']) {
-                    zona.metrics.power = data['POTENCIA'].valor
-                    zona.history.power.push({ x: time, y: data['POTENCIA'].valor })
-                    if (zona.history.power.length > 30) zona.history.power.shift()
-                  }
-                  if (data['BATERIA']) {
-                    zona.metrics.battery = data['BATERIA'].valor
-                  }
+            for (const zona of cerro.zonas) {
+              // Actualizar sensores
+              for (const s of zona.sensors) {
+                const devData = deviceMap.get(s.serial)
+                if (!devData) continue
 
-                  // In case repeater response contains sensor metrics
-                  if (data['TEMPERATURA']) {
-                    zona.metrics.temperature = data['TEMPERATURA'].valor
-                    zona.history.temperature.push({ x: time, y: data['TEMPERATURA'].valor })
-                    if (zona.history.temperature.length > 30) zona.history.temperature.shift()
-                  }
-                  if (data['HUMEDAD']) {
-                    zona.metrics.humidity = data['HUMEDAD'].valor
-                    zona.history.humidity.push({ x: time, y: data['HUMEDAD'].valor })
-                    if (zona.history.humidity.length > 30) zona.history.humidity.shift()
-                  }
-                  if (data['VOLTAJE_PANEL']) {
-                    zona.metrics.solarPanelVoltage = data['VOLTAJE_PANEL'].valor
-                  }
-
-                  // Sincronizar directamente con los widgets dinámicos en pantalla
-                  const device = zona.dispositivos.find(d => d.serial === r.serial)
-                  if (device && device.widgets) {
-                    device.widgets.forEach(w => {
-                      if (rawData.sensores && Array.isArray(rawData.sensores)) {
-                        const sensorData = rawData.sensores.find(sd => sd.codigo_sensor === w.codigo_sensor)
-                        if (sensorData) {
-                          w.valor = sensorData.valor
-                          w.medido_en = sensorData.medido_en
-                          w.estado = sensorData.estado || 'ok'
-                        }
-                      }
-                    })
-                  }
+                const data = transformEstadoActual(devData)
+                
+                if (data['TEMPERATURA']) {
+                  zona.metrics.temperature = data['TEMPERATURA'].valor
+                  zona.history.temperature.push({ x: time, y: data['TEMPERATURA'].valor })
+                  if (zona.history.temperature.length > 30) zona.history.temperature.shift()
                 }
-              } catch {
-                // ignore
+                if (data['HUMEDAD']) {
+                  zona.metrics.humidity = data['HUMEDAD'].valor
+                  zona.history.humidity.push({ x: time, y: data['HUMEDAD'].valor })
+                  if (zona.history.humidity.length > 30) zona.history.humidity.shift()
+                }
+                if (data['BATERIA']) {
+                  zona.metrics.battery = data['BATERIA'].valor
+                }
+                if (data['VOLTAJE_PANEL']) {
+                  zona.metrics.solarPanelVoltage = data['VOLTAJE_PANEL'].valor
+                }
+                if (data['VOLTAJE']) {
+                  zona.metrics.voltage = data['VOLTAJE'].valor
+                  zona.history.voltage.push({ x: time, y: data['VOLTAJE'].valor })
+                  if (zona.history.voltage.length > 30) zona.history.voltage.shift()
+                }
+                if (data['POTENCIA']) {
+                  zona.metrics.power = data['POTENCIA'].valor
+                  zona.history.power.push({ x: time, y: data['POTENCIA'].valor })
+                  if (zona.history.power.length > 30) zona.history.power.shift()
+                }
               }
-            })())
+
+              // Actualizar repetidores
+              for (const r of zona.repeaters) {
+                const devData = deviceMap.get(r.serial)
+                if (!devData) continue
+
+                const data = transformEstadoActual(devData)
+                
+                if (data['VOLTAJE']) {
+                  zona.metrics.voltage = data['VOLTAJE'].valor
+                  zona.history.voltage.push({ x: time, y: data['VOLTAJE'].valor })
+                  if (zona.history.voltage.length > 30) zona.history.voltage.shift()
+                }
+                if (data['POTENCIA']) {
+                  zona.metrics.power = data['POTENCIA'].valor
+                  zona.history.power.push({ x: time, y: data['POTENCIA'].valor })
+                  if (zona.history.power.length > 30) zona.history.power.shift()
+                }
+                if (data['BATERIA']) {
+                  zona.metrics.battery = data['BATERIA'].valor
+                }
+                if (data['TEMPERATURA']) {
+                  zona.metrics.temperature = data['TEMPERATURA'].valor
+                  zona.history.temperature.push({ x: time, y: data['TEMPERATURA'].valor })
+                  if (zona.history.temperature.length > 30) zona.history.temperature.shift()
+                }
+                if (data['HUMEDAD']) {
+                  zona.metrics.humidity = data['HUMEDAD'].valor
+                  zona.history.humidity.push({ x: time, y: data['HUMEDAD'].valor })
+                  if (zona.history.humidity.length > 30) zona.history.humidity.shift()
+                }
+                if (data['VOLTAJE_PANEL']) {
+                  zona.metrics.solarPanelVoltage = data['VOLTAJE_PANEL'].valor
+                }
+              }
+
+              // Sincronizar directamente con los widgets dinámicos en pantalla
+              for (const device of zona.dispositivos) {
+                const devData = deviceMap.get(device.serial)
+                if (devData && device.widgets && devData.sensores && Array.isArray(devData.sensores)) {
+                  device.widgets.forEach(w => {
+                    const sensorData = devData.sensores.find(sd => sd.codigo_sensor && sd.codigo_sensor.toUpperCase() === w.codigo_sensor.toUpperCase())
+                    if (sensorData) {
+                      w.valor = sensorData.valor
+                      w.medido_en = sensorData.medido_en
+                      w.estado = sensorData.estado || 'ok'
+                    }
+                  })
+                }
+              }
+            }
           }
+        } catch (err) {
+          console.warn(`Error al actualizar tiempo real para el sitio/cerro ${cerro.id}:`, err)
         }
-      }
-
-      if (promises.length > 0) {
-        await Promise.all(promises)
       }
     } catch (e) {
       console.warn("Polling de estado actual fallido", e)

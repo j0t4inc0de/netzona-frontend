@@ -204,6 +204,20 @@ const availableVisualizations = computed(() => {
     ]
   }
 
+  // Usar las visualizaciones compatibles calculadas por el backend si están disponibles
+  if (sensor.visualizaciones_compatibles && Array.isArray(sensor.visualizaciones_compatibles)) {
+    const labelMap = {
+      'valor_actual': 'Valor Actual',
+      'historico': 'Histórico (Gráfico)',
+      'estado': 'Estado (Badge)',
+      'indicador': 'Indicador (Gauge)'
+    }
+    return sensor.visualizaciones_compatibles.map(vis => ({
+      value: vis,
+      label: labelMap[vis] || vis
+    }))
+  }
+
   const options = []
 
   // Valor actual
@@ -712,10 +726,6 @@ const handleSaveTipoSensor = async () => {
       tipo_dato: newSensorTipoDato.value,
       categoria: newSensorCategoria.value.trim(),
       descripcion: newSensorDescripcion.value.trim(),
-      permite_valor_actual: newSensorPermiteValorActual.value,
-      permite_historico: newSensorPermiteHistorico.value,
-      permite_agregacion_promedio: newSensorPermiteAgregacionPromedio.value,
-      tipo_widget_sugerido: newSensorTipoWidgetSugerido.value,
       activo: true
     }
 
@@ -1328,6 +1338,15 @@ const fetchWizardDashboardWidgets = async () => {
   } catch (e) {
     console.error(e)
   }
+}
+
+const handleFinishWizardStep7 = () => {
+  if (wizardWidgets.value.length === 0) {
+    toast.error('Debes agregar al menos un widget para finalizar la configuración del dashboard.')
+    return
+  }
+  wizardStep.value = 8
+  fetchWizardEquipoSensors()
 }
 
 watch(() => wizardState.value.createdDashboardTemplate, async (newVal) => {
@@ -2240,7 +2259,7 @@ const copyToClipboard = (text) => {
             <h3 class="text-base font-bold text-mako-800 dark:text-mako-100">Paso 7: Configuración del Dashboard</h3>
             <p class="text-xs text-mako-400 mt-0.5">Define cómo se presentarán visualmente los datos recolectados.</p>
           </div>
-          <button @click="wizardStep = 8; fetchWizardEquipoSensors()" class="px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold">Siguiente (Finalizar)</button>
+          <button @click="handleFinishWizardStep7" class="px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold" :class="{'opacity-60 cursor-not-allowed': wizardWidgets.length === 0}">Siguiente (Finalizar)</button>
         </div>
 
         <div v-if="!wizardState.createdDashboardTemplate" class="p-6 text-center space-y-3 bg-mako-100/30 dark:bg-mako-900/10 rounded-2xl border border-dashed border-mako-300 dark:border-mako-700">
@@ -2281,7 +2300,7 @@ const copyToClipboard = (text) => {
           <!-- Listado widgets creados -->
           <div class="border border-mako-200 dark:border-mako-700 rounded-3xl p-4 bg-white/50 dark:bg-transparent overflow-y-auto max-h-[40vh] custom-scrollbar space-y-2">
             <span class="text-xs font-bold text-mako-400 uppercase tracking-widest block mb-2">Widgets Creados</span>
-            <div v-if="wizardWidgets.length === 0" class="text-center py-8 text-xs text-mako-400">Ningún widget configurado aún. Se creará por defecto el visualizador al recibir la telemetría.</div>
+            <div v-if="wizardWidgets.length === 0" class="text-center py-8 text-xs text-mako-400">Aún no hay widgets configurados. Agrega al menos un widget para visualizar datos en el dashboard.</div>
             <div v-else class="space-y-2">
               <div v-for="w in wizardWidgets" :key="w.id" class="flex items-center justify-between p-3 bg-mako-100/50 dark:bg-mako-800/40 border border-mako-200/50 dark:border-mako-700/50 rounded-2xl">
                 <div>
@@ -2604,36 +2623,6 @@ const copyToClipboard = (text) => {
             <p v-if="tipoSensorFormErrors.descripcion" class="text-red-500 text-[10px] mt-1">{{ tipoSensorFormErrors.descripcion[0] }}</p>
           </div>
 
-          <!-- Permisos y Widget Sugerido -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 p-4 bg-mako-100/30 dark:bg-mako-800/20 rounded-3xl border border-mako-200 dark:border-mako-700/60">
-            <div class="space-y-3">
-              <span class="text-xs uppercase font-bold tracking-wider text-mako-400 block mb-1">Capacidades del Sensor</span>
-              <div class="flex items-center justify-between">
-                <span class="text-xs">Permite Valor Actual</span>
-                <input v-model="newSensorPermiteValorActual" type="checkbox" class="rounded border-mako-300 text-primary focus:ring-primary" />
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-xs">Permite Histórico</span>
-                <input v-model="newSensorPermiteHistorico" type="checkbox" class="rounded border-mako-300 text-primary focus:ring-primary" :disabled="newSensorTipoDato !== 'integer' && newSensorTipoDato !== 'float'" />
-              </div>
-              <div class="flex items-center justify-between">
-                <span class="text-xs">Permite Promedio</span>
-                <input v-model="newSensorPermiteAgregacionPromedio" type="checkbox" class="rounded border-mako-300 text-primary focus:ring-primary" :disabled="newSensorTipoDato !== 'integer' && newSensorTipoDato !== 'float'" />
-              </div>
-            </div>
-            <div>
-              <label class="block text-xs uppercase font-bold tracking-wider text-mako-400 mb-1.5">Widget Sugerido</label>
-              <select v-model="newSensorTipoWidgetSugerido" class="w-full px-4 py-3 rounded-xl bg-white dark:bg-mako-800 border border-mako-300 dark:border-mako-700 outline-none font-semibold text-xs">
-                <option value="metric_card">Tarjeta Métrica Básica</option>
-                <option value="line_chart">Gráfico de Líneas</option>
-                <option value="battery_card">Batería / Energía</option>
-                <option value="signal_card">Conectividad / Red</option>
-                <option value="status_card">Badge de Estado</option>
-                <option value="gauge">Indicador Gauge</option>
-              </select>
-              <p class="text-[10px] text-mako-400 mt-2">La selección de widgets compatibles está restringida por el tipo de dato para evitar fallas de renderizado en el Dashboard.</p>
-            </div>
-          </div>
 
           <div class="pt-4 border-t border-mako-200 dark:border-mako-700/50 flex gap-3 justify-end">
             <button type="button" @click="isAddTipoSensorModalOpen = false" class="px-5 py-3 border border-mako-300 dark:border-mako-700 text-sm font-semibold rounded-xl hover:bg-mako-100 dark:hover:bg-white/5 transition-all">Cancelar</button>
