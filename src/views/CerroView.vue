@@ -142,13 +142,22 @@ const initGrid = async () => {
       // Load layout
       if (dev.dashboard_template_id) {
         try {
-          const res = await api(`/cuentas/preferencias/?sitio=${selectedCerro.value.id}&dashboard_template=${dev.dashboard_template_id}`)
-          if (res.ok) {
-            const data = await res.json()
+          let layoutData = null
+          if (dev.layout_dashboard) {
+            layoutData = dev.layout_dashboard
+          } else {
+            const res = await api(`/cuentas/preferencias/?sitio=${selectedCerro.value.id}&dashboard_template=${dev.dashboard_template_id}`)
+            if (res.ok) {
+              const data = await res.json()
+              layoutData = data.layout_dashboard
+            }
+          }
+
+          if (layoutData) {
             const finalLayout = []
-            if (data.layout_dashboard && data.layout_dashboard.length > 0) {
-              const mappedLayout = data.layout_dashboard.map(item => ({
-                id: item.widget_id,
+            if (layoutData.length > 0) {
+              const mappedLayout = layoutData.map(item => ({
+                id: item.widget_id || item.id,
                 x: item.x,
                 y: item.y,
                 w: item.w,

@@ -879,12 +879,16 @@ const handleRegisterNode = async () => {
       if (activeTab.value === 'alta-rapida') {
         wizardState.value.createdEquipo = data
         try {
-          const dashRes = await api(`/dashboards/templates/?empresa=${empresaId}&tipo_dispositivo=${tipoDispId}`)
+          const dashRes = await api(`/dispositivos/${data.serial}/dashboard/`)
           if (dashRes.ok) {
             const dashData = await dashRes.json()
-            const results = dashData.results || dashData
-            if (results.length > 0) {
-              wizardState.value.createdDashboardTemplate = results[0]
+            if (dashData.dashboard && dashData.dashboard.id) {
+              if (dashData.dashboard.dispositivo_serial === data.serial) {
+                wizardState.value.createdDashboardTemplate = dashData.dashboard
+              } else {
+                console.error('Error: El dashboard no corresponde al dispositivo.')
+                toast.error('El dashboard recuperado no corresponde a este dispositivo.')
+              }
             }
           }
         } catch (e) {
@@ -1121,19 +1125,26 @@ const handleDeleteWidget = async (widgetId) => {
       
       try {
         const telemetricsStore = useTelemetricsStore()
-        telemetricsStore.fetchDataFromBackend()
+        await telemetricsStore.fetchDataFromBackend()
+        const sitioId = activeTab.value === 'alta-rapida' ? wizardState.value.sitioId : selectedTipoDispositivoDashboard.value?.sitio_id
+        if (sitioId) {
+          await telemetricsStore.fetchCerroDetails(sitioId, true)
+        }
       } catch (e) {
         console.error('Failed to reload telemetrics store:', e)
       }
 
-      const templateId = activeTab.value === 'alta-rapida' 
-        ? wizardState.value.createdDashboardTemplate?.id 
-        : selectedTipoDispositivoDashboard.value?.id
-      await fetchDashboardWidgets(templateId)
+      if (activeTab.value === 'alta-rapida') {
+        await fetchWizardDashboardWidgets()
+      } else {
+        const templateId = selectedTipoDispositivoDashboard.value?.id
+        await fetchDashboardWidgets(templateId)
+      }
     } else {
       toast.error('Error al eliminar widget.')
     }
-  } catch {
+  } catch (error) {
+    console.error(error)
     toast.error('Error de conexión.')
   }
 }
@@ -1328,12 +1339,23 @@ const handleWizardAddPermittedSensor = async () => {
 // Widgets del dashboard creado en el wizard
 const wizardWidgets = ref([])
 const fetchWizardDashboardWidgets = async () => {
-  if (!wizardState.value.createdDashboardTemplate) return
+  if (!wizardState.value.createdEquipo) return
   try {
-    const res = await api(`/dashboards/widgets/?dashboard_template=${wizardState.value.createdDashboardTemplate.id}`)
+    const serial = wizardState.value.createdEquipo.serial
+    const res = await api(`/dispositivos/${serial}/dashboard/`)
     if (res.ok) {
-      const data = await res.json()
-      wizardWidgets.value = data.results || data
+      const dashData = await res.json()
+      if (dashData.dashboard) {
+        if (dashData.dashboard.dispositivo_serial === serial) {
+          wizardState.value.createdDashboardTemplate = dashData.dashboard
+          wizardWidgets.value = dashData.dashboard.widgets || []
+        } else {
+          console.error('Error: El dashboard no corresponde al dispositivo.')
+          toast.error('El dashboard recuperado no corresponde a este dispositivo.')
+          wizardState.value.createdDashboardTemplate = null
+          wizardWidgets.value = []
+        }
+      }
     }
   } catch (e) {
     console.error(e)
@@ -2259,7 +2281,12 @@ const copyToClipboard = (text) => {
             <h3 class="text-base font-bold text-mako-800 dark:text-mako-100">Paso 7: Configuración del Dashboard</h3>
             <p class="text-xs text-mako-400 mt-0.5">Define cómo se presentarán visualmente los datos recolectados.</p>
           </div>
-          <button @click="handleFinishWizardStep7" class="px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold" :class="{'opacity-60 cursor-not-allowed': wizardWidgets.length === 0}">Siguiente (Finalizar)</button>
+          <div class="flex flex-col items-end gap-1">
+            <button :disabled="wizardWidgets.length === 0" @click="handleFinishWizardStep7" class="px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold disabled:opacity-50 disabled:cursor-not-allowed">Siguiente (Finalizar)</button>
+            <p v-if="wizardWidgets.length === 0" class="text-[10px] text-red-500 font-bold text-right max-w-xs">
+              Debes agregar al menos un widget para finalizar la configuración del dashboard.
+            </p>
+          </div>
         </div>
 
         <div v-if="!wizardState.createdDashboardTemplate" class="p-6 text-center space-y-3 bg-mako-100/30 dark:bg-mako-900/10 rounded-2xl border border-dashed border-mako-300 dark:border-mako-700">

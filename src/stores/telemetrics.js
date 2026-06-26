@@ -536,6 +536,27 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
         allDispositivos = dataDisp.results || dataDisp
       }
 
+      // Obtener de forma agrupada los dashboards, widgets y layouts de los dispositivos del sitio
+      const dashboardsMap = new Map()
+      try {
+        const resDashboards = await api(`/dashboards/por-sitio/?sitio=${cerroId}`)
+        if (resDashboards.ok) {
+          const dashboardsData = await resDashboards.json()
+          const items = dashboardsData.results || dashboardsData
+          if (Array.isArray(items)) {
+            items.forEach(item => {
+              if (item.dispositivo && item.dispositivo.serial) {
+                dashboardsMap.set(item.dispositivo.serial, item)
+              } else if (item.serial) {
+                dashboardsMap.set(item.serial, item)
+              }
+            })
+          }
+        }
+      } catch (dashError) {
+        console.warn('No se pudo cargar dashboards/por-sitio:', dashError)
+      }
+
       const resZonas = await api(`/empresas/zonas/?sitio=${cerroId}`)
       if (resZonas.ok) {
         const dataZonas = await resZonas.json()
@@ -604,32 +625,56 @@ export const useTelemetricsStore = defineStore('telemetrics', () => {
               latitud: d.latitud,
               longitud: d.longitud,
               dashboard_template_id: null,
-              widgets: []
+              widgets: [],
+              layout_dashboard: null
             }
 
-            try {
-              const resDash = await api(`/dispositivos/${d.serial}/dashboard/`)
-              if (resDash.ok) {
-                const dash = await resDash.json()
-                if (dash.dashboard && dash.dashboard.id) {
-                  devObj.dashboard_template_id = dash.dashboard.id
-                }
-                const widgets = dash.dashboard ? dash.dashboard.widgets : dash.widgets || []
-                widgets.forEach(w => {
-                  w.device_serial = d.serial
-                  const val = w.valor || 0
-                  if (w.codigo_sensor === 'TEMPERATURA' || w.titulo.toLowerCase().includes('temp')) { mappedZona.metrics.temperature = val; mappedZona.metrics.temp_widget_id = w.id }
-                  if (w.codigo_sensor === 'HUMEDAD' || w.titulo.toLowerCase().includes('hum')) { mappedZona.metrics.humidity = val; mappedZona.metrics.hum_widget_id = w.id }
-                  if (w.codigo_sensor === 'BATERIA' || w.titulo.toLowerCase().includes('bat')) { mappedZona.metrics.battery = val; mappedZona.metrics.bat_widget_id = w.id }
-                  if (w.codigo_sensor === 'VOLTAJE' || w.titulo.toLowerCase().includes('volt')) { mappedZona.metrics.voltage = val; mappedZona.metrics.volt_widget_id = w.id }
-                  if (w.codigo_sensor === 'POTENCIA' || w.titulo.toLowerCase().includes('pot')) { mappedZona.metrics.power = val; mappedZona.metrics.pow_widget_id = w.id }
-                  if (w.codigo_sensor === 'HUMEDAD_SUELO' || w.titulo.toLowerCase().includes('suelo')) { mappedZona.metrics.soilMoisture = val; mappedZona.metrics.soil_widget_id = w.id }
-                  if (w.codigo_sensor === 'VOLTAJE_PANEL' || w.titulo.toLowerCase().includes('panel')) { mappedZona.metrics.solarPanelVoltage = val; mappedZona.metrics.solar_widget_id = w.id }
-                })
-                devObj.widgets = widgets
+            if (dashboardsMap.has(d.serial)) {
+              const dashInfo = dashboardsMap.get(d.serial)
+              if (dashInfo.dashboard && dashInfo.dashboard.id) {
+                devObj.dashboard_template_id = dashInfo.dashboard.id
               }
-            } catch {
-              // ignore error
+              const widgets = dashInfo.widgets || (dashInfo.dashboard ? dashInfo.dashboard.widgets : []) || []
+              widgets.forEach(w => {
+                w.device_serial = d.serial
+                const val = w.valor || 0
+                if (w.codigo_sensor === 'TEMPERATURA' || w.titulo.toLowerCase().includes('temp')) { mappedZona.metrics.temperature = val; mappedZona.metrics.temp_widget_id = w.id }
+                if (w.codigo_sensor === 'HUMEDAD' || w.titulo.toLowerCase().includes('hum')) { mappedZona.metrics.humidity = val; mappedZona.metrics.hum_widget_id = w.id }
+                if (w.codigo_sensor === 'BATERIA' || w.titulo.toLowerCase().includes('bat')) { mappedZona.metrics.battery = val; mappedZona.metrics.bat_widget_id = w.id }
+                if (w.codigo_sensor === 'VOLTAJE' || w.titulo.toLowerCase().includes('volt')) { mappedZona.metrics.voltage = val; mappedZona.metrics.volt_widget_id = w.id }
+                if (w.codigo_sensor === 'POTENCIA' || w.titulo.toLowerCase().includes('pot')) { mappedZona.metrics.power = val; mappedZona.metrics.pow_widget_id = w.id }
+                if (w.codigo_sensor === 'HUMEDAD_SUELO' || w.titulo.toLowerCase().includes('suelo')) { mappedZona.metrics.soilMoisture = val; mappedZona.metrics.soil_widget_id = w.id }
+                if (w.codigo_sensor === 'VOLTAJE_PANEL' || w.titulo.toLowerCase().includes('panel')) { mappedZona.metrics.solarPanelVoltage = val; mappedZona.metrics.solar_widget_id = w.id }
+              })
+              devObj.widgets = widgets
+              if (dashInfo.preferencias && dashInfo.preferencias.layout_dashboard) {
+                devObj.layout_dashboard = dashInfo.preferencias.layout_dashboard
+              }
+            } else {
+              try {
+                const resDash = await api(`/dispositivos/${d.serial}/dashboard/`)
+                if (resDash.ok) {
+                  const dash = await resDash.json()
+                  if (dash.dashboard && dash.dashboard.id) {
+                    devObj.dashboard_template_id = dash.dashboard.id
+                  }
+                  const widgets = dash.dashboard ? dash.dashboard.widgets : dash.widgets || []
+                  widgets.forEach(w => {
+                    w.device_serial = d.serial
+                    const val = w.valor || 0
+                    if (w.codigo_sensor === 'TEMPERATURA' || w.titulo.toLowerCase().includes('temp')) { mappedZona.metrics.temperature = val; mappedZona.metrics.temp_widget_id = w.id }
+                    if (w.codigo_sensor === 'HUMEDAD' || w.titulo.toLowerCase().includes('hum')) { mappedZona.metrics.humidity = val; mappedZona.metrics.hum_widget_id = w.id }
+                    if (w.codigo_sensor === 'BATERIA' || w.titulo.toLowerCase().includes('bat')) { mappedZona.metrics.battery = val; mappedZona.metrics.bat_widget_id = w.id }
+                    if (w.codigo_sensor === 'VOLTAJE' || w.titulo.toLowerCase().includes('volt')) { mappedZona.metrics.voltage = val; mappedZona.metrics.volt_widget_id = w.id }
+                    if (w.codigo_sensor === 'POTENCIA' || w.titulo.toLowerCase().includes('pot')) { mappedZona.metrics.power = val; mappedZona.metrics.pow_widget_id = w.id }
+                    if (w.codigo_sensor === 'HUMEDAD_SUELO' || w.titulo.toLowerCase().includes('suelo')) { mappedZona.metrics.soilMoisture = val; mappedZona.metrics.soil_widget_id = w.id }
+                    if (w.codigo_sensor === 'VOLTAJE_PANEL' || w.titulo.toLowerCase().includes('panel')) { mappedZona.metrics.solarPanelVoltage = val; mappedZona.metrics.solar_widget_id = w.id }
+                  })
+                  devObj.widgets = widgets
+                }
+              } catch {
+                // ignore error
+              }
             }
             mappedZona.dispositivos.push(devObj)
           }))
